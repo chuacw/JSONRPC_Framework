@@ -3,10 +3,31 @@
         <ProjectGuid>{5E2562F9-E3BF-47AF-B6A3-7611A4B49D82}</ProjectGuid>
     </PropertyGroup>
     <ItemGroup>
-        <Projects Include="..\WSDL_Server\Server\WSDL_Server.dproj">
+        <Projects Include="Tests\TestJSONRPC.dproj">
             <Dependencies/>
         </Projects>
-        <Projects Include="..\WSDL_Server\Client\WSDL_Client.dproj">
+        <Projects Include="Server\JSONRPC.ServerIndy.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Server\JSONRPC.ServerWebBroker.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="..\NetSocket\Client\NetSocket.Client.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Client\JSONRPC.ClientProj.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Client\JSONRPC.EthereumProj.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="..\Bugs\StrToFloatProj\StrToFloatProj.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="..\Bugs\ExtendedToJSON\ExtendedToJSON.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="..\Bugs\Multiline0001Bug\JsonBigNumber.dproj">
             <Dependencies/>
         </Projects>
     </ItemGroup>
@@ -17,32 +38,95 @@
             <Default.Personality/>
         </BorlandProject>
     </ProjectExtensions>
-    <Target Name="WSDL_Server">
-        <MSBuild Projects="..\WSDL_Server\Server\WSDL_Server.dproj"/>
+    <Target Name="TestJSONRPC">
+        <MSBuild Projects="Tests\TestJSONRPC.dproj"/>
     </Target>
-    <Target Name="WSDL_Server:Clean">
-        <MSBuild Projects="..\WSDL_Server\Server\WSDL_Server.dproj" Targets="Clean"/>
+    <Target Name="TestJSONRPC:Clean">
+        <MSBuild Projects="Tests\TestJSONRPC.dproj" Targets="Clean"/>
     </Target>
-    <Target Name="WSDL_Server:Make">
-        <MSBuild Projects="..\WSDL_Server\Server\WSDL_Server.dproj" Targets="Make"/>
+    <Target Name="TestJSONRPC:Make">
+        <MSBuild Projects="Tests\TestJSONRPC.dproj" Targets="Make"/>
     </Target>
-    <Target Name="WSDL_Client">
-        <MSBuild Projects="..\WSDL_Server\Client\WSDL_Client.dproj"/>
+    <Target Name="JSONRPC_ServerIndy">
+        <MSBuild Projects="Server\JSONRPC.ServerIndy.dproj"/>
     </Target>
-    <Target Name="WSDL_Client:Clean">
-        <MSBuild Projects="..\WSDL_Server\Client\WSDL_Client.dproj" Targets="Clean"/>
+    <Target Name="JSONRPC_ServerIndy:Clean">
+        <MSBuild Projects="Server\JSONRPC.ServerIndy.dproj" Targets="Clean"/>
     </Target>
-    <Target Name="WSDL_Client:Make">
-        <MSBuild Projects="..\WSDL_Server\Client\WSDL_Client.dproj" Targets="Make"/>
+    <Target Name="JSONRPC_ServerIndy:Make">
+        <MSBuild Projects="Server\JSONRPC.ServerIndy.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="JSONRPC_ServerWebBroker">
+        <MSBuild Projects="Server\JSONRPC.ServerWebBroker.dproj"/>
+    </Target>
+    <Target Name="JSONRPC_ServerWebBroker:Clean">
+        <MSBuild Projects="Server\JSONRPC.ServerWebBroker.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="JSONRPC_ServerWebBroker:Make">
+        <MSBuild Projects="Server\JSONRPC.ServerWebBroker.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="NetSocket_Client">
+        <MSBuild Projects="..\NetSocket\Client\NetSocket.Client.dproj"/>
+    </Target>
+    <Target Name="NetSocket_Client:Clean">
+        <MSBuild Projects="..\NetSocket\Client\NetSocket.Client.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="NetSocket_Client:Make">
+        <MSBuild Projects="..\NetSocket\Client\NetSocket.Client.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="JSONRPC_ClientProj">
+        <MSBuild Projects="Client\JSONRPC.ClientProj.dproj"/>
+    </Target>
+    <Target Name="JSONRPC_ClientProj:Clean">
+        <MSBuild Projects="Client\JSONRPC.ClientProj.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="JSONRPC_ClientProj:Make">
+        <MSBuild Projects="Client\JSONRPC.ClientProj.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="JSONRPC_EthereumProj">
+        <MSBuild Projects="Client\JSONRPC.EthereumProj.dproj"/>
+    </Target>
+    <Target Name="JSONRPC_EthereumProj:Clean">
+        <MSBuild Projects="Client\JSONRPC.EthereumProj.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="JSONRPC_EthereumProj:Make">
+        <MSBuild Projects="Client\JSONRPC.EthereumProj.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="StrToFloatProj">
+        <MSBuild Projects="..\Bugs\StrToFloatProj\StrToFloatProj.dproj"/>
+    </Target>
+    <Target Name="StrToFloatProj:Clean">
+        <MSBuild Projects="..\Bugs\StrToFloatProj\StrToFloatProj.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="StrToFloatProj:Make">
+        <MSBuild Projects="..\Bugs\StrToFloatProj\StrToFloatProj.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="ExtendedToJSON">
+        <MSBuild Projects="..\Bugs\ExtendedToJSON\ExtendedToJSON.dproj"/>
+    </Target>
+    <Target Name="ExtendedToJSON:Clean">
+        <MSBuild Projects="..\Bugs\ExtendedToJSON\ExtendedToJSON.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="ExtendedToJSON:Make">
+        <MSBuild Projects="..\Bugs\ExtendedToJSON\ExtendedToJSON.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="JsonBigNumber">
+        <MSBuild Projects="..\Bugs\Multiline0001Bug\JsonBigNumber.dproj"/>
+    </Target>
+    <Target Name="JsonBigNumber:Clean">
+        <MSBuild Projects="..\Bugs\Multiline0001Bug\JsonBigNumber.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="JsonBigNumber:Make">
+        <MSBuild Projects="..\Bugs\Multiline0001Bug\JsonBigNumber.dproj" Targets="Make"/>
     </Target>
     <Target Name="Build">
-        <CallTarget Targets="WSDL_Server;WSDL_Client"/>
+        <CallTarget Targets="TestJSONRPC;JSONRPC_ServerIndy;JSONRPC_ServerWebBroker;NetSocket_Client;JSONRPC_ClientProj;JSONRPC_EthereumProj;StrToFloatProj;ExtendedToJSON;JsonBigNumber"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="WSDL_Server:Clean;WSDL_Client:Clean"/>
+        <CallTarget Targets="TestJSONRPC:Clean;JSONRPC_ServerIndy:Clean;JSONRPC_ServerWebBroker:Clean;NetSocket_Client:Clean;JSONRPC_ClientProj:Clean;JSONRPC_EthereumProj:Clean;StrToFloatProj:Clean;ExtendedToJSON:Clean;JsonBigNumber:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="WSDL_Server:Make;WSDL_Client:Make"/>
+        <CallTarget Targets="TestJSONRPC:Make;JSONRPC_ServerIndy:Make;JSONRPC_ServerWebBroker:Make;NetSocket_Client:Make;JSONRPC_ClientProj:Make;JSONRPC_EthereumProj:Make;StrToFloatProj:Make;ExtendedToJSON:Make;JsonBigNumber:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

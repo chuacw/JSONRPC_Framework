@@ -3,13 +3,15 @@ unit ServerConst1;
 interface
 
 resourcestring
-  sPortInUse = '- Error: Port %s already in use';
-  sPortSet = '- Port set to %s';
-  sServerRunning = '- The Server is already running';
+  sPortInUse = '- Error: Port %d already in use';
+  sPortSSet = '- Port set to %s';
+  sPortISet = '- Port set to %d';
+  sServerAlreadyRunning = '- The server is already running';
+  sServerStarted = '- The server has started on port %d';
   sStartingServer = '- Starting HTTP Server on port %d';
-  sStoppingServer = '- Stopping Server';
-  sServerStopped = '- Server Stopped';
-  sServerNotRunning = '- The Server is not running';
+  sStoppingServer = '- Stopping server';
+  sServerStopped = '- server stopped';
+  sServerNotRunning = '- The server is not running';
   sInvalidCommand = '- Error: Invalid Command';
   sIndyVersion = '- Indy Version: ';
   sActive = '- Active: ';
@@ -31,6 +33,7 @@ const
   cCommandHelp = 'help';
   cCommandSetPort = 'set port';
   cCommandExit = 'exit';
+  cCommandQUit = 'quit';
 
 implementation
 

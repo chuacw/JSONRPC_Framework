@@ -5,9 +5,16 @@ program TestProj1;
 {$R *.res}
 
 uses
-  TestProj1.JSONRPCRIOImpl in 'TestProj1.JSONRPCRIOImpl.pas',
-  System.Classes,	System.Rtti, System.JSON, System.SysUtils,
-  JSONRPCMethodsBase in 'JSONRPCMethodsBase.pas';
+  JSONRPC.RIO in '..\Common\JSONRPC.RIO.pas',
+  System.Classes,
+  System.Rtti,
+  System.JSON,
+  System.SysUtils,
+  JSONRPCMethodsBase in 'JSONRPCMethodsBase.pas',
+  JSONRPC.Common.Consts in '..\Common\JSONRPC.Common.Consts.pas',
+  JSONRPC.InvokeRegistry in '..\Common\JSONRPC.InvokeRegistry.pas',
+  JSONRPC.User.SomeTypes in '..\Common\JSONRPC.User.SomeTypes.pas',
+  JSONRPC.Common.Types in '..\Common\JSONRPC.Common.Types.pas';
 
 type
 
@@ -15,8 +22,9 @@ type
   SomeJSONRPC = interface(IJSONRPCMethods)
     ['{BDA67613-BA2E-415A-9C4E-DE5BD519C05E}']
     procedure CallSomeMethod;
-    function CallSomeRoutine: boolean;
+    function CallSomeRoutine: Boolean;
     function AddSomeXY(X, Y: Integer): Integer;
+    function GetSomeDate(const ADateTime: TDateTime): TDateTime;
   end;
 
 function GetSomeJSONRPC(const ServerURL: string = ''): SomeJSONRPC;
@@ -34,18 +42,24 @@ begin
 // Do anything to the JSON response stream, before parsing starts...
 // Since there's no server, write response data into the server response, so that it can be parsed
 
-  LJSONRPCWrapper.OnBeforeParse := procedure (const AContext: TInvContext; 
+  LJSONRPCWrapper.OnBeforeParse := procedure (const AContext: TInvContext;
     AMethNum: Integer; const AMethMD: TIntfMethEntry; const AMethodID: Int64;
     AJSONResponse: TStream)
   begin
     if (AJSONResponse.Size <> 0) and (AMethMD.Name = 'AddSomeXY') then
       begin
-        var LBytes: TBytes;
         AJSONResponse.Position := 0;
+
+        var LBytes: TArray<Byte>;
         SetLength(LBytes, AJSONResponse.Size);
         AJSONResponse.Read(LBytes[0], AJSONResponse.Size);
-        var LJSONResponseStr := TEncoding.UTF8.GetString(LBytes);
-        var LJSONObj := TJSONObject.ParseJSONValue(LJSONResponseStr);
+//        var LJSONResponseStr := TEncoding.UTF8.GetString(LBytes);
+
+// THIS BUG WILL KILL / HANG THE DEBUGGER, on exit of this method
+//       var LJSONResponseStr := '';
+//       AJSONResponse.Read(LJSONResponseStr, AJSONResponse.Size);
+
+        var LJSONObj := TJSONObject.ParseJSONValue(LBytes, 0);
         try
           var LX: Integer := LJSONObj.GetValue<Integer>('params.X');
           var LY: Integer := LJSONObj.GetValue<Integer>('params.Y');
@@ -57,15 +71,18 @@ begin
         end;
       end;
   end;
-  
+
   LJSONRPCWrapper.ServerURL := ServerURL;
   Result := LJSONRPCWrapper as SomeJSONRPC;
 end;
 
 procedure Main;
 begin
-  var LJSONRPC := GetSomeJSONRPC;
-  var LAdditionResult := LJSONRPC.AddSomeXY(5, 6);
+  var LJSONRPC := GetSomeJSONRPC('http://localhost:8083');
+  try
+    var LAdditionResult := LJSONRPC.AddSomeXY(5, 6);
+  except
+  end;
   LJSONRPC := nil;
 end;
 

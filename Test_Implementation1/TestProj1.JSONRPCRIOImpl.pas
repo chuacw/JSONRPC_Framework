@@ -4,7 +4,7 @@ interface
 
 uses
   System.TypInfo, System.Classes, System.Rtti, System.Generics.Collections,
-  System.JSON.Serializers, Soap.IntfInfo, Soap.InvokeRegistry, System.SysUtils,
+  System.JSON.Serializers, Soap.IntfInfo, JSONRPC.InvokeRegistry, System.SysUtils,
   Soap.Rio, System.Net.HttpClient;
 
 type
@@ -68,13 +68,13 @@ type
     property id: Integer read Fid write Fid;
   end;
 
-  TBeforeParseEvent = reference to procedure(const AContext: TInvContext; 
+  TBeforeParseEvent = reference to procedure(const AContext: TInvContext;
     AMethNum: Integer; const AMethMD: TIntfMethEntry; const AMethodID: Int64; 
     AJSONResponse: TStream);
 
   TOnSyncEvent = reference to procedure(ARequest, AResponse: TStream);
 
-  TInvContext = Soap.InvokeRegistry.TInvContext;
+  TInvContext = JSONRPC.InvokeRegistry.TInvContext;
   TIntfMethEntry = Soap.IntfInfo.TIntfMethEntry;
 
   TJSONRPCWrapper = class(TComponent, IInvokable, IRIOAccess)
@@ -128,6 +128,7 @@ type
     { IRIOAccess }
     function GetRIO: TJSONRPCWrapper;
   public
+    constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     class function NewInstance: TObject; override;
     function QueryInterface(const IID: TGUID; out Obj): HRESULT; override; stdcall;
@@ -143,14 +144,15 @@ type
 
 procedure RegisterJSONRPCWrapper(const ATypeInfo: PTypeInfo);
 
-procedure WriteJSONResult(const AContext: TInvContext; 
-    AMethNum: Integer; const AMethMD: TIntfMethEntry; const AMethodID: Int64; 
+procedure WriteJSONResult(const AContext: TInvContext;
+    AMethNum: Integer; const AMethMD: TIntfMethEntry; const AMethodID: Int64;
     AResponseValue: TValue; AJSONResponse: TStream);
 
 implementation
 
 uses
-  System.Types, System.SyncObjs, System.JSON;
+  System.Types, System.SyncObjs, System.JSON, JSONRPC.Common.Consts,
+  System.Net.URLClient;
 
 
 procedure RegisterJSONRPCWrapper(const ATypeInfo: PTypeInfo);
@@ -165,11 +167,11 @@ begin
   // Write this // {"jsonrpc": "2.0", "result": 19, "id": 1}
   var LJSONObject := TJSONObject.Create;
   try
-    LJSONObject.AddPair('jsonrpc', FloatToJson(2.0));
+    LJSONObject.AddPair(SJSONRPC, FloatToJson(2.0));
     case AMethMD.ResultInfo.Kind of
-      tkInteger: LJSONObject.AddPair('result', AResponseValue.AsOrdinal);
+      tkInteger: LJSONObject.AddPair(SRESULT, AResponseValue.AsOrdinal);
     end;
-    LJSONObject.AddPair('id', AMethodID);
+    LJSONObject.AddPair(SID, AMethodID);
     var LJSON := LJSONObject.ToString;
     var LBytes := TEncoding.UTF8.GetBytes(LJSON);
     AJSONResponse.Write(LBytes[0], Length(LBytes));
@@ -179,6 +181,12 @@ begin
 end;
 
 { TJSONRPCWrapper }
+
+constructor TJSONRPCWrapper.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FClient := THTTPClient.Create;
+end;
 
 destructor TJSONRPCWrapper.Destroy;
 begin
@@ -227,8 +235,8 @@ begin
   LJSONMethodObj := TJSONObject.Create;
   try
     LJSONMethodObj.Owned := True;
-    LJSONMethodObj.AddPair('jsonrpc', FloatToJson(2.0));
-    LJSONMethodObj.AddPair('method', AMethMD.Name);
+    LJSONMethodObj.AddPair(SJSONRPC, FloatToJson(2.0));
+    LJSONMethodObj.AddPair(SMETHOD, AMethMD.Name);
     if AMethMD.ParamCount > 0 then
       begin
         var LParamsObj := TJSONObject.Create;
@@ -244,10 +252,10 @@ begin
             else
             end;
           end;
-        LJSONMethodObj.AddPair('params', LParamsObj);
+        LJSONMethodObj.AddPair(SPARAMS, LParamsObj);
       end;
     var LMethodID := TInterlocked.Increment(CJSONMethodID);
-    LJSONMethodObj.AddPair('id', LMethodID);
+    LJSONMethodObj.AddPair(SID, LMethodID);
     var LRequest := LJSONMethodObj.ToString;
 
     // then send it
@@ -260,7 +268,13 @@ begin
       try
         if FServerURL <> '' then
           begin
-            FClient.Post(FServerURL, LRequestStream, LResponseStream);
+            LRequestStream.Position := 0;
+            var LHeaders: TNetHeaders := [
+              TNameValuePair.Create('accept', 'application/json'),
+              TNameValuePair.Create('Content-Length', IntToStr(LRequestStream.Size)),
+              TNameValuePair.Create('Content-Type', 'application/json-rpc')
+            ];
+            FClient.Post(FServerURL, LRequestStream, LResponseStream, LHeaders);
           end;
         DoAfterExecute(AMethMD.Name, LResponseStream);
         DoSync(LRequestStream, LResponseStream);
@@ -273,10 +287,14 @@ begin
             LResponseStream.Seek(0, soFromBeginning);
             SetLength(LBytes, LResponseStream.Size);
             LResponseStream.Read(LBytes, LResponseStream.Size);
-            LResponse := TEncoding.UTF8.GetString(LBytes);
-            var LJSONObj := TJSONObject.ParseJSONValue(LResponse);
+
+//            LResponse := TEncoding.UTF8.GetString(LBytes);
+//            var LJSONObj := TJSONObject.ParseJSONValue(LResponse);
+
+            var LJSONObj := TJSONObject.ParseJSONValue(TArray<Byte>(LBytes), 0);
+
             try
-              var LResultPathName := 'result';
+              var LResultPathName := SRESULT;
               case AMethMD.ResultInfo.Kind of
                 tkInteger: begin
                   var LResult: Integer;
@@ -288,7 +306,7 @@ begin
               LJSONObj.Free;
             end;
           end;
-        
+
       finally
         LResponseStream.Free;
       end;

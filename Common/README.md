@@ -1,0 +1,1 @@
+This directory contains code that should be common to both the client and server side.
