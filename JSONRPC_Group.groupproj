@@ -21,12 +21,6 @@
         <Projects Include="Client\JSONRPC.EthereumProj.dproj">
             <Dependencies/>
         </Projects>
-        <Projects Include="..\Bugs\StrToFloatProj\StrToFloatProj.dproj">
-            <Dependencies/>
-        </Projects>
-        <Projects Include="..\Bugs\ExtendedToJSON\ExtendedToJSON.dproj">
-            <Dependencies/>
-        </Projects>
         <Projects Include="..\Bugs\Multiline0001Bug\JsonBigNumber.dproj">
             <Dependencies/>
         </Projects>
@@ -92,24 +86,6 @@
     <Target Name="JSONRPC_EthereumProj:Make">
         <MSBuild Projects="Client\JSONRPC.EthereumProj.dproj" Targets="Make"/>
     </Target>
-    <Target Name="StrToFloatProj">
-        <MSBuild Projects="..\Bugs\StrToFloatProj\StrToFloatProj.dproj"/>
-    </Target>
-    <Target Name="StrToFloatProj:Clean">
-        <MSBuild Projects="..\Bugs\StrToFloatProj\StrToFloatProj.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="StrToFloatProj:Make">
-        <MSBuild Projects="..\Bugs\StrToFloatProj\StrToFloatProj.dproj" Targets="Make"/>
-    </Target>
-    <Target Name="ExtendedToJSON">
-        <MSBuild Projects="..\Bugs\ExtendedToJSON\ExtendedToJSON.dproj"/>
-    </Target>
-    <Target Name="ExtendedToJSON:Clean">
-        <MSBuild Projects="..\Bugs\ExtendedToJSON\ExtendedToJSON.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="ExtendedToJSON:Make">
-        <MSBuild Projects="..\Bugs\ExtendedToJSON\ExtendedToJSON.dproj" Targets="Make"/>
-    </Target>
     <Target Name="JsonBigNumber">
         <MSBuild Projects="..\Bugs\Multiline0001Bug\JsonBigNumber.dproj"/>
     </Target>
@@ -120,13 +96,13 @@
         <MSBuild Projects="..\Bugs\Multiline0001Bug\JsonBigNumber.dproj" Targets="Make"/>
     </Target>
     <Target Name="Build">
-        <CallTarget Targets="TestJSONRPC;JSONRPC_ServerIndy;JSONRPC_ServerWebBroker;NetSocket_Client;JSONRPC_ClientProj;JSONRPC_EthereumProj;StrToFloatProj;ExtendedToJSON;JsonBigNumber"/>
+        <CallTarget Targets="TestJSONRPC;JSONRPC_ServerIndy;JSONRPC_ServerWebBroker;NetSocket_Client;JSONRPC_ClientProj;JSONRPC_EthereumProj;JsonBigNumber"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="TestJSONRPC:Clean;JSONRPC_ServerIndy:Clean;JSONRPC_ServerWebBroker:Clean;NetSocket_Client:Clean;JSONRPC_ClientProj:Clean;JSONRPC_EthereumProj:Clean;StrToFloatProj:Clean;ExtendedToJSON:Clean;JsonBigNumber:Clean"/>
+        <CallTarget Targets="TestJSONRPC:Clean;JSONRPC_ServerIndy:Clean;JSONRPC_ServerWebBroker:Clean;NetSocket_Client:Clean;JSONRPC_ClientProj:Clean;JSONRPC_EthereumProj:Clean;JsonBigNumber:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="TestJSONRPC:Make;JSONRPC_ServerIndy:Make;JSONRPC_ServerWebBroker:Make;NetSocket_Client:Make;JSONRPC_ClientProj:Make;JSONRPC_EthereumProj:Make;StrToFloatProj:Make;ExtendedToJSON:Make;JsonBigNumber:Make"/>
+        <CallTarget Targets="TestJSONRPC:Make;JSONRPC_ServerIndy:Make;JSONRPC_ServerWebBroker:Make;NetSocket_Client:Make;JSONRPC_ClientProj:Make;JSONRPC_EthereumProj:Make;JsonBigNumber:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>
