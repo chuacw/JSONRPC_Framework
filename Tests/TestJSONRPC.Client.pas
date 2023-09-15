@@ -118,7 +118,8 @@ implementation
 uses
   System.SysUtils, JSONRPC.RIO, JSONRPC.Common.Types,
   IPPeerServer, IPPeerAPI, JSONRPC.User.SomeTypes.Impl,
-  JSONRPC.ServerIdHTTP.Runner, System.DateUtils;
+  JSONRPC.ServerIdHTTP.Runner, System.DateUtils,
+  JSONRPC.Common.FixBuggyNativeTypes;
 
 procedure TTestJSONRPCClient.AddDoubles(A, B: Float64);
 begin
@@ -189,6 +190,7 @@ end;
 
 procedure TTestJSONRPCClient.SendExtended(const Value: Extended);
 begin
+  var LFloat := FixedFloatToJson(Extended.MaxValue);
   var LResult := FSomeRPC.SendExtended(Value);
   Assert.IsTrue(Value = LResult, 'Extendeds are not the same!');
 end;

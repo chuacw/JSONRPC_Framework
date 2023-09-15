@@ -42,8 +42,51 @@ type
   end;
   PRecordHandlers = ^TRecordHandlers;
 
+/// <summary>
+/// Looks up record handlers for a record with a specific TypeInfo
+/// </summary>
+/// <param name="ATypeInfo">The TypeInfo for the native record</param>
+/// <param name="OHandlers">A variable of the type <see cref="TRecordHandlers"></param>
 function LookupRecordHandlers(ATypeInfo: PTypeInfo; out OHandlers: TRecordHandlers): Boolean;
 
+/// <summary>
+/// Register a handler for a record with a specific TypeInfo
+/// </summary>
+/// <param name="ATypeInfo">The TypeInfo for the native record
+/// <code>reference to procedure(
+///  const APassParamByPosOrName: TPassParamByPosOrName;
+///  const AParamName: string;
+///  const AParamValuePtr: Pointer;
+///  const AParamsObj: TJSONObject;
+///  const AParamsArray: TJSONArray
+///);
+/// </code>
+/// </param>
+/// <param name="ANativeToJSON">Converts the native record to JSON
+/// <code>reference to procedure(
+///  const AResponseObj: TJSONValue;
+///  const APathName: string; AResultP: Pointer
+///);</code>
+/// </param>
+/// <param name="AJSONToNative">Converts the JSON string to a native record
+/// <code>reference to procedure(
+///  const AValue: TValue;
+///  ATypeInfo: PTypeInfo;
+///  const AJSONObject: TJSONObject
+///);</code>
+/// </param>
+/// <param name="ATValueToJSON">Converts a TValue to a JSON string
+/// <code>reference to procedure(
+///  const AValue: TValue;
+///  ATypeInfo: PTypeInfo;
+///  const AJSONObject: TJSONObject
+/// );
+/// </code></param>
+/// <param name="AJSONToTValue">Converts a JSON string to a TValue
+/// <code>reference to function(
+///  const AJSONRequestObj: TJSONObject;
+///  const AParamName: string
+/// ): TValue;</code></param>
 procedure RegisterRecordHandler(
   ATypeInfo: PTypeInfo;
   const ANativeToJSON: TNativeToJSON;

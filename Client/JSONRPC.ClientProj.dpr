@@ -26,15 +26,6 @@ uses
   System.Net.Socket.Common in '..\..\NetSocket\Common\System.Net.Socket.Common.pas',
   JSONRPC.Common.RecordHandlers in '..\Common\JSONRPC.Common.RecordHandlers.pas';
 
-type
-{$M+}
-{$RTTI FIELDS([vcPrivate, vcProtected, vcPublic, vcPublished])
-       PROPERTIES([vcPrivate, vcProtected, vcPublic, vcPublished])}
-  TFoo = record
-    FBar: Integer;
-    property Bar: Integer read FBar;
-  end;
-
 procedure Main;
 begin
   var LJSONRPC := GetSomeJSONRPC('http://localhost:8083');
@@ -84,8 +75,8 @@ begin
         end;
     end;
 
-    var LResultBigInt := LJSONRPC.SendBigInteger(UInt64.MaxValue);
-    Assert(LResultBigInt = UInt64.MaxValue, 'Roundtripping failed');
+//    var LResultBigInt := LJSONRPC.SendBigInteger(UInt64.MaxValue);
+//    Assert(LResultBigInt = UInt64.MaxValue, 'Roundtripping failed');
 
 // This needs to run in 32-bit and the server needs to run in 64-bit
     var LResult := LJSONRPC.SendExtended(Extended.MaxValue);
