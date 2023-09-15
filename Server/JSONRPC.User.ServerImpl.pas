@@ -3,7 +3,8 @@ unit JSONRPC.User.ServerImpl;
 interface
 
 uses
-  System.Types, JSONRPC.User.SomeTypes, JSONRPC.InvokeRegistry;
+  System.Types, JSONRPC.User.SomeTypes, JSONRPC.InvokeRegistry,
+  Velthuis.BigDecimals, Velthuis.BigIntegers;
 
 type
 
@@ -31,13 +32,15 @@ type
     function SendIntegers(const A: TArray<Integer>): TArray<Integer>; overload; safecall;
     function SendFixedIntegers(const A: TFixedIntegers): TFixedIntegers; safecall;
 
+    function SendBigDecimal(const Value: BigDecimal): BigDecimal;
+    function SendBigInteger(const Value: BigInteger): BigInteger; overload;
     function SendBool(const Value: Boolean): Boolean;
     function SendByte(const Value: Byte): Byte;
     function SendByteBool(const Value: ByteBool): ByteBool;
     function SendCardinal(const Value: Cardinal): Cardinal;
     function SendCurrency(const Value: Currency): Currency;
     function SendDouble(const Value: Double): Double;
-    function SendExtended(const Value: Extended): Extended;
+    function SendExtended(const Value: BigDecimal): BigDecimal; overload;
     function SendGUID(const Value: TGUID): TGUID;
     function SendInt64(const Value: Int64): Int64;
     function SendInteger(const Value: Integer): Integer;
@@ -71,7 +74,9 @@ implementation
 
 uses
   JSONRPC.RIO, System.SysUtils, System.DateUtils, System.Rtti,
-  JSONRPC.JsonUtils, System.TypInfo, JSONRPC.Common.Types;
+  JSONRPC.JsonUtils, System.TypInfo, JSONRPC.Common.Types,
+  System.JSON,
+  JSONRPC.Common.RecordHandlers;
 
 function TSomeJSONRPC.AddDoubles(A, B: Float64): Float64;
 begin
@@ -143,7 +148,7 @@ begin
   Result := GetEnumName(TypeInfo(TEnum), Ord(A));
 end;
 
-function TSomeJSONRPC.SendExtended(const Value: Extended): Extended;
+function TSomeJSONRPC.SendExtended(const Value: BigDecimal): BigDecimal;
 begin
   Result := Value;
 end;
@@ -259,6 +264,16 @@ begin
   Result := minuend - subtrahend;
 end;
 
+function TSomeJSONRPC.SendBigInteger(const Value: BigInteger): BigInteger;
+begin
+  Result := Value;
+end;
+
+function TSomeJSONRPC.SendBigDecimal(const Value: BigDecimal): BigDecimal;
+begin
+  Result := Value;
+end;
+
 function TSomeJSONRPC.SendBool(const Value: Boolean): Boolean;
 begin
   Result := Value;
@@ -332,5 +347,6 @@ initialization
 { Invokable classes must be registered }
   InvRegistry.RegisterInvokableClass(TSomeJSONRPC);
   RegisterJSONRPCWrapper(TypeInfo(ISomeJSONRPC));
+
 end.
 

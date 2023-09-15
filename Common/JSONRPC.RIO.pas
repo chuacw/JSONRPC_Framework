@@ -28,13 +28,12 @@ type
 {$IF DEFINED(BASECLASS)}
   TBaseJSONRPCWrapper = class abstract(TComponent)
   protected
-  type
-    TPassParamByPosOrName = (tppByPos, tppByName);
   var
     FIntfMD: TIntfMetaData;
     procedure InitClient; virtual; abstract;
     procedure SetInvokeMethod; virtual; abstract;
-    procedure DoDispatch(const AContext: TInvContext; AMethNum: Integer; const AMethMD: TIntfMethEntry); virtual;
+    procedure DoDispatch(const AContext: TInvContext; AMethNum: Integer;
+      const AMethMD: TIntfMethEntry); virtual;
   type
     TRioVirtualInterface = class(TVirtualInterface, ISafeCallException)
     private
@@ -80,7 +79,7 @@ type
     FOnAfterExecute: TAfterExecuteEvent;
     FOnBeforeParse: TOnBeforeParseEvent;
     FOnSync: TOnSyncEvent;
-    FPassByPosOrName: {$IF DEFINED(BASECLASS)}TBaseJSONRPCWrapper.{$ENDIF}TPassParamByPosOrName;
+    FPassByPosOrName: TPassParamByPosOrName;
     FOnSafeCallException: TOnSafeCallException;
     FIID: TGUID;
     FRefCount: Integer;
@@ -249,7 +248,9 @@ implementation
 
 uses
   System.Types, System.SyncObjs, JSONRPC.Common.Consts,
-  System.DateUtils, JSONRPC.JsonUtils, Velthuis.BigDecimals, System.JSONConsts;
+  System.DateUtils, JSONRPC.JsonUtils,
+  JSONRPC.Common.RecordHandlers,
+  System.JSONConsts;
 
 procedure AssignJSONRPCSafeCallExceptionHandler(const AIntf: IInterface;
   const ASafeCallExceptionHandler: TOnSafeCallException);
@@ -319,74 +320,74 @@ end;
 {$ENDIF}
 
 // Fix for numbers that can't be marshalled
-type
-  TJSONObjectHelper = class helper for TJSONObject
-  public
-    function AddPair(const Str: string; const Value: BigDecimal): TJSONObject; overload;
-  end;
-
-  TJSONPairHelper = class helper for TJSONPair
-  public
-    constructor Create(const Str: string; const Value: BigDecimal); overload;
-  end;
-
-  TJSONNumberHelper = class helper for TJSONNumber
-  protected
-    function GetAsBigDecimal: BigDecimal;
-  public
-    constructor Create(const Value: BigDecimal); overload;
-    property AsBigDecimal: BigDecimal read GetAsBigDecimal;
-  end;
-
-  TJSONValueHelper = class helper for TJSONValue
-  public
-    function AsTypeBigDecimal: BigDecimal;
-  end;
-
-  TJSONArrayHelper = class helper for TJSONArray
-  public
-    function Add(const Element: BigDecimal): TJSONArray; overload;
-  end;
-
-function TJSONObjectHelper.AddPair(const Str: string; const Value: BigDecimal): TJSONObject;
-begin
-  if not Str.IsEmpty then
-    AddPair(TJSONPair.Create(Str, Value));
-  Result := Self;
-end;
-
-constructor TJSONPairHelper.Create(const Str: string; const Value: BigDecimal);
-begin
-  inherited Create(TJSONString.Create(Str), TJSONNumber.Create(Value));
-end;
-
-constructor TJSONNumberHelper.Create(const Value: BigDecimal);
-begin
-  inherited Create(Value.ToString);
-end;
-
-function TJSONNumberHelper.GetAsBigDecimal: BigDecimal;
-begin
-  Result := BigDecimal.Create(FValue);
-end;
-
-function TJSONValueHelper.AsTypeBigDecimal: BigDecimal;
-var
-  LTypeInfo: PTypeInfo;
-  LValue: TValue;
-begin
-  LTypeInfo := System.TypeInfo(BigDecimal);
-  if not AsTValue(LTypeInfo, LValue) then
-    raise EJSONException.CreateResFmt(@SCannotConvertJSONValueToType,
-      [ClassName, LTypeInfo.Name]);
-  Result := LValue.AsType<BigDecimal>;
-end;
-
-function TJSONArrayHelper.Add(const Element: BigDecimal): TJSONArray;
-begin
-  AddElement(TJSONNumber.Create(Element));
-  Result := Self;
-end;
+//type
+//  TJSONObjectHelper = class helper for TJSONObject
+//  public
+//    function AddPair(const Str: string; const Value: BigDecimal): TJSONObject; overload;
+//  end;
+//
+//  TJSONPairHelper = class helper for TJSONPair
+//  public
+//    constructor Create(const Str: string; const Value: BigDecimal); overload;
+//  end;
+//
+//  TJSONNumberHelper = class helper for TJSONNumber
+//  protected
+//    function GetAsBigDecimal: BigDecimal;
+//  public
+//    constructor Create(const Value: BigDecimal); overload;
+//    property AsBigDecimal: BigDecimal read GetAsBigDecimal;
+//  end;
+//
+//  TJSONValueHelper = class helper for TJSONValue
+//  public
+//    function AsTypeBigDecimal: BigDecimal;
+//  end;
+//
+//  TJSONArrayHelper = class helper for TJSONArray
+//  public
+//    function Add(const Element: BigDecimal): TJSONArray; overload;
+//  end;
+//
+//function TJSONObjectHelper.AddPair(const Str: string; const Value: BigDecimal): TJSONObject;
+//begin
+//  if not Str.IsEmpty then
+//    AddPair(TJSONPair.Create(Str, Value));
+//  Result := Self;
+//end;
+//
+//constructor TJSONPairHelper.Create(const Str: string; const Value: BigDecimal);
+//begin
+//  inherited Create(TJSONString.Create(Str), TJSONNumber.Create(Value));
+//end;
+//
+//constructor TJSONNumberHelper.Create(const Value: BigDecimal);
+//begin
+//  inherited Create(Value.ToString);
+//end;
+//
+//function TJSONNumberHelper.GetAsBigDecimal: BigDecimal;
+//begin
+//  Result := BigDecimal.Create(FValue);
+//end;
+//
+//function TJSONValueHelper.AsTypeBigDecimal: BigDecimal;
+//var
+//  LTypeInfo: PTypeInfo;
+//  LValue: TValue;
+//begin
+//  LTypeInfo := System.TypeInfo(BigDecimal);
+//  if not AsTValue(LTypeInfo, LValue) then
+//    raise EJSONException.CreateResFmt(@SCannotConvertJSONValueToType,
+//      [ClassName, LTypeInfo.Name]);
+//  Result := LValue.AsType<BigDecimal>;
+//end;
+//
+//function TJSONArrayHelper.Add(const Element: BigDecimal): TJSONArray;
+//begin
+//  AddElement(TJSONNumber.Create(Element));
+//  Result := Self;
+//end;
 
 { TJSONRPCWrapper }
 
@@ -533,11 +534,36 @@ begin
                 end;
               end;
               tkRecord: begin
-                  var LJSON := SerializeRecord(LParamValuePtr^, LParamTypeInfo);
-                  var LJSONObj := TJSONObject.ParseJSONValue(LJSON);
-                  case FPassByPosOrName of
-                    tppByName: LParamsObj.AddPair(LParamName, LJSONObj);
-                    tppByPos:  LParamsArray.AddElement(LJSONObj);
+                var LHandlers: TRecordHandlers;
+                if LookupRecordHandlers(LParamTypeInfo, LHandlers) then
+                  begin
+                    LHandlers.NativeToJSON(FPassByPosOrName, LParamName, LParamValuePtr,
+                      LParamsObj, LParamsArray);
+                  end else
+//                if LParamTypeInfo = TypeInfo(BigDecimal) then
+//                  begin
+//                    var LJSON := TJSONString.Create(BigDecimal(LParamValuePtr^).ToString);
+//                    case FPassByPosOrName of
+//                      tppByName: LParamsObj.AddPair(LParamName, LJSON);
+//                      tppByPos:  LParamsArray.AddElement(LJSON);
+//                    end;
+//                  end else
+//                if LParamTypeInfo = TypeInfo(BigInteger) then
+//                  begin
+//                    BigInteger.Hex;
+//                    var LJSON := TJSONString.Create('0x'+BigInteger(LParamValuePtr^).ToString(16));
+//                    case FPassByPosOrName of
+//                      tppByName: LParamsObj.AddPair(LParamName, LJSON);
+//                      tppByPos:  LParamsArray.AddElement(LJSON);
+//                    end;
+//                  end else
+                  begin
+                    var LJSON := SerializeRecord(LParamValuePtr^, LParamTypeInfo);
+                    var LJSONObj := TJSONObject.ParseJSONValue(LJSON);
+                    case FPassByPosOrName of
+                      tppByName: LParamsObj.AddPair(LParamName, LJSONObj);
+                      tppByPos:  LParamsArray.AddElement(LJSONObj);
+                    end;
                   end;
               end;
               tkEnumeration: begin
@@ -591,11 +617,15 @@ begin
                       end else
                     if LParamTypeInfo = System.TypeInfo(Extended) then
                       begin
-                        var LParamValue := PExtended(LParamValuePtr)^;
-                        case FPassByPosOrName of
-                          tppByName: LParamsObj.AddPair(LParamName, LParamValue);
-                          tppByPos:  LParamsArray.Add(LParamValue);
-                        end;
+                        // Delphi cannot handle the precision of Extended
+                        // if the client is 32-bit and the server is 64-bit
+                        // so convert to BigDecimal
+                        var LHandlers: TRecordHandlers;
+                        if LookupRecordHandlers(LParamTypeInfo, LHandlers) then
+                          begin
+                            LHandlers.NativeToJSON(FPassByPosOrName, LParamName,
+                              LParamValuePtr, LParamsObj, LParamsArray);
+                          end;
                       end else
                       begin
                         var LParamValue := PDouble(LParamValuePtr)^;
@@ -643,12 +673,6 @@ begin
           begin
             LRequestStream.Position := 0;
             var LHeaders: TNetHeaders := InitializeHeaders(LRequestStream);
-//            [
-//              TNameValuePair.Create('accept', SApplicationJson),
-//              TNameValuePair.Create('Content-Length', IntToStr(LRequestStream.Size)),
-//              TNameValuePair.Create('Content-Type', SApplicationJsonRPC)
-//            ];
-            // FClient.Post(FServerURL, LRequestStream, LResponseStream, LHeaders);
             SendGetPost(FServerURL, LRequestStream, LResponseStream, LHeaders);
           end;
 
@@ -702,9 +726,31 @@ begin
                       DeserializeJSON(LJSONObj, AMethMD.ResultInfo, LResultP^);
                   end;
                   tkRecord: begin
-                    var LJSONObj := LJSONResponseObj.FindValue(LResultPathName);
-                    if Assigned(LJSONObj) then
-                      DeserializeJSON(LJSONObj, AMethMD.ResultInfo, LResultP^);
+                    var LTypeInfo := AMethMD.ResultInfo;
+                    var LHandlers: TRecordHandlers;
+                    if LookupRecordHandlers(LTypeInfo, LHandlers) then
+                      begin
+                        LHandlers.JSONToNative(LJSONResponseObj, LResultPathName, LResultP);
+                      end else
+//                    if LTypeInfo = TypeInfo(BigDecimal) then
+//                      begin
+//                        var LResultValue: string := '';
+//                        LJSONResponseObj.TryGetValue<string>(LResultPathName, LResultValue);
+//                        PBigDecimal(LResultP)^ := BigDecimal.Create(LResultValue);
+//                      end else
+//                    if LTypeInfo = TypeInfo(BigInteger) then
+//                      begin
+//                        var LResultValue: string := '';
+//                        LJSONResponseObj.TryGetValue<string>(LResultPathName, LResultValue);
+//                        if LResultValue.StartsWith('0x', True) then
+//                          LResultValue := Copy(LResultValue, Low(LResultValue) + 2);
+//                        BigInteger.TryParse(LResultValue, 16, PBigInteger(LResultP)^);
+//                      end else
+                      begin
+                        var LJSONObj := LJSONResponseObj.FindValue(LResultPathName);
+                        if Assigned(LJSONObj) then
+                          DeserializeJSON(LJSONObj, AMethMD.ResultInfo, LResultP^);
+                      end;
                   end;
                   tkEnumeration: begin
                     var LResultValue: string := '';
@@ -728,8 +774,17 @@ begin
                             LJSONResponseObj.TryGetValue<string>(LResultPathName, LDateTimeStr);
                             PDateTime(LResultP)^ := ISO8601ToDate(LDateTimeStr, False);
                           end else
+                        if LTypeInfo = System.TypeInfo(Double) then
                           begin
                             LJSONResponseObj.TryGetValue<Double>(LResultPathName, PDouble(LResultP)^);
+                          end else
+                        if LTypeInfo = System.TypeInfo(Extended) then
+                          begin
+                            var LHandlers: TRecordHandlers;
+                            if LookupRecordHandlers(LTypeInfo, LHandlers) then
+                              begin
+                                LHandlers.JSONToNative(LJSONResponseObj, LResultPathName, LResultP);
+                              end;
                           end;
                       end;
                     end;
@@ -1348,6 +1403,27 @@ begin
                   end;
                   tkRecord: begin
                     var LParamJSONObject := LJSONRequestObj.FindValue(LParamName);
+                    var LHandlers: TRecordHandlers;
+                    if LookupRecordHandlers(LParseParamTypeInfo, LHandlers) then
+                      begin
+                        LArg := LHandlers.JSONToTValue(LJSONRequestObj, LParamName);
+                      end else
+//                    if LParseParamTypeInfo = TypeInfo(BigDecimal) then
+//                      begin
+//                        var LParamValue: string;
+//                        LJSONRequestObj.TryGetValue<string>(LParamName, LParamValue);
+//                        LArg := TValue.From(BigDecimal.Create(LParamValue));
+//                      end else
+//                    if LParseParamTypeInfo = TypeInfo(BigInteger) then
+//                      begin
+//                        var LParamValue: string;
+//                        LJSONRequestObj.TryGetValue<string>(LParamName, LParamValue);
+//                        var LBigInteger: BigInteger;
+//                        if LParamValue.StartsWith('0x', True) then
+//                          LParamValue := Copy(LParamValue, Low(LParamValue) + 2);
+//                        BigInteger.TryParse(LParamValue, 16, LBigInteger);
+//                        LArg := TValue.From(LBigInteger);
+//                      end else
                     if Assigned(LParamJSONObject) then
                       DeserializeJSON(LParamJSONObject, LParams[I].ParamType.Handle, LArg);
                   end;
@@ -1408,28 +1484,28 @@ begin
                             var LDateTime: TDateTime := ISO8601ToDate(LDateTimeStr, False); // Convert to local date/time
                             LArg := TValue.From(LDateTime);
                           end else
-//                        if LTypeInfo = TypeInfo(Single) then
-//                          begin
-//                            var LValue: Single;
-//                            if not LJSONRequestObj.TryGetValue<Single>(LParamName, LValue) then
-//                              begin
-//                                var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
-//                                var LParamElem := LParamsArr[I];
-//                                LValue := LParamElem.AsType<Single>;
-//                              end;
-//                            LArg := TValue.From(LValue);
-//                          end else
-//                        if LTypeInfo = TypeInfo(Extended) then
-//                          begin
-//                            var LValue: Extended;
-//                            if not LJSONRequestObj.TryGetValue<Extended>(LParamName, LValue) then
-//                              begin
-//                                var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
-//                                var LParamElem := LParamsArr[I];
-//                                LValue := LParamElem.AsType<Extended>;
-//                              end;
-//                            LArg := TValue.From(LValue);
-//                          end else
+                        if LTypeInfo = TypeInfo(Single) then
+                          begin
+                            var LValue: Single;
+                            if not LJSONRequestObj.TryGetValue<Single>(LParamName, LValue) then
+                              begin
+                                var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
+                                var LParamElem := LParamsArr[I];
+                                LValue := LParamElem.AsType<Single>;
+                              end;
+                            LArg := TValue.From(LValue);
+                          end else
+                        if LTypeInfo = TypeInfo(Extended) then
+                          begin
+                            // Delphi cannot handle the precision of Extended
+                            // if the client is 32-bit and the server is 64-bit
+                            // so convert to BigDecimal
+                            var LHandlers: TRecordHandlers;
+                            if LookupRecordHandlers(LTypeInfo, LHandlers) then
+                              begin
+                                LArg := LHandlers.JSONToTValue(LJSONRequestObj, LParamName);
+                              end;
+                          end else
                           begin
                             var LValue: string;
                             if not LJSONRequestObj.TryGetValue<string>(LParamName, LValue) then
@@ -1481,9 +1557,29 @@ begin
                         LJSONResultObj.AddPair(SRESULT, LJSONArray);
                       end;
                       tkRecord: begin
-                        var LJSON := SerializeRecord(LResult, LMethod.ReturnType.Handle);
-                        var LJSONObject := TJSONObject.ParseJSONValue(LJSON);
-                        LJSONResultObj.AddPair(SRESULT, LJSONObject);
+                        // TODO : Handle BigDecimals here
+                        var LTypeInfo := LMethod.ReturnType.Handle;
+                        var LJSONObject: TJSONValue;
+                        var LHandlers: TRecordHandlers;
+                        if LookupRecordHandlers(LTypeInfo, LHandlers) then
+                          begin
+                            LHandlers.TValueToJSON(
+                              LResult, LTypeInfo, LJSONResultObj
+                            );
+                          end else
+//                        if LTypeInfo = TypeInfo(BigDecimal) then
+//                          begin
+//                            // LResult is a TValue from BigDecimal
+//                            var LBigDecimal: BigDecimal;
+//                            ValueToObj(LResult, LTypeInfo, LBigDecimal);
+//                            var LJSON := LBigDecimal.ToString;
+//                            LJSONResultObj.AddPair(SRESULT, LJSON);
+//                          end else
+                          begin
+                            var LJSON := SerializeRecord(LResult, LTypeInfo);
+                            LJSONObject := TJSONObject.ParseJSONValue(LJSON);
+                            LJSONResultObj.AddPair(SRESULT, LJSONObject);
+                          end;
                       end;
                       tkEnumeration: begin
                         // Only possible values are True, False
@@ -1511,6 +1607,15 @@ begin
                                 var LDateTimeStr :=  System.DateUtils.DateToISO8601(LResult.AsExtended, False);
                                 LJSONResultObj.AddPair(SRESULT, LDateTimeStr);
                               end else
+                            if LTypeInfo = System.TypeInfo(Single) then
+                              begin
+                                LJSONResultObj.AddPair(SRESULT, LResult.AsExtended);
+                              end else
+                            if LTypeInfo = System.TypeInfo(Double) then
+                              begin
+                                LJSONResultObj.AddPair(SRESULT, LResult.AsExtended);
+                              end else
+                            if LTypeInfo = System.TypeInfo(Extended) then
                               begin
                                 LJSONResultObj.AddPair(SRESULT, LResult.AsExtended);
                               end;

@@ -5,7 +5,7 @@
         <FrameworkType>None</FrameworkType>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Debug</Config>
-        <Platform Condition="'$(Platform)'==''">Win64</Platform>
+        <Platform Condition="'$(Platform)'==''">Win32</Platform>
         <TargetedPlatforms>3</TargetedPlatforms>
         <AppType>Console</AppType>
         <MainSource>TestJSONRPC.dpr</MainSource>
@@ -148,6 +148,8 @@
         <DCCReference Include="..\Client\JSONRPC.User.SomeTypes.Impl.pas"/>
         <DCCReference Include="..\Server\JSONRPC.ServerIdHTTP.Runner.pas"/>
         <DCCReference Include="..\Common\JSONRPC.TransportWrapper.HTTP.pas"/>
+        <DCCReference Include="..\Common\JSONRPC.Common.FixBuggyNativeTypes.pas"/>
+        <DCCReference Include="..\Common\JSONRPC.Common.RecordHandlers.pas"/>
         <None Include="..\Server\README.md"/>
         <None Include="..\Client\README.md"/>
         <None Include="..\Common\README.md"/>
@@ -196,13 +198,31 @@
                     </Platform>
                 </DeployFile>
                 <DeployFile LocalName="..\Client\README.md" Configuration="Debug" Class="ProjectFile">
+                    <Platform Name="Win32">
+                        <RemoteDir>.\</RemoteDir>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="..\Client\README.md" Configuration="Debug" Class="ProjectFile">
                     <Platform Name="Win64">
                         <RemoteDir>.\</RemoteDir>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
                 <DeployFile LocalName="..\Common\README.md" Configuration="Debug" Class="ProjectFile">
+                    <Platform Name="Win32">
+                        <RemoteDir>.\</RemoteDir>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="..\Common\README.md" Configuration="Debug" Class="ProjectFile">
                     <Platform Name="Win64">
+                        <RemoteDir>.\</RemoteDir>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="..\Server\README.md" Configuration="Debug" Class="ProjectFile">
+                    <Platform Name="Win32">
                         <RemoteDir>.\</RemoteDir>
                         <Overwrite>true</Overwrite>
                     </Platform>
@@ -222,12 +242,6 @@
                 <DeployFile LocalName="Win64\Debug\TestJSONRPC.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win64">
                         <RemoteName>TestJSONRPC.exe</RemoteName>
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
-                <DeployFile LocalName="Win64\Debug\TestJSONRPC.rsm" Configuration="Debug" Class="DebugSymbols">
-                    <Platform Name="Win64">
-                        <RemoteName>TestJSONRPC.rsm</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>

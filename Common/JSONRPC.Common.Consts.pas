@@ -31,7 +31,6 @@ const
   CServerError000 = -32000;
   CServerError099 = -32099;
 
-
 implementation
 
 end.

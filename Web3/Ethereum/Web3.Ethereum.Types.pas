@@ -4,14 +4,14 @@ interface
 
 uses
   System.SysUtils, System.JSON.Serializers, System.TypInfo, System.JSON.Readers,
-  System.JSON.Writers, System.Rtti;
+  System.JSON.Writers, System.Rtti, Velthuis.BigIntegers;
 
 type
 
   {$SCOPEDENUMS ON}
   TBlockNumber = (earliest, latest, safe, finalized, pending);
 
-  Web3Address = string;
+  Web3Address = BigInteger;
   Hash = string;
   NonceType = string;
   HexNumber = string;
@@ -96,33 +96,11 @@ type
     withdrawalsRoot: HexNumber;
   end;
 
-  HexBytes = string;
-  HexBytesHelper = record helper for HexBytes
-    class operator Implicit(const ABytes: TBytes): HexBytes;
-  end;
-
 implementation
 
 uses
-  System.JSON.Types;
-
-{ HexBytesHelper }
-
-class operator HexBytesHelper.Implicit(const ABytes: TBytes): HexBytes;
-var
-  LSB: TStringBuilder;
-begin
-  LSB := TStringBuilder.Create;
-  try
-    for var AByte in ABytes do
-      begin
-
-      end;
-  finally
-
-    LSB.Free;
-  end;
-end;
+  System.JSON, JSONRPC.Common.Types, JSONRPC.Common.RecordHandlers,
+  System.JSON.Types, JSONRPC.JsonUtils, JSONRPC.Common.Consts;
 
 { TEthSyncingConverter }
 
@@ -135,16 +113,13 @@ function TEthSyncingConverter.ReadJson(const AReader: TJsonReader;
   ATypeInf: PTypeInfo; const AExistingValue: TValue;
   const ASerializer: TJsonSerializer): TValue;
 var
-  LJSONText: string;
+//  LJSONText: string;
   LEthSyncing: TEthSyncing;
-  Index: Integer;
 begin
   LEthSyncing := Default(TEthSyncing);
-  Index := 0;
   var LTokenType := AReader.TokenType;
-  var Done := False;
   repeat
-    Done := AReader.Read;
+    AReader.Read;
     var LValue := AReader.Value;
     case LTokenType of
       TJsonToken.Boolean: LEthSyncing.Syncing := LValue.AsBoolean;
@@ -160,4 +135,65 @@ begin
 
 end;
 
+initialization
+  RegisterRecordHandler(TypeInfo(BigInteger),
+    procedure(
+      const APassParamByPosOrName: TPassParamByPosOrName;
+      const AParamName: string;
+      const AParamValuePtr: Pointer;
+      const AParamsObj: TJSONObject;
+      const AParamsArray: TJSONArray
+    )
+    // NativeToJSON
+    var
+      LJSON: TJSONString;
+    begin
+      BigInteger.Hex;
+      LJSON := TJSONString.Create('0x'+BigInteger(AParamValuePtr^).ToString(16));
+      case APassParamByPosOrName of
+        tppByName: AParamsObj.AddPair(AParamName, LJSON);
+        tppByPos:  AParamsArray.AddElement(LJSON);
+      end;
+    end,
+    procedure(const AJSONResponseObj: TJSONValue; const APathName: string; AResultP: Pointer)
+    // JSONToNative
+    var
+      LDecimalPlaces: Integer;
+    begin
+      var LResultValue: string;
+      AJSONResponseObj.TryGetValue<string>(APathName, LResultValue);
+      if LResultValue.StartsWith('0x', True) then
+        begin
+          LResultValue := Copy(LResultValue, Low(LResultValue) + 2);
+          LDecimalPlaces := 16;
+        end else
+        begin
+          LDecimalPlaces := 10;
+        end;
+      BigInteger.TryParse(LResultValue, LDecimalPlaces, PBigInteger(AResultP)^);
+    end,
+    procedure(const AValue: TValue; ATypeInfo: PTypeInfo; const AJSONObject: TJSONObject)
+    // TValueToJSON
+    var
+      LBigInteger: BigInteger;
+      LJSON: string;
+    begin
+      // LResult is a TValue from BigDecimal
+      ValueToObj(AValue, ATypeInfo, LBigInteger);
+      LJSON := LBigInteger.ToString;
+      AJSONObject.AddPair(SRESULT, LJSON);
+    end,
+    function(const AJSONRequestObj: TJSONObject; const AParamName: string): TValue
+    // JSONToTValue
+    var
+      LParamValue: string;
+      LBigInteger: BigInteger;
+    begin
+      AJSONRequestObj.TryGetValue<string>(AParamName, LParamValue);
+      if LParamValue.StartsWith('0x', True) then
+        LParamValue := Copy(LParamValue, Low(LParamValue) + 2);
+      BigInteger.TryParse(LParamValue, 16, LBigInteger);
+      Result := TValue.From(LBigInteger);
+    end
+  );
 end.

@@ -22,7 +22,8 @@ uses
   JSONRPC.User.ServerImpl in 'JSONRPC.User.ServerImpl.pas',
   JSONRPC.JsonUtils in '..\Common\JSONRPC.JsonUtils.pas',
   JSONRPC.WebBrokerJSONRPC in 'JSONRPC.WebBrokerJSONRPC.pas',
-  JSONRPC.ServerWebBroker.Runner in 'JSONRPC.ServerWebBroker.Runner.pas';
+  JSONRPC.ServerWebBroker.Runner in 'JSONRPC.ServerWebBroker.Runner.pas',
+  JSONRPC.Common.RecordHandlers in '..\Common\JSONRPC.Common.RecordHandlers.pas';
 
 {$R *.res}
 

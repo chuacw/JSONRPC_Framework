@@ -223,12 +223,18 @@ type
   protected
     ResultP: Pointer;
   public
+    procedure AllocServerData(const MD: TIntfMethEntry);
     procedure SetMethodInfo(const MD: TIntfMethEntry);
-    procedure SetParamPointer(Param: Integer; P: Pointer);
+
     function  GetParamPointer(Param: Integer): Pointer;
+    procedure SetParamPointer(Param: Integer; P: Pointer);
+
     function  GetResultPointer: Pointer;
     procedure SetResultPointer(P: Pointer);
-    procedure AllocServerData(const MD: TIntfMethEntry);
+
+    property ParamPointer[Index: Integer]: Pointer read GetParamPointer write
+      SetParamPointer;
+    property ResultPointer: Pointer read GetResultPointer write SetResultPointer;
   end;
 
 function  GetRemotableDataContext: Pointer;

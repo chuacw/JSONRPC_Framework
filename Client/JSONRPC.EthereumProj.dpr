@@ -25,13 +25,14 @@ uses
   JSONRPC.User.SomeTypes.Impl in 'JSONRPC.User.SomeTypes.Impl.pas',
   System.Net.ClientSocket in '..\..\NetSocket\Client\System.Net.ClientSocket.pas',
   System.Net.Socket.Common in '..\..\NetSocket\Common\System.Net.Socket.Common.pas',
-  Web3.EtheerumAPI in '..\Web3\Web3.EtheerumAPI.pas',
   Web3.Common.Types in '..\Web3\Web3.Common.Types.pas',
   Web3.Serializers in '..\Web3\Web3.Serializers.pas',
-  Web3.Ethereum.RIO in '..\Web3\Web3.Ethereum.RIO.pas',
-  Web3.Ethereum.Types in '..\Web3\Web3.Ethereum.Types.pas',
   Web3.JsonUtils in '..\Web3\Web3.JsonUtils.pas',
-  Web3.Ethereum.Serializers in '..\Web3\Web3.Ethereum.Serializers.pas';
+  JSONRPC.Common.RecordHandlers in '..\Common\JSONRPC.Common.RecordHandlers.pas',
+  Web3.Ethereum.Types in '..\Web3\Ethereum\Web3.Ethereum.Types.pas',
+  Web3.EtheerumAPI in '..\Web3\Ethereum\Web3.EtheerumAPI.pas',
+  Web3.Ethereum.RIO in '..\Web3\Ethereum\Web3.Ethereum.RIO.pas',
+  Web3.Ethereum.Serializers in '..\Web3\Ethereum\Web3.Ethereum.Serializers.pas';
 
 procedure AssignSafeCallException(const AJSONRPC: IEthereumJSONRPC);
 begin

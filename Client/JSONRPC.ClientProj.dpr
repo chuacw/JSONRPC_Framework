@@ -23,9 +23,8 @@ uses
   JSONRPC.TransportWrapper.HTTP in '..\Common\JSONRPC.TransportWrapper.HTTP.pas',
   JSONRPC.User.SomeTypes.Impl in 'JSONRPC.User.SomeTypes.Impl.pas',
   System.Net.ClientSocket in '..\..\NetSocket\Client\System.Net.ClientSocket.pas',
-  System.Net.Socket.Common in '..\..\NetSocket\Common\System.Net.Socket.Common.pas';
-
-{$MESSAGE WARN 'Works with ServerBroker, not ServerIndy yet'}
+  System.Net.Socket.Common in '..\..\NetSocket\Common\System.Net.Socket.Common.pas',
+  JSONRPC.Common.RecordHandlers in '..\Common\JSONRPC.Common.RecordHandlers.pas';
 
 type
 {$M+}
@@ -37,52 +36,8 @@ type
   end;
 
 procedure Main;
-type
-  TMyArray = TArray<Integer>;
-var
-  LClientSocket: TClientSocket;
-  LEndpoint: TNetEndpoint;
-  LID: Integer; LText: string;
-  LBuffer: TBytes;
-  ctx: TRttiContext;
 begin
-//  LClientSocket := TClientSocket.Create;
-//  LEndpoint.Port := 8083;
-//  LEndpoint.SetAddress('localhost');
-//  LEndpoint.Family := AF_INET;
-//  try
-//    LClientSocket.Connect(LEndpoint);  // this can throw an exception
-//
-//    LID := 0;
-//    for var I := 1 to 10 do
-//      begin
-//        Inc(LID);
-//        LText :=  Format(
-//        '''
-//        {"jsonrpc": 2.0, "method": "GetSomeDate", "params": {"ADateTime":"%s"}, "id": %d}
-//        '''
-//        , [DateToISO8601(Now), LID]);
-//        LBuffer := BytesOf(LText);
-//        WriteLn('Sending...');
-//        WriteLn(LText);
-//
-//        LClientSocket.Send(LBuffer);
-//        LBuffer := nil;
-//
-//        LClientSocket.Receive(LBuffer);
-//        if Length(LBuffer) <> 0 then
-//          begin
-//            WriteLn('Received...');
-//            var LReceivedString := StringOf(LBuffer);
-//            WriteLn(LReceivedString);
-//          end;
-//        WriteLn(StringOfChar('-', 100));
-//      end;
-//  except
-//  end;
-  var LJSONRPC := GetSomeJSONRPC
-  ('http://localhost:8083', twtHTTP)
-  ;
+  var LJSONRPC := GetSomeJSONRPC('http://localhost:8083');
   try
     AssignJSONRPCSafeCallExceptionHandler(LJSONRPC,
       function (ExceptObject: TObject; ExceptAddr: Pointer): HResult
@@ -128,6 +83,13 @@ begin
           WriteLn(StringOfChar('-', 90));
         end;
     end;
+
+    var LResultBigInt := LJSONRPC.SendBigInteger(UInt64.MaxValue);
+    Assert(LResultBigInt = UInt64.MaxValue, 'Roundtripping failed');
+
+// This needs to run in 32-bit and the server needs to run in 64-bit
+    var LResult := LJSONRPC.SendExtended(Extended.MaxValue);
+    Assert(LResult = Extended.MaxValue, 'Roundtripping failed');
 
     // A safecall do not need any exception handler
     // it uses the one assigned by AssignSafeCallExceptionHandler

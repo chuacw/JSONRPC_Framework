@@ -1,0 +1,147 @@
+unit JSONRPC.Common.RecordHandlers;
+
+interface
+
+uses
+  System.TypInfo, System.JSON, JSONRPC.Common.Types, System.Rtti;
+
+type
+  TNativeToJSON = reference to procedure(
+    const APassParamByPosOrName: TPassParamByPosOrName;
+    const AParamName: string;
+    const AParamValuePtr: Pointer;
+    const AParamsObj: TJSONObject;
+    const AParamsArray: TJSONArray
+  );
+  TJSONToNative = reference to procedure(
+    const AResponseObj: TJSONValue;
+    const APathName: string; AResultP: Pointer
+  );
+  TTValueToJSON = reference to procedure(
+    const AValue: TValue;
+    ATypeInfo: PTypeInfo;
+    const AJSONObject: TJSONObject
+  );
+  TJSONToTValue = reference to function(
+    const AJSONRequestObj: TJSONObject;
+    const AParamName: string
+  ): TValue;
+
+  TRecordHandlers = record
+    NativeToJSON: TNativeToJSON;
+    JSONToNative: TJSONToNative;
+    TValueToJSON: TTValueToJSON;
+    JSONToTValue: TJSONToTValue;
+  public
+    constructor Create(
+      const ANativeToJSON: TNativeToJSON;
+      const AJSONToNative: TJSONToNative;
+      const ATValueToJSON: TTValueToJSON;
+      const AJSONToTValue: TJSONToTValue
+    );
+  end;
+  PRecordHandlers = ^TRecordHandlers;
+
+function LookupRecordHandlers(ATypeInfo: PTypeInfo; out OHandlers: TRecordHandlers): Boolean;
+
+procedure RegisterRecordHandler(
+  ATypeInfo: PTypeInfo;
+  const ANativeToJSON: TNativeToJSON;
+  const AJSONToNative: TJSONToNative;
+  const ATValueToJSON: TTValueToJSON;
+  const AJSONToTValue: TJSONToTValue
+);
+
+implementation
+
+uses
+  System.Generics.Collections;
+
+constructor TRecordHandlers.Create(
+  const ANativeToJSON: TNativeToJSON;
+  const AJSONToNative: TJSONToNative;
+  const ATValueToJSON: TTValueToJSON;
+  const AJSONToTValue: TJSONToTValue
+);
+begin
+  NativeToJSON := ANativeToJSON;
+  JSONToNative := AJSONToNative;
+  TValueToJSON := ATValueToJSON;
+  JSONToTValue := AJSONToTValue;
+end;
+
+var
+  Handlers: TDictionary<PTypeInfo, TRecordHandlers>;
+
+function LookupRecordHandlers(ATypeInfo: PTypeInfo; out OHandlers: TRecordHandlers): Boolean;
+var
+  LNativeToJSON: TNativeToJSON;
+  LJSONToNative: TJSONToNative;
+  LTValueToJSON: TTValueToJSON;
+  LJSONToTValue: TJSONToTValue;
+begin
+  Result := Handlers.TryGetValue(ATypeInfo, OHandlers);
+  LNativeToJSON := OHandlers.NativeToJSON;
+  LJSONToNative := OHandlers.JSONToNative;
+  LTValueToJSON := OHandlers.TValueToJSON;
+  LJSONToTValue := OHandlers.JSONToTValue;
+
+  OHandlers.NativeToJSON := procedure(
+    const APassParamByPosOrName: TPassParamByPosOrName;
+    const AParamName: string;
+    const AParamValuePtr: Pointer;
+    const AParamsObj: TJSONObject;
+    const AParamsArray: TJSONArray
+  )
+  begin
+    if Assigned(LNativeToJSON) then
+      LNativeToJSON(APassParamByPosOrName, AParamName, AParamValuePtr,
+        AParamsObj, AParamsArray);
+  end;
+  OHandlers.JSONToNative := procedure(
+    const AResponseObj: TJSONValue;
+    const APathName: string; AResultP: Pointer
+  )
+  begin
+    if Assigned(LJSONToNative) then
+      LJSONToNative(AResponseObj, APathName, AResultP);
+  end;
+  OHandlers.TValueToJSON := procedure(
+    const AValue: TValue;
+    ATypeInfo: PTypeInfo;
+    const AJSONObject: TJSONObject
+  )
+  begin
+    if Assigned(LTValueToJSON) then
+      LTValueToJSON(AValue, ATypeInfo, AJSONObject);
+  end;
+  OHandlers.JSONToTValue := function(
+    const AJSONRequestObj: TJSONObject;
+    const AParamName: string
+  ): TValue
+  begin
+    if Assigned(LJSONToTValue) then
+      Result := LJSONToTValue(AJSONRequestObj, AParamName);
+  end;
+end;
+
+procedure RegisterRecordHandler(
+  ATypeInfo: PTypeInfo;
+  const ANativeToJSON: TNativeToJSON;
+  const AJSONToNative: TJSONToNative;
+  const ATValueToJSON: TTValueToJSON;
+  const AJSONToTValue: TJSONToTValue
+);
+begin
+  Handlers.Add(ATypeInfo, TRecordHandlers.Create(
+    ANativeToJSON, AJSONToNative, ATValueToJSON, AJSONToTValue)
+  );
+end;
+
+{ THandler }
+
+initialization
+  Handlers := TDictionary<PTypeInfo, TRecordHandlers>.Create;
+finalization
+  Handlers.Free;
+end.

@@ -20,7 +20,7 @@ type
 implementation
 
 uses
-  JSONRPC.JsonUtils,
+  JSONRPC.JsonUtils, JSONRPC.Common.Types,
   Web3.Common.Types, System.JSON.Readers, System.JSON.Serializers,
   Web3.Ethereum.Serializers;
 

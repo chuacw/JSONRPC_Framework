@@ -172,13 +172,13 @@ end;
 procedure TTestJSONRPCClient.SendCurrency(const Value: Currency);
 begin
   var LResult := FSomeRPC.SendCurrency(Value);
-  Assert.AreEqual(Value, LResult, 'Currencies are not the same!');
+  Assert.AreEqual<Currency>(Value, LResult, 'Currencies are not the same!');
 end;
 
 procedure TTestJSONRPCClient.SendDouble(const Value: Double);
 begin
   var LResult := FSomeRPC.SendDouble(Value);
-  Assert.AreEqual(Value, LResult, 'Doubles are not the same!');
+  Assert.AreEqual<Double>(Value, LResult, 'Doubles are not the same!');
 end;
 
 procedure TTestJSONRPCClient.SendEnum;
@@ -190,7 +190,7 @@ end;
 procedure TTestJSONRPCClient.SendExtended(const Value: Extended);
 begin
   var LResult := FSomeRPC.SendExtended(Value);
-  Assert.AreEqual(Value, LResult, 'Extendeds are not the same!');
+  Assert.IsTrue(Value = LResult, 'Extendeds are not the same!');
 end;
 
 procedure TTestJSONRPCClient.SendGUID;

@@ -20,7 +20,8 @@ uses
   JSONRPC.JsonUtils in '..\Common\JSONRPC.JsonUtils.pas',
   JSONRPC.ServerBase.Runner in 'JSONRPC.ServerBase.Runner.pas',
   System.Net.ServerSocket in 'System.Net.ServerSocket.pas',
-  JSONRPC.ServerIdHTTP.Runner in 'JSONRPC.ServerIdHTTP.Runner.pas';
+  JSONRPC.ServerIdHTTP.Runner in 'JSONRPC.ServerIdHTTP.Runner.pas',
+  JSONRPC.Common.RecordHandlers in '..\Common\JSONRPC.Common.RecordHandlers.pas';
 
 {$R *.res}
 

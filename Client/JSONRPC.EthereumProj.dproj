@@ -65,6 +65,7 @@
         <DCC_K>false</DCC_K>
         <DCC_Namespace>System;Xml;Data;Datasnap;Web;Soap;$(DCC_Namespace)</DCC_Namespace>
         <SanitizedProjectName>JSONRPC_EthereumProj</SanitizedProjectName>
+        <GetItPackages>RudysBigNumbers-12</GetItPackages>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Android)'!=''">
         <VerInfo_Keys>package=com.embarcadero.$(MSBuildProjectName);label=$(MSBuildProjectName);versionCode=1;versionName=1.0.0;persistent=False;restoreAnyVersion=False;installLocation=auto;largeHeap=False;theme=TitleBar;hardwareAccelerated=true;apiKey=</VerInfo_Keys>
@@ -136,13 +137,14 @@
         <DCCReference Include="JSONRPC.User.SomeTypes.Impl.pas"/>
         <DCCReference Include="..\..\NetSocket\Client\System.Net.ClientSocket.pas"/>
         <DCCReference Include="..\..\NetSocket\Common\System.Net.Socket.Common.pas"/>
-        <DCCReference Include="..\Web3\Web3.EtheerumAPI.pas"/>
         <DCCReference Include="..\Web3\Web3.Common.Types.pas"/>
         <DCCReference Include="..\Web3\Web3.Serializers.pas"/>
-        <DCCReference Include="..\Web3\Web3.Ethereum.RIO.pas"/>
-        <DCCReference Include="..\Web3\Web3.Ethereum.Types.pas"/>
         <DCCReference Include="..\Web3\Web3.JsonUtils.pas"/>
-        <DCCReference Include="..\Web3\Web3.Ethereum.Serializers.pas"/>
+        <DCCReference Include="..\Common\JSONRPC.Common.RecordHandlers.pas"/>
+        <DCCReference Include="..\Web3\Ethereum\Web3.Ethereum.Types.pas"/>
+        <DCCReference Include="..\Web3\Ethereum\Web3.EtheerumAPI.pas"/>
+        <DCCReference Include="..\Web3\Ethereum\Web3.Ethereum.RIO.pas"/>
+        <DCCReference Include="..\Web3\Ethereum\Web3.Ethereum.Serializers.pas"/>
         <None Include="README.md"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
@@ -188,7 +190,7 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="Untitled1.md" Configuration="Debug" Class="ProjectFile">
+                <DeployFile LocalName="README.md" Configuration="Debug" Class="ProjectFile">
                     <Platform Name="Win64">
                         <RemoteDir>.\</RemoteDir>
                         <Overwrite>true</Overwrite>

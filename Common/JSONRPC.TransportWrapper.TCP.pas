@@ -48,6 +48,7 @@ uses
 {$IF DEFINED(DEBUG)}
   Winapi.Windows,
 {$ENDIF}
+  System.Net.Socket,
   Winapi.Winsock2, System.SysUtils;
 
 { TJSONRPCTCPTransportWrapper }

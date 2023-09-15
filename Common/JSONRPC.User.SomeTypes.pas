@@ -4,7 +4,7 @@ interface
 
 uses
   JSONRPC.Common.Types, System.Classes, System.JSON.Serializers,
-  JSONRPC.RIO;
+  JSONRPC.RIO, Velthuis.BigDecimals, Velthuis.BigIntegers;
 
 type
 
@@ -70,13 +70,14 @@ type
     function GetEnum(const A: TEnum): TEnum;
     function SendEnum(const A: TEnum): string;
 
+    function SendBigInteger(const Value: BigInteger): BigInteger;
     function SendBool(const Value: Boolean): Boolean;
     function SendByte(const Value: Byte): Byte;
     function SendByteBool(const Value: ByteBool): ByteBool;
     function SendCardinal(const Value: Cardinal): Cardinal;
     function SendCurrency(const Value: Currency): Currency;
     function SendDouble(const Value: Double): Double;
-    function SendExtended(const Value: Extended): Extended;
+    function SendExtended(const Value: BigDecimal): BigDecimal;
     function SendGUID(const Value: TGUID): TGUID;
     function SendInt64(const Value: Int64): Int64;
     function SendInteger(const Value: Integer): Integer;
@@ -118,7 +119,7 @@ uses
   Winapi.Windows,
 {$ENDIF}
   System.JSON, System.Rtti, JSONRPC.InvokeRegistry,
-  JSONRPC.JsonUtils;
+  JSONRPC.JsonUtils, JSONRPC.Common.RecordHandlers;
 
 { TMyObject }
 
@@ -148,4 +149,5 @@ initialization
   // Developed to send rubbish data to check server tolerance
   InvRegistry.RegisterInterface(TypeInfo(ISomeExtendedJSONRPC));
 {$ENDIF}
+
 end.

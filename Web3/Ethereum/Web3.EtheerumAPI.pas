@@ -4,9 +4,11 @@ interface
 
 uses
   JSONRPC.RIO, Web3.Common.Types, JSONRPC.Common.Types, Web3.Ethereum.Types,
-  System.SysUtils, System.JSON;
+  System.SysUtils, System.JSON, Velthuis.BigIntegers;
 
 type
+
+  HexBytes = BigInteger;
 
   IEthereumJSONRPC = interface(IJSONRPCMethods)
     ['{BC41AE33-10B1-4969-BA60-D2581EA21613}']
@@ -75,6 +77,7 @@ function GetEthereumJSONRPC(const AServerURL: string = '';
 begin
   RegisterJSONRPCWrapper(TypeInfo(IEthereumJSONRPC));
   var LJSONRPCWrapper := TWeb3EthereumJSONRPCWrapper.Create(nil);
+  LJSONRPCWrapper.PassParamsByPos := True;
   LJSONRPCWrapper.ServerURL := AServerURL;
   Result := LJSONRPCWrapper as IEthereumJSONRPC;
 end;

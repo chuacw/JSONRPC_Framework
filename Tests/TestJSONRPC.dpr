@@ -18,7 +18,6 @@ uses
   TestInsight.DUnitX,
   {$ELSE}
   DUnitX.Loggers.Console,
-  DUnitX.Loggers.Xml.NUnit,
   {$ENDIF }
   DUnitX.TestFramework,
   System.SysUtils,
@@ -33,10 +32,14 @@ uses
   JSONRPC.ServerBase.Runner in '..\Server\JSONRPC.ServerBase.Runner.pas',
   JSONRPC.User.SomeTypes.Impl in '..\Client\JSONRPC.User.SomeTypes.Impl.pas',
   JSONRPC.ServerIdHTTP.Runner in '..\Server\JSONRPC.ServerIdHTTP.Runner.pas',
-  JSONRPC.TransportWrapper.HTTP in '..\Common\JSONRPC.TransportWrapper.HTTP.pas';
+  JSONRPC.TransportWrapper.HTTP in '..\Common\JSONRPC.TransportWrapper.HTTP.pas',
+  JSONRPC.Common.FixBuggyNativeTypes in '..\Common\JSONRPC.Common.FixBuggyNativeTypes.pas',
+  DUnitX.Loggers.XML.NUnit,
+  JSONRPC.Common.RecordHandlers in '..\Common\JSONRPC.Common.RecordHandlers.pas';
+
+// Comments to prevent {$IFNDEF } from being overwritten
 
 {$IFNDEF TESTINSIGHT}
-// {$IFNDEF TESTINSIGHT} // in case the IDE removes the above, this is what was there
 var
   runner: ITestRunner;
   results: IRunResults;
