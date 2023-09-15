@@ -218,6 +218,10 @@ var
   GOnSentJSONRPC: TOnSentJSONRPC;
   GJSONRPCTransportWrapperClass: TJSONRPCTransportWrapperClass;
 
+{$IF SizeOf(Extended) > SizeOf(Double)}
+  {$DEFINE HasExtended}
+{$IFEND}
+
 implementation
 
 uses
@@ -303,6 +307,7 @@ initialization
   RegisterRecordHandler(TypeInfo(BigDecimal),
     procedure(
       const APassParamByPosOrName: TPassParamByPosOrName;
+      ATypeInfo: PTypeInfo;
       const AParamName: string;
       const AParamValuePtr: Pointer;
       const AParamsObj: TJSONObject;
@@ -343,19 +348,26 @@ initialization
     end
   );
 
+  // Delphi cannot handle the precision of Extended
+  // if the client is 32-bit and the server is 64-bit
+  // so convert to BigDecimal
+
   RegisterRecordHandler(TypeInfo(Extended),
     // NativeToJSON
     procedure(
       const APassParamByPosOrName: TPassParamByPosOrName;
+      ATypeInfo: PTypeInfo;
       const AParamName: string;
       const AParamValuePtr: Pointer;
       const AParamsObj: TJSONObject;
       const AParamsArray: TJSONArray
     )
     var
+      LBigDecimal: BigDecimal;
       LJSON: TJSONString;
     begin
-      LJSON := TJSONString.Create(BigDecimal(AParamValuePtr^).ToString);
+      LBigDecimal := BigDecimal.Create(Extended(AParamValuePtr^));
+      LJSON := TJSONString.Create(LBigDecimal.ToString);
       case APassParamByPosOrName of
         tppByName: AParamsObj.AddPair(AParamName, LJSON);
         tppByPos:  AParamsArray.AddElement(LJSON);
@@ -365,24 +377,29 @@ initialization
     procedure(const AJSONResponseObj: TJSONValue; const APathName: string; AResultP: Pointer)
     var
       LResultValue: string;
+      LBigDecimal: BigDecimal;
     begin
       AJSONResponseObj.TryGetValue<string>(APathName, LResultValue);
-      PBigDecimal(AResultP)^ := BigDecimal.Create(LResultValue);
+      BigDecimal.TryParse(LResultValue, LBigDecimal);
+      {$IF DEFINED(HasExtended)}
+      PExtended(AResultP)^ := LBigDecimal.AsExtended;
+      {$ELSE}
+      PExtended(AResultP)^ := LBigDecimal.AsDouble;
+      {$ENDIF}
     end,
     // TValueToJSON
     procedure(const AValue: TValue; ATypeInfo: PTypeInfo; const AJSONObject: TJSONObject)
     var
-      LBigDecimal: BigDecimal;
-      LJSON: string;
+      LBigDecimal: Extended;
     begin
-      ValueToObj(AValue, ATypeInfo, LBigDecimal);
-      LJSON := LBigDecimal.ToString;
+      LBigDecimal := AValue.AsExtended;
+      var LJSON := TJSONNumber.Create(LBigDecimal.ToString);
       AJSONObject.AddPair(SRESULT, LJSON);
     end,
     // JSONToTValue
     function(const AJSON: string): TValue
     begin
-      Result := TValue.From(BigDecimal.Create(AJSON));
+      Result := TValue.From(StrToFloat(AJSON));
     end
   );
 
@@ -390,6 +407,7 @@ initialization
     // NativeToJSON
     procedure(
       const APassParamByPosOrName: TPassParamByPosOrName;
+      ATypeInfo: PTypeInfo;
       const AParamName: string;
       const AParamValuePtr: Pointer;
       const AParamsObj: TJSONObject;

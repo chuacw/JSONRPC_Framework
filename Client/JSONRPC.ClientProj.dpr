@@ -35,11 +35,7 @@ begin
     Assert(LResult = Extended.MaxValue, 'Roundtripping failed');
 
     // Pass by position, or pass by name, default = pass params by name
-    var LJSONRPCInvocationSettings: IJSONRPCInvocationSettings;
-    if Supports(LJSONRPC, IJSONRPCInvocationSettings, LJSONRPCInvocationSettings) then
-      begin
-        LJSONRPCInvocationSettings.PassParamsByPosition := True;
-      end;
+    PassParamsByPosition(LJSONRPC);
 
     AssignJSONRPCSafeCallExceptionHandler(LJSONRPC,
       function (ExceptObject: TObject; ExceptAddr: Pointer): HResult

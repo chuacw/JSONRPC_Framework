@@ -77,7 +77,7 @@ type
     function SendCardinal(const Value: Cardinal): Cardinal;
     function SendCurrency(const Value: Currency): Currency;
     function SendDouble(const Value: Double): Double;
-    function SendExtended(const Value: BigDecimal): BigDecimal;
+    function SendExtended(const Value: BigDecimal): BigDecimal; overload;
     function SendGUID(const Value: TGUID): TGUID;
     function SendInt64(const Value: Int64): Int64;
     function SendInteger(const Value: Integer): Integer;

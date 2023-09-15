@@ -1067,16 +1067,18 @@ begin
 {$IFDEF UNICODE}
       tkUString:
         begin
-          P := AllocData(sizeof(PUnicodeString));
+          P := AllocData(Sizeof(PUnicodeString));
           PUnicodeString(P)^ := '';
           AddUStrToClear(P);
         end;
 {$ENDIF}
+      tkInteger, tkEnumeration:
+        P := AllocData(SizeOf(Integer));
       tkInt64:
-        P := AllocData(sizeof(Int64));
+        P := AllocData(Sizeof(Int64));
       tkVariant:
         begin
-          P := AllocData(sizeof(TVarData));
+          P := AllocData(Sizeof(TVarData));
           Variant( PVarData(P)^ ) := NULL;
           AddVariantToClear(PVarData(P));
         end;

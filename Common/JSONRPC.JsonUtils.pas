@@ -85,11 +85,29 @@ procedure WriteJSONResult(const AContext: TInvContext;
   AMethNum: Integer; const AMethMD: TIntfMethEntry; const AMethodID: Int64;
   AResponseValue: TValue; AJSONResponse: TStream);
 
+procedure CheckFloatType(AFloatType: TFloatType);
+procedure CheckTypeInfo(ATypeInfo: PTypeInfo);
 implementation
 
 uses
   JSONRPC.Common.Consts, System.JSON.Serializers,
   System.JSON.Readers, System.JSON.Writers;
+
+procedure CheckFloatType(AFloatType: TFloatType);
+begin
+{$IF DEFINED(DEBUG)}
+  if AFloatType <> ftSingle then
+    ;
+{$ENDIF}
+end;
+
+procedure CheckTypeInfo(ATypeInfo: PTypeInfo);
+begin
+{$IF DEFINED(DEBUG)}
+  if ATypeInfo <> nil then
+    ;
+{$ENDIF}
+end;
 
 // 0 => nil
 // >0 => inline ok

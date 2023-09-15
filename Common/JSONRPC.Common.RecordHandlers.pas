@@ -12,6 +12,7 @@ type
   /// </summary>
   TNativeToJSON = reference to procedure(
     const APassParamByPosOrName: TPassParamByPosOrName;
+    ATypeInfo: PTypeInfo;
     const AParamName: string;
     const AParamValuePtr: Pointer;
     const AParamsObj: TJSONObject;
@@ -135,6 +136,7 @@ begin
 
   OHandlers.NativeToJSON := procedure(
     const APassParamByPosOrName: TPassParamByPosOrName;
+    ATypeInfo: PTypeInfo;
     const AParamName: string;
     const AParamValuePtr: Pointer;
     const AParamsObj: TJSONObject;
@@ -142,7 +144,7 @@ begin
   )
   begin
     if Assigned(LNativeToJSON) then
-      LNativeToJSON(APassParamByPosOrName, AParamName, AParamValuePtr,
+      LNativeToJSON(APassParamByPosOrName, ATypeInfo, AParamName, AParamValuePtr,
         AParamsObj, AParamsArray);
   end;
   OHandlers.JSONToNative := procedure(
