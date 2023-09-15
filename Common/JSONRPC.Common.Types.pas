@@ -336,16 +336,15 @@ initialization
       LJSON := LBigDecimal.ToString;
       AJSONObject.AddPair(SRESULT, LJSON);
     end,
-    function(const AJSONRequestObj: TJSONObject; const AParamName: string): TValue
-    var
-      LParamValue: string;
+    function(const AJSON: string): TValue
+    // JSONToTValue
     begin
-      AJSONRequestObj.TryGetValue<string>(AParamName, LParamValue);
-      Result := TValue.From(BigDecimal.Create(LParamValue));
+      Result := TValue.From(BigDecimal.Create(AJSON));
     end
   );
 
   RegisterRecordHandler(TypeInfo(Extended),
+    // NativeToJSON
     procedure(
       const APassParamByPosOrName: TPassParamByPosOrName;
       const AParamName: string;
@@ -353,7 +352,6 @@ initialization
       const AParamsObj: TJSONObject;
       const AParamsArray: TJSONArray
     )
-    // NativeToJSON
     var
       LJSON: TJSONString;
     begin
@@ -363,16 +361,16 @@ initialization
         tppByPos:  AParamsArray.AddElement(LJSON);
       end;
     end,
-    procedure(const AJSONResponseObj: TJSONValue; const APathName: string; AResultP: Pointer)
     // JSONToNative
+    procedure(const AJSONResponseObj: TJSONValue; const APathName: string; AResultP: Pointer)
     var
       LResultValue: string;
     begin
       AJSONResponseObj.TryGetValue<string>(APathName, LResultValue);
       PBigDecimal(AResultP)^ := BigDecimal.Create(LResultValue);
     end,
-    procedure(const AValue: TValue; ATypeInfo: PTypeInfo; const AJSONObject: TJSONObject)
     // TValueToJSON
+    procedure(const AValue: TValue; ATypeInfo: PTypeInfo; const AJSONObject: TJSONObject)
     var
       LBigDecimal: BigDecimal;
       LJSON: string;
@@ -381,16 +379,15 @@ initialization
       LJSON := LBigDecimal.ToString;
       AJSONObject.AddPair(SRESULT, LJSON);
     end,
-    function(const AJSONRequestObj: TJSONObject; const AParamName: string): TValue
-    var
-      LParamValue: string;
+    // JSONToTValue
+    function(const AJSON: string): TValue
     begin
-      AJSONRequestObj.TryGetValue<string>(AParamName, LParamValue);
-      Result := TValue.From(BigDecimal.Create(LParamValue));
+      Result := TValue.From(BigDecimal.Create(AJSON));
     end
   );
 
   RegisterRecordHandler(TypeInfo(BigInteger),
+    // NativeToJSON
     procedure(
       const APassParamByPosOrName: TPassParamByPosOrName;
       const AParamName: string;
@@ -398,7 +395,6 @@ initialization
       const AParamsObj: TJSONObject;
       const AParamsArray: TJSONArray
     )
-    // NativeToJSON
     var
       LJSON: TJSONString;
     begin
@@ -409,8 +405,8 @@ initialization
         tppByPos:  AParamsArray.AddElement(LJSON);
       end;
     end,
-    procedure(const AJSONResponseObj: TJSONValue; const APathName: string; AResultP: Pointer)
     // JSONToNative
+    procedure(const AJSONResponseObj: TJSONValue; const APathName: string; AResultP: Pointer)
     var
       LDecimalPlaces: Integer;
       LResultValue: string;
@@ -437,16 +433,23 @@ initialization
       LJSON := LBigInteger.ToString;
       AJSONObject.AddPair(SRESULT, LJSON);
     end,
-    function(const AJSONRequestObj: TJSONObject; const AParamName: string): TValue
+    function(const AJSON: string): TValue
     // JSONToTValue
     var
       LParamValue: string;
       LBigInteger: BigInteger;
+      LDecimalPlaces: Integer;
     begin
-      AJSONRequestObj.TryGetValue<string>(AParamName, LParamValue);
-      if LParamValue.StartsWith('0x', True) then
-        LParamValue := Copy(LParamValue, Low(LParamValue) + 2);
-      BigInteger.TryParse(LParamValue, 16, LBigInteger);
+      if AJSON.StartsWith('0x', True) then
+        begin
+          LParamValue := Copy(AJSON, Low(LParamValue) + 2);
+          LDecimalPlaces := 16;
+        end else
+        begin
+          LParamValue := AJSON;
+          LDecimalPlaces := 10;
+        end;
+      BigInteger.TryParse(LParamValue, LDecimalPlaces, LBigInteger);
       Result := TValue.From(LBigInteger);
     end
   );

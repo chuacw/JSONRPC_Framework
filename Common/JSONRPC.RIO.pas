@@ -940,9 +940,7 @@ begin
   Result := E_NOINTERFACE;
 
   { IInterface, IJSONRPCWrapper, etc... }
-  if ((IID = IInterface) or (IID = IJSONRPCWrapper) or
-      (IID = IJSONRPCInvocationSettings) or
-      (IID = ISafeCallException)) and GetInterface(IID, Obj) then
+  if GetInterface(IID, Obj) then
     Result := S_OK;
 
   if (Result <> S_OK) and (FInterface <> nil) and (IID = FIID) then
@@ -1430,9 +1428,16 @@ begin
                   tkRecord: begin
                     var LParamJSONObject := LJSONRequestObj.FindValue(LParamName);
                     var LHandlers: TRecordHandlers;
+                    var LJSON := '';
+                    // Try looking up the parameter by name and if it fails
+                    // look up the parameter by position
+                    // The JSON is then passed to the handler
+                    if Assigned(LParamJSONObject) then
+                      LJSONRequestObj.TryGetValue<string>(LParamName, LJSON) else
+                      LJSON := TJSONArray(LParamsObjOrArray)[LParamPosition].Value;
                     if LookupRecordHandlers(LParseParamTypeInfo, LHandlers) then
                       begin
-                        LArg := LHandlers.JSONToTValue(LJSONRequestObj, LParamName);
+                        LArg := LHandlers.JSONToTValue(LJSON);
                       end else
 //                    if LParseParamTypeInfo = TypeInfo(BigDecimal) then
 //                      begin
@@ -1450,8 +1455,11 @@ begin
 //                        BigInteger.TryParse(LParamValue, 16, LBigInteger);
 //                        LArg := TValue.From(LBigInteger);
 //                      end else
-                    if Assigned(LParamJSONObject) then
-                      DeserializeJSON(LParamJSONObject, LParams[I].ParamType.Handle, LArg);
+                      begin
+                        // Default handling of records
+                        if Assigned(LParamJSONObject) then
+                          DeserializeJSON(LParamJSONObject, LParams[I].ParamType.Handle, LArg);
+                      end;
                   end;
                   tkEnumeration: begin // False, True, etc...
                     var LParamValue: string;
@@ -1529,7 +1537,9 @@ begin
                             var LHandlers: TRecordHandlers;
                             if LookupRecordHandlers(LTypeInfo, LHandlers) then
                               begin
-                                LArg := LHandlers.JSONToTValue(LJSONRequestObj, LParamName);
+                                var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
+                                var LJSON := LParamsArr[I].Value;
+                                LArg := LHandlers.JSONToTValue(LJSON);
                               end;
                           end else
                           begin
@@ -1583,25 +1593,18 @@ begin
                         LJSONResultObj.AddPair(SRESULT, LJSONArray);
                       end;
                       tkRecord: begin
-                        // TODO : Handle BigDecimals here
                         var LTypeInfo := LMethod.ReturnType.Handle;
                         var LJSONObject: TJSONValue;
                         var LHandlers: TRecordHandlers;
+                        // Look up custom handlers for records
                         if LookupRecordHandlers(LTypeInfo, LHandlers) then
                           begin
                             LHandlers.TValueToJSON(
                               LResult, LTypeInfo, LJSONResultObj
                             );
                           end else
-//                        if LTypeInfo = TypeInfo(BigDecimal) then
-//                          begin
-//                            // LResult is a TValue from BigDecimal
-//                            var LBigDecimal: BigDecimal;
-//                            ValueToObj(LResult, LTypeInfo, LBigDecimal);
-//                            var LJSON := LBigDecimal.ToString;
-//                            LJSONResultObj.AddPair(SRESULT, LJSON);
-//                          end else
                           begin
+                            // default handler for records
                             var LJSON := SerializeRecord(LResult, LTypeInfo);
                             LJSONObject := TJSONObject.ParseJSONValue(LJSON);
                             LJSONResultObj.AddPair(SRESULT, LJSONObject);
@@ -1814,14 +1817,12 @@ end;
 
 function TJSONRPCServerWrapper.InternalQI(const IID: TGUID; out Obj): HResult;
 begin
-  Result := E_NOINTERFACE;
-
   { IInterface, IJSONRPCDispatch, IJSONRPCDispatchEvents, IJSONRPCGetSetDispatchEvents, etc... }
   if ((IID = IInterface) or (IID = IJSONRPCDispatch) or
       (IID = IJSONRPCDispatchEvents) or
       (IID = IJSONRPCGetSetDispatchEvents)) and GetInterface(IID, Obj) then
-    Result := S_OK;
-
+    Result := S_OK else
+    Result := E_NOINTERFACE;
 end;
 
 procedure TJSONRPCServerWrapper.SetInvokeMethod;

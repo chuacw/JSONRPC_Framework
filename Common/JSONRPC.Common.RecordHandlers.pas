@@ -6,6 +6,10 @@ uses
   System.TypInfo, System.JSON, JSONRPC.Common.Types, System.Rtti;
 
 type
+
+  /// <summary>
+  /// Client-side
+  /// </summary>
   TNativeToJSON = reference to procedure(
     const APassParamByPosOrName: TPassParamByPosOrName;
     const AParamName: string;
@@ -17,14 +21,14 @@ type
     const AResponseObj: TJSONValue;
     const APathName: string; AResultP: Pointer
   );
+
   TTValueToJSON = reference to procedure(
     const AValue: TValue;
     ATypeInfo: PTypeInfo;
     const AJSONObject: TJSONObject
   );
   TJSONToTValue = reference to function(
-    const AJSONRequestObj: TJSONObject;
-    const AParamName: string
+    const AJSON: string
   ): TValue;
 
   TRecordHandlers = record
@@ -159,12 +163,11 @@ begin
       LTValueToJSON(AValue, ATypeInfo, AJSONObject);
   end;
   OHandlers.JSONToTValue := function(
-    const AJSONRequestObj: TJSONObject;
-    const AParamName: string
+    const AJSON: string
   ): TValue
   begin
     if Assigned(LJSONToTValue) then
-      Result := LJSONToTValue(AJSONRequestObj, AParamName);
+      Result := LJSONToTValue(AJSON);
   end;
 end;
 

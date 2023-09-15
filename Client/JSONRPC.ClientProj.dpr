@@ -31,12 +31,15 @@ begin
   var LJSONRPC := GetSomeJSONRPC('http://localhost:8083');
   try
 
+    var LResult := LJSONRPC.SendExtended(Extended.MaxValue);
+    Assert(LResult = Extended.MaxValue, 'Roundtripping failed');
+
     // Pass by position, or pass by name, default = pass params by name
-//    var LJSONRPCInvocationSettings: IJSONRPCInvocationSettings;
-//    if Supports(LJSONRPC, IJSONRPCInvocationSettings, LJSONRPCInvocationSettings) then
-//      begin
-//        LJSONRPCInvocationSettings.PassParamsByPosition := True;
-//      end;
+    var LJSONRPCInvocationSettings: IJSONRPCInvocationSettings;
+    if Supports(LJSONRPC, IJSONRPCInvocationSettings, LJSONRPCInvocationSettings) then
+      begin
+        LJSONRPCInvocationSettings.PassParamsByPosition := True;
+      end;
 
     AssignJSONRPCSafeCallExceptionHandler(LJSONRPC,
       function (ExceptObject: TObject; ExceptAddr: Pointer): HResult
@@ -87,8 +90,8 @@ begin
 //    Assert(LResultBigInt = UInt64.MaxValue, 'Roundtripping failed');
 
 // This needs to run in 32-bit and the server needs to run in 64-bit
-    var LResult := LJSONRPC.SendExtended(Extended.MaxValue);
-    Assert(LResult = Extended.MaxValue, 'Roundtripping failed');
+    var LExtendedResult := LJSONRPC.SendExtended(Extended.MaxValue);
+    Assert(LExtendedResult = Extended.MaxValue, 'Roundtripping failed');
 
     // A safecall do not need any exception handler
     // it uses the one assigned by AssignSafeCallExceptionHandler

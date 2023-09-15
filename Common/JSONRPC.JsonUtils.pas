@@ -27,15 +27,21 @@ procedure DeserializeRecord(const AJSON: string; ATypeInfo: PTypeInfo; var VRest
 procedure DeserializeRecord(const AJSON: string; ATypeInfo: PTypeInfo; PtrToRestoredRecord: Pointer); overload;
 
 /// <summary>
-/// Deserialize the JSON using the given TypeInfo, in VValue
+/// Deserialize the JSON using the given TypeInfo, into VValue
 /// </summary>
 procedure DeserializeJSON(const AJsonValue: TJSONValue; ATypeInfo: PTypeInfo; var VValue: TValue); overload;
 
 /// <summary>
-/// Deserialize the JSON using the given TypeInfo, in VRestoredRecord
+/// Deserialize the JSON using the given TypeInfo, into VRestoredRecord
 /// </summary>
 procedure DeserializeJSON(const AJsonValue: TJSONValue; ATypeInfo: PTypeInfo; var VRestoredRecord); overload;
 
+/// <summary>
+/// Convert a TValue into the record itself
+/// </summary>
+/// <param name="AValue"> The TValue carrying the data of the record</param>
+/// <param name="ATypeInfo"> The TypeInfo of the record</param>
+/// <param name="VRestoredRecord> The untyped variable of the record</param>
 procedure ValueToObj(const AValue: TValue; ATypeInfo: PTypeInfo; var VRestoredRecord);
 
 
@@ -335,7 +341,7 @@ procedure WriteJSONResult(const AContext: TInvContext;
   AMethNum: Integer; const AMethMD: TIntfMethEntry; const AMethodID: Int64;
   AResponseValue: TValue; AJSONResponse: TStream);
 begin
-  // Write this // {"jsonrpc": "2.0", "result": 19, "id": 1}
+  // Write this {"jsonrpc": "2.0", "result": 19, "id": 1}
   var LJSONObject := TJSONObject.Create;
   try
     LJSONObject.AddPair(SJSONRPC, FloatToJson(2.0));
