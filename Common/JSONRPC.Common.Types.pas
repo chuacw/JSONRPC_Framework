@@ -120,6 +120,8 @@ type
   end;
 
 {$M+}
+  /// <summary> An exception class that contains the JSON RPC Code
+  /// </summary>
   EJSONRPCException = class(Exception)
   protected
     FCode: Integer;
@@ -130,6 +132,8 @@ type
   end;
 {$M-}
 
+  /// <summary> An exception class that contains the Method Name.
+  /// </summary>
   EJSONRPCMethodException = class(EJSONRPCException)
   protected
     FMethodName: string;

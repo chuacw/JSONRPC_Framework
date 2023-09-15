@@ -30,6 +30,14 @@ procedure Main;
 begin
   var LJSONRPC := GetSomeJSONRPC('http://localhost:8083');
   try
+
+    // Pass by position, or pass by name, default = pass params by name
+//    var LJSONRPCInvocationSettings: IJSONRPCInvocationSettings;
+//    if Supports(LJSONRPC, IJSONRPCInvocationSettings, LJSONRPCInvocationSettings) then
+//      begin
+//        LJSONRPCInvocationSettings.PassParamsByPosition := True;
+//      end;
+
     AssignJSONRPCSafeCallExceptionHandler(LJSONRPC,
       function (ExceptObject: TObject; ExceptAddr: Pointer): HResult
       var
