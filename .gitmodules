@@ -1,0 +1,3 @@
+[submodule "ThirdParty/Neslib.MultiPrecision"]
+	path = ThirdParty/Neslib.MultiPrecision
+	url = https://github.com/neslib/Neslib.MultiPrecision.git
