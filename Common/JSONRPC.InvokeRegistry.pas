@@ -188,17 +188,17 @@ type
   TDataContext = class
   protected
     FObjsToDestroy: TArray<TObject>;
-    DataOffset: Integer;
-    Data: TArray<Byte>;
-    DataP: TArray<Pointer>;
-    VarToClear: TArray<Pointer>;
-    DynArrayToClear: TArray<TDynToClear>;
+    FDataOffset: Integer;
+    FData: TArray<Byte>;
+    FDataP: TArray<Pointer>;
+    FVarToClear: TArray<Pointer>;
+    FDynArrayToClear: TArray<TDynToClear>;
 {$IFNDEF NEXTGEN}
-    StrToClear: TArray<Pointer>;
-    WStrToClear: TArray<Pointer>;
+    FStrToClear: TArray<Pointer>;
+    FWStrToClear: TArray<Pointer>;
 {$ENDIF !NEXTGEN}
 {$IFDEF UNICODE}
-    UStrToClear: TArray<Pointer>;
+    FUStrToClear: TArray<Pointer>;
 {$ENDIF}
   public
     constructor Create;
@@ -221,7 +221,7 @@ type
 
   TInvContext = class(TDataContext)
   protected
-    ResultP: Pointer;
+    FResultP: Pointer;
   public
     procedure AllocServerData(const MD: TIntfMethEntry);
     procedure SetMethodInfo(const MD: TIntfMethEntry);
@@ -774,24 +774,24 @@ end;
 
 procedure TDataContext.SetDataPointer(Index: Integer; P: Pointer);
 begin
-  DataP[Index] := P;
+  FDataP[Index] := P;
 end;
 
 function TDataContext.GetDataPointer(Index: Integer): Pointer;
 begin
-  Result := DataP[Index];
+  Result := FDataP[Index];
 end;
 
 procedure TDataContext.AddVariantToClear(P: PVarData);
 var
   I: Integer;
 begin
-  for I := 0 to Length(VarToClear) -1 do
-    if VarToClear[I] = P then
+  for I := 0 to Length(FVarToClear) -1 do
+    if FVarToClear[I] = P then
       Exit;
-  I := Length(VarToClear);
-  SetLength(VarToClear, I + 1);
-  VarToClear[I] := P;
+  I := Length(FVarToClear);
+  SetLength(FVarToClear, I + 1);
+  FVarToClear[I] := P;
 end;
 
 {$IFNDEF NEXTGEN}
@@ -800,12 +800,12 @@ var
   I: Integer;
 begin
   { If this string is in the list already, we're set }
-  for I := 0 to Length(StrToClear) -1 do
-    if StrToClear[I] = P then
+  for I := 0 to Length(FStrToClear) -1 do
+    if FStrToClear[I] = P then
       Exit;
-  I := Length(StrToClear);
-  SetLength(StrToClear, I + 1);
-  StrToClear[I] := P;
+  I := Length(FStrToClear);
+  SetLength(FStrToClear, I + 1);
+  FStrToClear[I] := P;
 end;
 
 procedure TDataContext.AddWStrToClear(P: Pointer);
@@ -813,12 +813,12 @@ var
   I: Integer;
 begin
   { If this WideString is in the list already, we're set }
-  for I := 0 to Length(WStrToClear) -1 do
-    if WStrToClear[I] = P then
+  for I := 0 to Length(FWStrToClear) -1 do
+    if FWStrToClear[I] = P then
       Exit;
-  I := Length(WStrToClear);
-  SetLength(WStrToClear, I + 1);
-  WStrToClear[I] := P;
+  I := Length(FWStrToClear);
+  SetLength(FWStrToClear, I + 1);
+  FWStrToClear[I] := P;
 end;
 {$ENDIF !NEXTGEN}
 
@@ -828,12 +828,12 @@ var
   I: Integer;
 begin
   { If this UnicodeString is in the list already, we're set }
-  for I := 0 to Length(UStrToClear) -1 do
-    if UStrToClear[I] = P then
+  for I := 0 to Length(FUStrToClear) -1 do
+    if FUStrToClear[I] = P then
       Exit;
-  I := Length(UStrToClear);
-  SetLength(UStrToClear, I + 1);
-  UStrToClear[I] := P;
+  I := Length(FUStrToClear);
+  SetLength(FUStrToClear, I + 1);
+  FUStrToClear[I] := P;
 end;
 {$ENDIF}
 
@@ -858,52 +858,52 @@ begin
   SetLength(FObjsToDestroy, 0);
 
   { Clean Variants we allocated }
-  for I := 0 to Length(VarToClear) - 1 do
+  for I := 0 to Length(FVarToClear) - 1 do
   begin
-    if Assigned(VarToClear[I]) then
-      Variant( PVarData(VarToClear[I])^) := NULL;
+    if Assigned(FVarToClear[I]) then
+      Variant( PVarData(FVarToClear[I])^) := NULL;
   end;
-  SetLength(VarToClear, 0);
+  SetLength(FVarToClear, 0);
 
   { Clean up dynamic arrays we allocated }
-  for I := 0 to Length(DynArrayToClear) - 1 do
+  for I := 0 to Length(FDynArrayToClear) - 1 do
   begin
-    if Assigned(DynArrayToClear[I].P) then
+    if Assigned(FDynArrayToClear[I].P) then
     begin
-      P := PPointer(DynArrayToClear[I].P)^;
-      DynArrayClear(P, DynArrayToClear[I].Info)
+      P := PPointer(FDynArrayToClear[I].P)^;
+      DynArrayClear(P, FDynArrayToClear[I].Info)
     end;
   end;
-  SetLength(DynArrayToClear, 0);
+  SetLength(FDynArrayToClear, 0);
 
 {$IFNDEF NEXTGEN}
   { Clean up strings we allocated }
-  for I := 0 to Length(StrToClear) - 1 do
+  for I := 0 to Length(FStrToClear) - 1 do
   begin
-    if Assigned(StrToClear[I]) then
-      PAnsiString(StrToClear[I])^ := '';
+    if Assigned(FStrToClear[I]) then
+      PAnsiString(FStrToClear[I])^ := '';
   end;
-  SetLength(StrToClear, 0);
+  SetLength(FStrToClear, 0);
 {$ENDIF !NEXTGEN}
 
 {$IFDEF UNICODE}
   { Cleanup unicode strings we allocated }
-  for I := 0 to Length(UStrToClear) - 1 do
+  for I := 0 to Length(FUStrToClear) - 1 do
   begin
-    if Assigned(UStrToClear[I]) then
-      PUnicodeString(UStrToClear[I])^ := '';
+    if Assigned(FUStrToClear[I]) then
+      PUnicodeString(FUStrToClear[I])^ := '';
   end;
-  SetLength(UStrToClear, 0);
+  SetLength(FUStrToClear, 0);
 {$ENDIF}
 
 {$IFNDEF NEXTGEN}
   { Clean up WideStrings we allocated }
-  for I := 0 to Length(WStrToClear) - 1 do
+  for I := 0 to Length(FWStrToClear) - 1 do
   begin
-    if Assigned(WStrToClear[I]) then
-      PWideString(WStrToClear[I])^ := '';
+    if Assigned(FWStrToClear[I]) then
+      PWideString(FWStrToClear[I])^ := '';
   end;
-  SetLength(WStrToClear, 0);
+  SetLength(FWStrToClear, 0);
 {$ENDIF !NEXTGEN}
 
   inherited;
@@ -913,13 +913,13 @@ procedure TDataContext.AddDynArrayToClear(P: Pointer; Info: PTypeInfo);
 var
   I: Integer;
 begin
-  for I := 0 to Length(DynArrayToClear) -1 do
-    if DynArrayToClear[I].P = P then
+  for I := 0 to Length(FDynArrayToClear) -1 do
+    if FDynArrayToClear[I].P = P then
       Exit;
-  I := Length(DynArrayToClear);
-  SetLength(DynArrayToClear, I + 1);
-  DynArrayToClear[I].P := P;
-  DynArrayToClear[I].Info := Info;
+  I := Length(FDynArrayToClear);
+  SetLength(FDynArrayToClear, I + 1);
+  FDynArrayToClear[I].P := P;
+  FDynArrayToClear[I].Info := Info;
 end;
 
 procedure TDataContext.AddObjectToDestroy(Obj: TObject);
@@ -962,24 +962,24 @@ end;
 
 function TDataContext.AllocData(Size: Integer): Pointer;
 begin
-  Result := @Data[DataOffset];
-  Inc(DataOffset, Size);
+  Result := @FData[FDataOffset];
+  Inc(FDataOffset, Size);
 end;
 
 { TInvContext }
 
 const
-  MAXINLINESIZE = sizeof(TVarData) + 4;
+  MAXINLINESIZE = SizeOf(TVarData) + 4;
 
 procedure TInvContext.SetMethodInfo(const MD: TIntfMethEntry);
 begin
-  SetLength(DataP, MD.ParamCount + 1);
-  SetLength(Data, (MD.ParamCount + 1) * MAXINLINESIZE);
+  SetLength(FDataP, MD.ParamCount + 1);
+  SetLength(FData, (MD.ParamCount + 1) * MAXINLINESIZE);
 end;
 
 procedure TInvContext.SetParamPointer(Param: Integer; P: Pointer);
 begin
-   SetDataPointer(Param,  P);
+  SetDataPointer(Param,  P);
 end;
 
 function TInvContext.GetParamPointer(Param: Integer): Pointer;
@@ -989,12 +989,12 @@ end;
 
 function TInvContext.GetResultPointer: Pointer;
 begin
-  Result := ResultP;
+  Result := FResultP;
 end;
 
 procedure TInvContext.SetResultPointer(P: Pointer);
 begin
-  ResultP := P;
+  FResultP := P;
 end;
 
 procedure TInvContext.AllocServerData(const MD: TIntfMethEntry);

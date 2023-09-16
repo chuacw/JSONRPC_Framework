@@ -144,6 +144,7 @@
         <DCCReference Include="System.Net.ServerSocket.pas"/>
         <DCCReference Include="JSONRPC.ServerIdHTTP.Runner.pas"/>
         <DCCReference Include="..\Common\JSONRPC.Common.RecordHandlers.pas"/>
+        <DCCReference Include="..\ThirdParty\Neslib.MultiPrecision.RecordHandlers.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

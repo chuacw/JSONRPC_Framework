@@ -4,7 +4,8 @@ interface
 
 uses
   JSONRPC.Common.Types, System.Classes, System.JSON.Serializers,
-  JSONRPC.RIO, Velthuis.BigDecimals, Velthuis.BigIntegers;
+  JSONRPC.RIO, Velthuis.BigDecimals, Velthuis.BigIntegers,
+  Neslib.MultiPrecision;
 
 type
 
@@ -77,6 +78,10 @@ type
     function SendCardinal(const Value: Cardinal): Cardinal;
     function SendCurrency(const Value: Currency): Currency;
     function SendDouble(const Value: Double): Double;
+
+    function SendDoubleDouble(const Value: DoubleDouble): DoubleDouble;
+    function SendQuadDouble(const Value: QuadDouble): QuadDouble;
+
     function SendExtended(const Value: BigDecimal): BigDecimal; overload;
     function SendGUID(const Value: TGUID): TGUID;
     function SendInt64(const Value: Int64): Int64;

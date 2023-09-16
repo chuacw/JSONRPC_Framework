@@ -573,6 +573,8 @@ const
 var
   LRequestStream, LResponseStream: TStream;
   LJSONMethodObj: TJSONObject;
+  LResultP: Pointer;
+  LJSONResponseObj: TJSONValue;
 begin
 
 // create something like this, with PassParamsByName
@@ -869,6 +871,7 @@ begin
         LJSONMethodObj.AddPair(SID, LMethodID);
       end;
 
+    // client request converted to JSON string
     var LRequest := LJSONMethodObj.ToJSON;
 
     // then send it
@@ -896,10 +899,11 @@ begin
         LResponseStream.Seek(0, soFromBeginning);
         SetLength(LBytes, LResponseStream.Size);
         LResponseStream.Read(LBytes, LResponseStream.Size);
+        // parse incoming response from server
         LResponse := TEncoding.UTF8.GetString(LBytes);
 
-        var LResultP := AContext.GetResultPointer;
-        var LJSONResponseObj := TJSONObject.ParseJSONValue(TArray<Byte>(LBytes), 0);
+        LResultP := AContext.GetResultPointer;
+        LJSONResponseObj := TJSONObject.ParseJSONValue(TArray<Byte>(LBytes), 0);
         var LError: TJSONValue;
         try
           LError := LJSONResponseObj.FindValue(SERROR);
@@ -997,7 +1001,7 @@ begin
                         end;
                         ftCurr: begin
                           // Currency cannot be extracted successfully, but double can.
-                          LJSONResponseObj.TryGetValue<Double>(LResultPathName, PDouble(LResultP)^);
+                          PCurrency(LResultP)^ := LJSONResponseObj.GetValue<Double>(LResultPathName, 0.0);
                         end;
                         ftDouble, ftExtended, ftSingle:
                         begin
@@ -1671,7 +1675,7 @@ begin
                   LParamPosition := I;
 
                 // Set up value in case it has an error
-                if  (LJSONRequestObj.ClassType <> TJSONObject) and
+                if  (LJSONRequestObj is TJSONObject) and
                     not LJSONRequestObj.TryGetValue<string>(LParamName, LParseParamValue) then
                   begin
                     var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
@@ -1682,7 +1686,7 @@ begin
                   end;
 
                 var LTypeKind  := LParams[I].ParamType.TypeKind;
-                LJSONState := TJSONState(Ord(High(TJSONState)) + Ord(LTypeKind));
+                // LJSONState := TJSONState(Ord(High(TJSONState)) + Ord(LTypeKind));
                 // params may be by name or by position, parse incoming client JSON requests
                 case LTypeKind of
                   tkArray,
@@ -2021,12 +2025,25 @@ begin
                             begin
                               // ftCurr, ftDouble
                               var LValue: Double;
-                              if not LJSONRequestObj.TryGetValue<Double>(LParamName, LValue) then
+                              var LParamValue := LJSONRequestObj.FindValue(LParamName);
+                              if Assigned(LParamValue) then
+                                begin
+//                                  LValue := // LJSONRequestObj.GetValue<Double>(LParamName);
+//                                    LParamValue.AsType<Double>;
+                                  var LValueStr := LParamValue.Value;
+                                  TextToFloat(LValueStr, LValue, System.SysUtils.FormatSettings);
+                                end else
                                 begin
                                   var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
                                   var LParamElem := LParamsArr[I];
                                   LValue := LParamElem.AsType<Double>;
                                 end;
+//                              if not LJSONRequestObj.TryGetValue<Double>(LParamName, LValue) then
+//                                begin
+//                                  var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
+//                                  var LParamElem := LParamsArr[I];
+//                                  LValue := LParamElem.AsType<Double>;
+//                                end;
                               LArg := TValue.From(LValue);
                             end;
                         end; // ftDouble, ftSingle, etc...
@@ -2112,10 +2129,10 @@ begin
                             ftComp: begin
                               //
                             end;
-//                            ftCurr: begin
-//                              LJSONResultObj.AddPair(SRESULT, LResult.AsCurrency);
-//                            end;
-                            ftCurr, ftDouble, ftExtended, ftSingle:
+                            ftCurr: begin
+                              LJSONResultObj.AddPair(SRESULT, LResult.AsCurrency);
+                            end;
+                            ftDouble, ftExtended, ftSingle:
                             begin
                               if (LTypeInfo = System.TypeInfo(TDate)) or
                                  (LTypeInfo = System.TypeInfo(TTime)) or
@@ -2184,13 +2201,14 @@ begin
                 LJSONResultObj.AddPair(SERROR, LJSONErrorObj);
               end;
           end;
-          // add ID here
+          // add Notification ID here
           if not LIsNotification then
             begin
               if LIDIsNumber then LJSONResultObj.AddPair(SID, LJSONRPCRequestID) else
               if LIDIsString then LJSONResultObj.AddPair(SID, LJSONRPCRequestIDString);
             end;
 
+          // Convert the JSON object to JSON
           var LJSONResult := LJSONResultObj.ToJSON;
           var LJSONResultBytes: TBytes; var LCount: NativeInt;
           DoBeforeDispatchJSONRPC(LJSONResult);

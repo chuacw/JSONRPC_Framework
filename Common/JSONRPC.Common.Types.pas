@@ -221,7 +221,6 @@ var
 {$IF SizeOf(Extended) > SizeOf(Double)}
   {$DEFINE HasExtended}
 {$IFEND}
-
 implementation
 
 uses

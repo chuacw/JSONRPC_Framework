@@ -4,7 +4,7 @@ interface
 
 uses
   System.Types, JSONRPC.User.SomeTypes, JSONRPC.InvokeRegistry,
-  Velthuis.BigDecimals, Velthuis.BigIntegers;
+  Velthuis.BigDecimals, Velthuis.BigIntegers, Neslib.MultiPrecision;
 
 type
 
@@ -21,6 +21,12 @@ type
     function GetSomeDate(const ADateTime: TDateTime): TDateTime;
     function AddDoubles(A, B: Float64): Float64;
     function Combine(const Str1, Str2: string): string;
+
+    { Neslib.MultiPrecision }
+    {$IF DECLARED(Neslib.MultiPrecision)}
+    function SendDoubleDouble(const Value: DoubleDouble): DoubleDouble;
+    function SendQuadDouble(const Value: QuadDouble): QuadDouble;
+    {$ENDIF}
 
     function subtract(minuend, subtrahend: NativeInt): NativeInt;
     function AddString(const X: string; const Y: string): string;
@@ -142,6 +148,18 @@ function TSomeJSONRPC.GetSomeDate(const ADateTime: TDateTime): TDateTime;
 begin
   Result := IncDay(ADateTime, 1);
 end;
+
+{$IF DECLARED(Neslib.MultiPrecision)}
+function TSomeJSONRPC.SendDoubleDouble(const Value: DoubleDouble): DoubleDouble;
+begin
+  Result := Value;
+end;
+
+function TSomeJSONRPC.SendQuadDouble(const Value: QuadDouble): QuadDouble;
+begin
+  Result := Value;
+end;
+{$ENDIF}
 
 function TSomeJSONRPC.SendEnum(const A: TEnum): string;
 begin
