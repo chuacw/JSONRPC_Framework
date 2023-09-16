@@ -87,7 +87,7 @@ type
   InvRegClassEntry = record
     ClassType: TClass;
     Proc: TCreateInstanceProc;
-  end;
+  end align 16;
 
   eHeaderMethodType = (hmtAll, hmtRequest, hmtResponse);
 
@@ -98,7 +98,7 @@ type
   IntfExceptionItem = record
     ClassType: TClass;
     MethodNames: string;
-  end;
+  end align 16;
 
   TExceptionItemArray = TArray<IntfExceptionItem>;
 
@@ -114,7 +114,7 @@ type
 {$ELSE}
     ReturnParamNames: string;                 { Return Parameter names      }
 {$ENDIF}
-  end;
+  end align 16;
 
   TInterfaceMapItemArray = TArray<InterfaceMapItem>;
 
@@ -183,7 +183,7 @@ type
   TDynToClear = record
     P: Pointer;
     Info: PTypeInfo;
-  end;
+  end align 16;
 
   TDataContext = class
   protected

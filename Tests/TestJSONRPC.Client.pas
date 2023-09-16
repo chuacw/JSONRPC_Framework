@@ -180,7 +180,7 @@ end;
 
 procedure TTestJSONRPCClient.SendCurrency(const Value: Currency);
 var
-  LCurrency, LResult: Currency;
+  LResult: Currency;
 begin
   LResult := FSomeRPC.SendCurrency(Value);
   Assert.IsTrue(SameValue(Value, LResult), 'Currencies are not the same!');

@@ -34,7 +34,7 @@ type
   TEthSyncing = record
     Syncing: Boolean;
     startingBlock: HexNumber; currentBlock: HexNumber; highestBlock: HexNumber;
-  end;
+  end align 16;
 
   TransactionObject = record
     from: Web3Address;
@@ -61,14 +61,14 @@ type
     contractAddress: Web3Address;
     logs: TArray<log>;
     logsBloom: BloomFilter;
-  end;
+  end align 16;
 
   Withdrawal = record
     index: HexNumber;
     validatorIndex: HexNumber;
     address: Web3Address;
     amount: HexNumber;
-  end;
+  end align 16;
 
   getBlockByHashReturn = record
     baseFeePerGas: HexNumber;
@@ -94,7 +94,7 @@ type
     uncles: TArray<HexNumber>;
     withdrawals: TArray<Withdrawal>;
     withdrawalsRoot: HexNumber;
-  end;
+  end align 16;
 
 implementation
 

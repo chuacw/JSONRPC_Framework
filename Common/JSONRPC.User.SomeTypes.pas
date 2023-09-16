@@ -23,7 +23,7 @@ type
     property Data: Double read FData write FData;
     property SomeString: string read FSomeString write FSomeString;
     property &Array: TArray<Integer> read FArray write FArray;
-  end;
+  end align 16;
 
   [JsonSerialize(TJsonMemberSerialization.Fields)]
   TMyObject = record
@@ -46,7 +46,7 @@ type
     property Num: Integer read FNum write FNum;
     property Date: TDateTime read FDate write FDate;
     property AnotherObj: TAnotherObject read FAnotherObj write FAnotherObj;
-  end;
+  end align 16;
 
   TEnum = (enumA, enumB, enumC);
   TFixedIntegers = array[0..3] of Integer;

@@ -155,7 +155,6 @@
         <DCCReference Include="..\Common\JSONRPC.TransportWrapper.HTTP.pas"/>
         <DCCReference Include="..\Common\JSONRPC.Common.FixBuggyNativeTypes.pas"/>
         <DCCReference Include="..\Common\JSONRPC.Common.RecordHandlers.pas"/>
-        <DCCReference Include="..\ThirdParty\Neslib.MultiPrecision.RecordHandlers.pas"/>
         <None Include="..\Server\README.md"/>
         <None Include="..\Client\README.md"/>
         <None Include="..\Common\README.md"/>

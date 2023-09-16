@@ -163,7 +163,7 @@ type
   public
     property code: Integer read Fcode write Fcode;
     property message: string read Fmessage write Fmessage;
-  end;
+  end align 16;
 
   TTrackedMemoryStream = class;
 

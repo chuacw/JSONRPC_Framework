@@ -35,8 +35,7 @@ uses
   JSONRPC.TransportWrapper.HTTP in '..\Common\JSONRPC.TransportWrapper.HTTP.pas',
   JSONRPC.Common.FixBuggyNativeTypes in '..\Common\JSONRPC.Common.FixBuggyNativeTypes.pas',
   DUnitX.Loggers.XML.NUnit,
-  JSONRPC.Common.RecordHandlers in '..\Common\JSONRPC.Common.RecordHandlers.pas',
-  Neslib.MultiPrecision.RecordHandlers in '..\ThirdParty\Neslib.MultiPrecision.RecordHandlers.pas';
+  JSONRPC.Common.RecordHandlers in '..\Common\JSONRPC.Common.RecordHandlers.pas';
 
 // Comments to prevent {$IFNDEF } from being overwritten
 

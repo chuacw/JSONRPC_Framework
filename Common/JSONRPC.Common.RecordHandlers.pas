@@ -44,7 +44,7 @@ type
       const ATValueToJSON: TTValueToJSON;
       const AJSONToTValue: TJSONToTValue
     );
-  end;
+  end align 16;
   PRecordHandlers = ^TRecordHandlers;
 
 /// <summary>
