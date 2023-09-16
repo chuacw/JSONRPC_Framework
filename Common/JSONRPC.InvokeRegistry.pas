@@ -1072,8 +1072,10 @@ begin
           AddUStrToClear(P);
         end;
 {$ENDIF}
-      tkInteger, tkEnumeration:
+      tkInteger, tkEnumeration: begin
+        // Integers and enums are allocated 4 bytes
         P := AllocData(SizeOf(Integer));
+      end;
       tkInt64:
         P := AllocData(Sizeof(Int64));
       tkVariant:

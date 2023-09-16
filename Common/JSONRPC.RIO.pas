@@ -575,9 +575,13 @@ var
   LJSONMethodObj: TJSONObject;
 begin
 
-// create something like this
+// create something like this, with PassParamsByName
+
 // {"jsonrpc": "2.0", "method": "CallSomeMethod", "id": 1}
-// {"jsonrpc": "2.0", "method": "AddSomeXY", "params": {"x": 5, "y": 6}, "id": 1}
+// {"jsonrpc": "2.0", "method": "AddSomeXY", "params": {"x": 5, "y": 6}, "id": 2}
+
+// create something like this, with PassParamsByPosition
+// {"jsonrpc": "2.0", "method": "AddSomeXY", "params": {5, 6}, "id": 2}
 
   LJSONMethodObj := TJSONObject.Create;
   try
@@ -964,6 +968,7 @@ begin
                     LJSONResponseObj.TryGetValue<string>(LResultPathName, LResultValue);
                     if IsBoolType(AMethMD.ResultInfo) then
                       begin
+                        //
                         case GetTypeData(AMethMD.ResultInfo)^.OrdType of
                           otSByte, otUByte: begin
                             PBoolean(LResultP)^ := SameText(LResultValue, 'True');
@@ -990,10 +995,11 @@ begin
                         ftComp: begin
                           LJSONResponseObj.TryGetValue<Comp>(LResultPathName, PComp(LResultP)^);
                         end;
-//                        ftCurr: begin
-//                          LJSONResponseObj.TryGetValue<Currency>(LResultPathName, PCurrency(LResultP)^);
-//                        end;
-                        ftCurr, ftDouble, ftExtended, ftSingle:
+                        ftCurr: begin
+                          // Currency cannot be extracted successfully, but double can.
+                          LJSONResponseObj.TryGetValue<Double>(LResultPathName, PDouble(LResultP)^);
+                        end;
+                        ftDouble, ftExtended, ftSingle:
                         begin
                           if (LTypeInfo = System.TypeInfo(TDate)) or
                              (LTypeInfo = System.TypeInfo(TTime)) or
@@ -1003,7 +1009,7 @@ begin
                               LJSONResponseObj.TryGetValue<string>(LResultPathName, LDateTimeStr);
                               PDateTime(LResultP)^ := ISO8601ToDate(LDateTimeStr, False);
                             end else
-                          if (LTypeInfo = System.TypeInfo(Double)) or (LTypeInfo = System.TypeInfo(Currency)) then
+                          if LTypeInfo = System.TypeInfo(Double) then
                             begin
                               LJSONResponseObj.TryGetValue<Double>(LResultPathName, PDouble(LResultP)^);
                             end else

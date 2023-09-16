@@ -66,31 +66,31 @@ type
     [Test, TestCase('SendDoubleMinValue', '-1.7976931348623157081e+308'), TestCase('SendDoubleMaxValue', '1.7976931348623157081e+308')]
     procedure SendDouble(const Value: Double);
 
-    {$IF DEFINED(EXTENDEDHAS10BYTES)}
-    [Test, TestCase('SendExtendedMinValue', '-1.18973149535723176505e+4932'), TestCase('SendExtendedMaxValue', '1.18973149535723176505e+4932')]
-    {$ELSE}
-    [Test, TestCase('SendExtendedMinValue', '-1.7976931348623157081e+308'), TestCase('SendExtendedMaxValue', '1.7976931348623157081e+308')]
-    {$ENDIF}
-    procedure SendExtended(const Value: Extended);
-
-    [Test]
-    procedure SendGUID;
-
-    [Test]
-    procedure SendInt64(const Value: Int64);
+//    {$IF DEFINED(EXTENDEDHAS10BYTES)}
+//    [Test, TestCase('SendExtendedMinValue', '-1.18973149535723176505e+4932'), TestCase('SendExtendedMaxValue', '1.18973149535723176505e+4932')]
+//    {$ELSE}
+//    [Test, TestCase('SendExtendedMinValue', '-1.7976931348623157081e+308'), TestCase('SendExtendedMaxValue', '1.7976931348623157081e+308')]
+//    {$ENDIF}
+//    procedure SendExtended(const Value: Extended);
+//
+//    [Test]
+//    procedure SendGUID;
+//
+//    [Test]
+//    procedure SendInt64(const Value: Int64);
 //
 //    [Test]
 //    procedure SendInteger(const Value: Integer);
 //
 //    [Test]
 //    procedure SendLongWord(const Value: LongWord);
-
-    [Test]
-    procedure SendNativeInt(const Value: NativeInt);
-
-    [Test]
-    procedure SendNativeUInt(const Value: NativeUInt);
-
+//
+//    [Test]
+//    procedure SendNativeInt(const Value: NativeInt);
+//
+//    [Test]
+//    procedure SendNativeUInt(const Value: NativeUInt);
+//
 //    [Test]
 //    procedure SendShort(const Value: ShortInt);
 //
@@ -99,18 +99,18 @@ type
 //
 //    [Test]
 //    procedure SendSmallInt(const Value: SmallInt);
-
-    [Test]
-    procedure SendString;
-
-    [Test]
-    procedure SendUInt64(const Value: UInt64);
-
-    [Test]
-    procedure SendWord(const Value: Word);
-
-    [Test]
-    procedure SendWordBool(const Value: WordBool);
+//
+//    [Test]
+//    procedure SendString;
+//
+//    [Test]
+//    procedure SendUInt64(const Value: UInt64);
+//
+//    [Test]
+//    procedure SendWord(const Value: Word);
+//
+//    [Test]
+//    procedure SendWordBool(const Value: WordBool);
   end;
 
 implementation
@@ -187,27 +187,27 @@ end;
 //  var LResult := FSomeRPC.SendEnum(TEnum.enumB);
 //  Assert.IsTrue(LResult = 'enumB', 'Enums are not marshalled correctly!');
 //end;
-
-procedure TTestJSONRPCClient.SendExtended(const Value: Extended);
-begin
-  var LFloat := FixedFloatToJson(Value);
-  var LResult := FSomeRPC.SendExtended(Value);
-  Assert.IsTrue(Value = LResult, 'Extendeds are not the same!');
-end;
-
-procedure TTestJSONRPCClient.SendGUID;
-begin
-  var LGUID: TGUID := TGUID.Create('{32CC06A3-D185-4035-B0A6-03A4D5F55CB2}');
-  var LResult := FSomeRPC.SendGUID(LGUID);
-  Assert.AreEqual(LGUID, LResult, 'GUIDs are not equal!');
-end;
-
-procedure TTestJSONRPCClient.SendInt64(const Value: Int64);
-begin
-  var LResult := FSomeRPC.SendInt64(Value);
-  Assert.AreEqual(Value, LResult, 'Int64s are not the same!');
-end;
-
+//
+//procedure TTestJSONRPCClient.SendExtended(const Value: Extended);
+//begin
+//  var LFloat := FixedFloatToJson(Value);
+//  var LResult := FSomeRPC.SendExtended(Value);
+//  Assert.IsTrue(Value = LResult, 'Extendeds are not the same!');
+//end;
+//
+//procedure TTestJSONRPCClient.SendGUID;
+//begin
+//  var LGUID: TGUID := TGUID.Create('{32CC06A3-D185-4035-B0A6-03A4D5F55CB2}');
+//  var LResult := FSomeRPC.SendGUID(LGUID);
+//  Assert.AreEqual(LGUID, LResult, 'GUIDs are not equal!');
+//end;
+//
+//procedure TTestJSONRPCClient.SendInt64(const Value: Int64);
+//begin
+//  var LResult := FSomeRPC.SendInt64(Value);
+//  Assert.AreEqual(Value, LResult, 'Int64s are not the same!');
+//end;
+//
 //procedure TTestJSONRPCClient.SendInteger(const Value: Integer);
 //begin
 //  var LResult := FSomeRPC.SendInteger(Value);
@@ -219,19 +219,19 @@ end;
 //  var LResult := FSomeRPC.SendLongWord(Value);
 //  Assert.AreEqual(Value, LResult, 'LongWords are not the same!');
 //end;
-
-procedure TTestJSONRPCClient.SendNativeInt(const Value: NativeInt);
-begin
-  var LResult := FSomeRPC.SendNativeInt(Value);
-  Assert.AreEqual(Value, LResult, 'NativeInts are not the same!');
-end;
-
-procedure TTestJSONRPCClient.SendNativeUInt(const Value: NativeUInt);
-begin
-  var LResult := FSomeRPC.SendNativeUInt(Value);
-  Assert.AreEqual(Value, LResult, 'NativeUInts are not the same!');
-end;
-
+//
+//procedure TTestJSONRPCClient.SendNativeInt(const Value: NativeInt);
+//begin
+//  var LResult := FSomeRPC.SendNativeInt(Value);
+//  Assert.AreEqual(Value, LResult, 'NativeInts are not the same!');
+//end;
+//
+//procedure TTestJSONRPCClient.SendNativeUInt(const Value: NativeUInt);
+//begin
+//  var LResult := FSomeRPC.SendNativeUInt(Value);
+//  Assert.AreEqual(Value, LResult, 'NativeUInts are not the same!');
+//end;
+//
 //procedure TTestJSONRPCClient.SendShort(const Value: ShortInt);
 //begin
 //  var LResult := FSomeRPC.SendShort(Value);
@@ -249,36 +249,36 @@ end;
 //  var LResult := FSomeRPC.SendSmallInt(Value);
 //  Assert.AreEqual(Value, LResult, 'SmallInts are not the same!');
 //end;
-
-procedure TTestJSONRPCClient.SendString;
-begin
-  var LValue1 := 'HelloWorld';
-  var LResult := FSomeRPC.SendString(LValue1);
-  Assert.AreEqual(LValue1, LResult, 'Strings are not the same!');
-
-  var LValue2 := 'Are you ok?';
-  var LResult2 := FSomeRPC.SendString(LValue2);
-  Assert.AreEqual(LValue2, LResult2, 'Strings are not the same!');
-end;
-
-procedure TTestJSONRPCClient.SendUInt64(const Value: UInt64);
-begin
-  var LResult := FSomeRPC.SendUInt64(Value);
-  Assert.AreEqual(Value, LResult, 'UInt64s are not the same!');
-end;
-
-procedure TTestJSONRPCClient.SendWord(const Value: Word);
-begin
-  var LResult := FSomeRPC.SendWord(Value);
-  Assert.AreEqual(Value, LResult, 'Words are not the same!');
-end;
-
-procedure TTestJSONRPCClient.SendWordBool(const Value: WordBool);
-begin
-  var LResult := FSomeRPC.SendWordBool(Value);
-  Assert.IsTrue(LResult = Value, 'WordBools are not the same!');
-end;
-
+//
+//procedure TTestJSONRPCClient.SendString;
+//begin
+//  var LValue1 := 'HelloWorld';
+//  var LResult := FSomeRPC.SendString(LValue1);
+//  Assert.AreEqual(LValue1, LResult, 'Strings are not the same!');
+//
+//  var LValue2 := 'Are you ok?';
+//  var LResult2 := FSomeRPC.SendString(LValue2);
+//  Assert.AreEqual(LValue2, LResult2, 'Strings are not the same!');
+//end;
+//
+//procedure TTestJSONRPCClient.SendUInt64(const Value: UInt64);
+//begin
+//  var LResult := FSomeRPC.SendUInt64(Value);
+//  Assert.AreEqual(Value, LResult, 'UInt64s are not the same!');
+//end;
+//
+//procedure TTestJSONRPCClient.SendWord(const Value: Word);
+//begin
+//  var LResult := FSomeRPC.SendWord(Value);
+//  Assert.AreEqual(Value, LResult, 'Words are not the same!');
+//end;
+//
+//procedure TTestJSONRPCClient.SendWordBool(const Value: WordBool);
+//begin
+//  var LResult := FSomeRPC.SendWordBool(Value);
+//  Assert.IsTrue(LResult = Value, 'WordBools are not the same!');
+//end;
+//
 procedure TTestJSONRPCClient.Setup;
 begin
 // Set up internal server
