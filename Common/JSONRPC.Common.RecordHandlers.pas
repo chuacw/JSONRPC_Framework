@@ -1,5 +1,7 @@
 unit JSONRPC.Common.RecordHandlers;
 
+{$CODEALIGN 16}
+
 interface
 
 uses

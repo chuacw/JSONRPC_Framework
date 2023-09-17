@@ -1,5 +1,7 @@
 unit JSONRPC.User.SomeTypes.Impl;
 
+{$CODEALIGN 16}
+
 interface
 
 uses

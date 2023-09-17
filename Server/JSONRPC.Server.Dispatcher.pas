@@ -1,5 +1,7 @@
 unit JSONRPC.Server.Dispatcher;
 
+{$CODEALIGN 16}
+
 interface
 
 uses

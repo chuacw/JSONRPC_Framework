@@ -1,5 +1,7 @@
 unit JSONRPC.TransportWrapper.HTTP;
 
+{$CODEALIGN 16}
+
 interface
 
 uses

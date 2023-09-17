@@ -1,5 +1,7 @@
 unit JSONRPC.ServerWebBroker.Runner;
 
+{$CODEALIGN 16}
+
 interface
 
 uses

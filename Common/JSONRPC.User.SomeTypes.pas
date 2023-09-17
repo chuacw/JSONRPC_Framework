@@ -1,11 +1,16 @@
 unit JSONRPC.User.SomeTypes;
 
+{$CODEALIGN 16}
+
 interface
 
 uses
   JSONRPC.Common.Types, System.Classes, System.JSON.Serializers,
-  JSONRPC.RIO, Velthuis.BigDecimals, Velthuis.BigIntegers,
-  Neslib.MultiPrecision;
+  JSONRPC.RIO, Velthuis.BigDecimals, Velthuis.BigIntegers;
+
+{$IF NOT DECLARED(Velthuis.BigDecimals) AND NOT DECLARED(Velthuis.BigIntegers)}
+  {$MESSAGE HINT 'Include Velthuis.BigDecimals to automatically enable SendExtended'}
+{$ENDIF}
 
 type
 
@@ -71,7 +76,13 @@ type
     function GetEnum(const A: TEnum): TEnum;
     function SendEnum(const A: TEnum): string;
 
+    {$IF DECLARED(Velthuis.BigIntegers)}
     function SendBigInteger(const Value: BigInteger): BigInteger;
+    {$ENDIF}
+    {$IF DECLARED(Velthuis.BigDecimals)}
+    function SendExtended(const Value: BigDecimal): BigDecimal; overload;
+    {$ENDIF}
+
     function SendBool(const Value: Boolean): Boolean;
     function SendByte(const Value: Byte): Byte;
     function SendByteBool(const Value: ByteBool): ByteBool;
@@ -79,10 +90,11 @@ type
     function SendCurrency(const Value: Currency): Currency;
     function SendDouble(const Value: Double): Double;
 
+    {$IF DECLARED(Neslib.MultiPrecision)}
     function SendDoubleDouble(const Value: DoubleDouble): DoubleDouble;
     function SendQuadDouble(const Value: QuadDouble): QuadDouble;
+    {$ENDIF}
 
-    function SendExtended(const Value: BigDecimal): BigDecimal; overload;
     function SendGUID(const Value: TGUID): TGUID;
     function SendInt64(const Value: Int64): Int64;
     function SendInteger(const Value: Integer): Integer;
@@ -100,6 +112,10 @@ type
     function SendIntegers(const A: TArray<Integer>): TArray<Integer>; safecall;
     function SendFixedIntegers(const A: TFixedIntegers): TFixedIntegers; safecall;
     function SendData(const A: TArray<string>): TArray<string>; overload;
+    function SendData(const A: TArray<Boolean>): TArray<Boolean>; overload;
+    function SendData(const A: TArray<Integer>): TArray<Integer>; overload;
+    function SendData(const A: TArray<Single>): TArray<Single>; overload;
+    function SendData(const A: TArray<Double>): TArray<Double>; overload;
     function SendData(const A: TArray<string>; const AMsg: string): string; overload;
     function SendData(const A: TArray<string>; const ANumber: Integer): string; overload;
     function SendData(const A: TArray<TArray<string>>): string; overload;

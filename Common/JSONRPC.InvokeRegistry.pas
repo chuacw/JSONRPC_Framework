@@ -1,5 +1,7 @@
 unit JSONRPC.InvokeRegistry;
 
+{$CODEALIGN 16}
+
 interface
 
 uses

@@ -1,5 +1,7 @@
 unit JSONRPC.Common.Types;
 
+{$CODEALIGN 16}
+
 interface
 
 uses
@@ -303,6 +305,7 @@ begin
 end;
 
 initialization
+
   RegisterRecordHandler(TypeInfo(BigDecimal),
     procedure(
       const APassParamByPosOrName: TPassParamByPosOrName;
@@ -349,7 +352,7 @@ initialization
 
   // Delphi cannot handle the precision of Extended
   // if the client is 32-bit and the server is 64-bit
-  // so convert to BigDecimal
+  // then convert to BigDecimal
 
   RegisterRecordHandler(TypeInfo(Extended),
     // NativeToJSON

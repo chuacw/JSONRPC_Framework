@@ -1,5 +1,7 @@
 unit JSONRPC.WebBrokerJSONRPC;
 
+{$CODEALIGN 16}
+
 interface
 
 uses

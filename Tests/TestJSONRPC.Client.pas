@@ -3,7 +3,12 @@ unit TestJSONRPC.Client;
 interface
 
 uses
-  DUnitX.TestFramework, JSONRPC.User.SomeTypes, JSONRPC.ServerBase.Runner;
+  DUnitX.TestFramework, JSONRPC.User.SomeTypes, JSONRPC.ServerBase.Runner,
+  Velthuis.BigDecimals, Velthuis.BigIntegers;
+
+{$IF NOT DECLARED(Velthuis.BigDecimals) AND NOT DECLARED(Velthuis.BigIntegers)}
+  {$MESSAGE HINT 'Include Velthuis.BigDecimals to automatically enable SendExtended'}
+{$ENDIF}
 
 {$IF SizeOf(Extended) >= 10}
   {$DEFINE EXTENDEDHAS10BYTES}
@@ -74,12 +79,26 @@ type
     procedure SendQuadDouble;
     {$ENDIF}
 
-    {$IF DEFINED(EXTENDEDHAS10BYTES)}
-    [Test, TestCase('SendExtendedMinValue', '-1.18973149535723176505e+4932'), TestCase('SendExtendedMaxValue', '1.18973149535723176505e+4932')]
-    {$ELSE}
-    [Test, TestCase('SendExtendedMinValue', '-1.7976931348623157081e+308'), TestCase('SendExtendedMaxValue', '1.7976931348623157081e+308')]
+    {$IF DECLARED(Velthuis.BigDecimals)}
+      {$IF DEFINED(EXTENDEDHAS10BYTES)}
+      [Test, TestCase('SendExtendedMinValue', '-1.18973149535723176505e+4932'), TestCase('SendExtendedMaxValue', '1.18973149535723176505e+4932')]
+      {$ELSE}
+      [Test, TestCase('SendExtendedMinValue', '-1.7976931348623157081e+308'), TestCase('SendExtendedMaxValue', '1.7976931348623157081e+308')]
+      {$ENDIF}
+      procedure SendExtended(const Value: Extended);
     {$ENDIF}
-    procedure SendExtended(const Value: Extended);
+
+    [Test, TestCase('SendDataBooleanArray', '[True,True]')]
+    procedure SendData(const A: TArray<Boolean>); overload;
+
+    [Test, TestCase('SendDataIntegerArray', '[1234,90916]')]
+    procedure SendData(const A: TArray<Integer>); overload;
+
+    [Test, TestCase('SendDataSingleArray', '[1.0,3.1]')]
+    procedure SendData(const A: TArray<Single>); overload;
+
+    [Test, TestCase('SendDataDoubleArray', '[4.5,9.6]')]
+    procedure SendData(const A: TArray<Double>); overload;
 
     [Test]
     procedure SendGUID;
@@ -229,11 +248,51 @@ begin
   Assert.IsTrue(LResult = 'enumB', 'Enums are not marshalled correctly!');
 end;
 
+{$IF DECLARED(Velthuis.BigDecimals)}
 procedure TTestJSONRPCClient.SendExtended(const Value: Extended);
 begin
   var LFloat := FixedFloatToJson(Value);
   var LResult := FSomeRPC.SendExtended(Value);
   Assert.IsTrue(Value = LResult, 'Extendeds are not the same!');
+end;
+{$ENDIF}
+
+procedure TTestJSONRPCClient.SendData(const A: TArray<Boolean>);
+var
+  LValues,
+  LResult: TArray<Boolean>;
+begin
+  LValues := [True, True];
+  LResult := FSomeRPC.SendData(LValues);
+  Assert.AreEqual<TArray<Boolean>>(LResult, LValues, 'Boolean arrays are not equal!');
+end;
+
+procedure TTestJSONRPCClient.SendData(const A: TArray<Integer>);
+var
+  LValues, LResult: TArray<Integer>;
+begin
+  LValues := [1, 2, 3];
+  LResult := FSomeRPC.SendData(LValues);
+  Assert.AreEqual<TArray<Integer>>(LResult, LValues, 'Integer arrays are not equal!');
+end;
+
+procedure TTestJSONRPCClient.SendData(const A: TArray<Single>);
+var
+  LValues, LResult: TArray<Single>;
+begin
+  LValues := [1.0, 2.0];
+  LResult := FSomeRPC.SendData(LValues);
+  Assert.AreEqual<TArray<Single>>(LResult, LValues, 'Single arrays are not equal!');
+end;
+
+procedure TTestJSONRPCClient.SendData(const A: TArray<Double>);
+var
+  LValues,
+  LResult: TArray<Double>;
+begin
+  LValues := [1.0, 2.0];
+  LResult := FSomeRPC.SendData(LValues);
+  Assert.AreEqual<TArray<Double>>(LResult, LValues, 'Double arrays are not equal!');
 end;
 
 procedure TTestJSONRPCClient.SendGUID;

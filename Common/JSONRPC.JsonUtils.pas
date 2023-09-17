@@ -1,5 +1,7 @@
 unit JSONRPC.JsonUtils;
 
+{$CODEALIGN 16}
+
 interface
 
 uses
@@ -85,13 +87,24 @@ procedure WriteJSONResult(const AContext: TInvContext;
   AMethNum: Integer; const AMethMD: TIntfMethEntry; const AMethodID: Int64;
   AResponseValue: TValue; AJSONResponse: TStream);
 
-procedure CheckFloatType(AFloatType: TFloatType);
-procedure CheckTypeInfo(ATypeInfo: PTypeInfo);
+procedure CheckFloatType(AFloatType: TFloatType); inline;
+procedure CheckTypeInfo(ATypeInfo: PTypeInfo); inline;
+
+/// <summary>
+/// Adds the "jsonrpc": "2.0" into the header
+/// </summary>
+procedure AddJSONVersion(const AJSONObj: TJSONObject); inline;
+
 implementation
 
 uses
   JSONRPC.Common.Consts, System.JSON.Serializers,
   System.JSON.Readers, System.JSON.Writers;
+
+procedure AddJSONVersion(const AJSONObj: TJSONObject);
+begin
+  AJSONObj.AddPair(SJSONRPC, FloatToJson(2.0));
+end;
 
 procedure CheckFloatType(AFloatType: TFloatType);
 begin
@@ -362,7 +375,7 @@ begin
   // Write this {"jsonrpc": "2.0", "result": 19, "id": 1}
   var LJSONObject := TJSONObject.Create;
   try
-    LJSONObject.AddPair(SJSONRPC, FloatToJson(2.0));
+    AddJSONVersion(LJSONObject);
     case AMethMD.ResultInfo.Kind of
       tkInteger: LJSONObject.AddPair(SRESULT, AResponseValue.AsInteger);
       tkString, tkLString, tkUString:

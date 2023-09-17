@@ -21,13 +21,9 @@ uses
   JSONRPC.ServerBase.Runner in 'JSONRPC.ServerBase.Runner.pas',
   System.Net.ServerSocket in 'System.Net.ServerSocket.pas',
   JSONRPC.ServerIdHTTP.Runner in 'JSONRPC.ServerIdHTTP.Runner.pas',
-  JSONRPC.Common.RecordHandlers in '..\Common\JSONRPC.Common.RecordHandlers.pas',
-  Neslib.MultiPrecision.RecordHandlers in '..\ThirdParty\Neslib.MultiPrecision.RecordHandlers.pas';
+  JSONRPC.Common.RecordHandlers in '..\Common\JSONRPC.Common.RecordHandlers.pas';
 
 {$R *.res}
-
-//var
-// GJSONRPCServerListener: TJSONRPCServerRunner;
 
 procedure WritePrompt; inline;
 begin
