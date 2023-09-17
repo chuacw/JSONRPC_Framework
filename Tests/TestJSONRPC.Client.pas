@@ -62,8 +62,8 @@ type
     [Test, TestCase('SendByteBool', 'False'), TestCase('SendByteBool', 'True')]
     procedure SendByteBool(const Value: ByteBool);
 
-    [Test, TestCase('SendCardinalMinValue', '0'), TestCase('SendCardinalMaxValue', '4294967295')]
-    procedure SendCardinal(const Value: Cardinal);
+    [Test]
+    procedure SendCardinal;
 
     [Test, TestCase('SendCurrencyMinValue', '-922337203685477.5807'), TestCase('SendCurrencyMaxValue', '922337203685477.5807')]
     procedure SendCurrency(const Value: Currency);
@@ -191,10 +191,17 @@ begin
   Assert.AreEqual(Value, LResult, 'ByteBools are not the same!');
 end;
 
-procedure TTestJSONRPCClient.SendCardinal(const Value: Cardinal);
+procedure TTestJSONRPCClient.SendCardinal;
+var
+  LValue1, LValue2: Cardinal;
 begin
-  var LResult := FSomeRPC.SendCardinal(Value);
-  Assert.AreEqual(Value, LResult, 'Cardinals are not the same!');
+  LValue1 := Cardinal.MinValue;
+  var LResult := FSomeRPC.SendCardinal(LValue1);
+  Assert.AreEqual(LValue1, LResult, 'Cardinals are not the same!');
+
+  LValue2 := Cardinal.MaxValue;
+  LResult := FSomeRPC.SendCardinal(LValue2);
+  Assert.AreEqual(LValue2, LResult, 'Cardinals are not the same!');
 end;
 
 procedure TTestJSONRPCClient.SendCurrency(const Value: Currency);

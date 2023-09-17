@@ -1583,7 +1583,9 @@ end;
 
 // Method and parameter resolution, delete methods which do not match
 // the parameter type in the JSON object
-procedure RemoveMethodsNotMatchingParameterCount(var VMethods: TArray<TRttiMethod>;
+procedure RemoveMethodsNotMatchingParameterCount(
+  var VMethods: TArray<TRttiMethod>;
+  const AParamCount: Integer;
   const AJSONObject: TJSONObject);
 var
   LParamsValue: TJSONValue;
@@ -1595,25 +1597,22 @@ begin
   LIsObj := LParamsValue is TJSONObject;
   for var I := High(VMethods) downto Low(VMethods) do
     begin
-      DumpMethod(VMethods[I]);
       var LParams := VMethods[I].GetParameters;
-      if Length(LParams) = 0 then
-        Continue;
+
       // see https://www.jsonrpc.org/specification#parameter_structures
       case LIsObj of
         False: begin  // params is an array
-          if (Length(LParams) <> LParamsArray.Count) or (not MatchParameterType(LParams, LParamsArray, LIsObj)) then
+          if (Length(LParams) <> LParamsArray.Count) or
+             (not MatchParameterType(LParams, LParamsArray, LIsObj)) then
             Delete(VMethods, I, 1);
         end;
         True: begin   // params is an object
-          if (Length(LParams) <> LParamsObj.Count) or (not MatchParameterType(LParams, LParamsObj, LIsObj)) then
+          if (Length(LParams) <> LParamsObj.Count) or
+             (not MatchParameterType(LParams, LParamsObj, LIsObj)) then
             Delete(VMethods, I, 1);
         end;
       end;
     end;
-{$IF DEFINED(DEBUG)} // Figure out which methods are having issues...
-  DumpMethods(VMethods);
-{$ENDIF}
   Assert(Length(VMethods) >= 1, 'Expected to have at least 1 method!');
 end;
 
@@ -1636,7 +1635,7 @@ begin
     Exit(LMethods[0]);
 // If there are multiple methods with the given name, remove methods that
 // do not match the JSON parameters
-  RemoveMethodsNotMatchingParameterCount(LMethods, AJSONObject);
+  RemoveMethodsNotMatchingParameterCount(LMethods, AParamCount, AJSONObject);
   if Length(LMethods) >= 1 then
     Exit(LMethods[0]);
   Result := nil;
@@ -1729,7 +1728,6 @@ begin
             MethodNotFoundError;
           DumpJSONRequest(LJSONRequestObj);
           DumpMethod(LMethod);
-          // LMethod might be nil here
           try
             var LParams := LMethod.GetParameters;
             // SetLength so that parameters can be parsed by position or name
@@ -1774,8 +1772,7 @@ begin
                 // LJSONState := TJSONState(Ord(High(TJSONState)) + Ord(LTypeKind));
                 // params may be by name or by position, parse incoming client JSON requests
                 case LTypeKind of
-                  tkArray,
-                  tkDynArray: begin
+                  tkArray, tkDynArray: begin
                     var LParamJSONObject := LJSONRequestObj.FindValue(LParamName);
                     if Assigned(LParamJSONObject) then
                       DeserializeJSON(LParamJSONObject, LParams[I].ParamType.Handle, LArg) else
@@ -1830,31 +1827,22 @@ begin
                       end;
                   end;
                   tkEnumeration: begin // False, True, etc...
-//                    var LParamValue: string;
-//                    if not LJSONRequestObj.TryGetValue<string>(LParamName, LParamValue) then
-//                      begin
-//                        var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
-//                        LParamValue := LParamsArr[I].AsType<string>;
-//                      end;
-                      // Supported types are strings, numbers, boolean, null, objects and arrays
+                    // Supported types are strings, numbers, boolean, null, objects and arrays
                     if IsBoolType(LParseParamTypeInfo) then
                       begin
                         case GetTypeData(LParseParamTypeInfo)^.OrdType of
                           otSByte, otUByte: begin
                             LArg := TValue.From(Boolean(SameText(
-//                              LParamValue,
                               LParseParamValue,
                               'True')));
                           end;
                           otSWord, otUWord: begin
                             LArg := TValue.From(WordBool(SameText(
-//                              LParamValue,
                               LParseParamValue,
                               'True')));
                           end;
                           otSLong, otULong: begin
                             LArg := TValue.From(LongBool(SameText(
-//                              LParamValue,
                               LParseParamValue,
                             'True')));
                           end;
@@ -1862,24 +1850,13 @@ begin
                       end else
                       begin // Really an enumeration
                         var LEnumValue := GetEnumValue(LParseParamTypeInfo,
-//                              LParamValue
-                              LParseParamValue
+                          LParseParamValue
                         );
                         TValue.Make(@LEnumValue, LParseParamTypeInfo, LArg);
                       end;
                   end;
                   tkString, tkLString, tkUString, tkWString: begin
-//                    var LParamValue: string;
-//                    if not LJSONRequestObj.TryGetValue<string>(LParamName, LParamValue) then
-//                      begin
-//                        var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
-//                        var LParamElem := LParamsArr[I];
-//                        LParamValue := LParamElem.AsType<string>;
-//                      end;
-                    LArg := TValue.From<string>(
-//                              LParamValue
-                              LParseParamValue
-                    );
+                    LArg := TValue.From<string>(LParseParamValue);
                   end;
                   tkInteger: begin
                     var LTypeName := LParams[I].ParamType.Name;
@@ -1888,154 +1865,35 @@ begin
                       case LTypeInfo.TypeData.OrdType of
                         otSByte: begin // ShortInt
                           Assert(SameText(LTypeName, 'ShortInt'), 'Type mismatch!');
-//                          var LParamValue: ShortInt;
-//                          begin
-//                            if not LJSONRequestObj.TryGetValue<ShortInt>(LParamName, LParamValue) then
-//                              begin
-//                                var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
-//                                var LParamElem := LParamsArr[I];
-//                                LParamValue := LParamElem.AsType<ShortInt>;
-//                              end;
-                            LArg := TValue.From(
-//                            LParamValue
-                              StrToInt(LParseParamValue)
-                            );
-//                          end;
+                          LArg := TValue.From(StrToInt(LParseParamValue));
                         end;
                         otSWord: begin // SmallInt
                           Assert(SameText(LTypeName, 'SmallInt'), 'Type mismatch!');
-                          var LParamValue: SmallInt;
-                          begin
-                            if not LJSONRequestObj.TryGetValue<SmallInt>(LParamName, LParamValue) then
-                              begin
-                                var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
-                                var LParamElem := LParamsArr[I];
-                                LParamValue := LParamElem.AsType<SmallInt>;
-                              end;
-                            LArg := TValue.From(LParamValue);
-                          end;
+                            LArg := TValue.From(
+                              StrToInt(LParseParamValue)
+                            );
                         end;
                         otSLong: begin // Integer
                           Assert(SameText(LTypeName, 'Integer'), 'Type mismatch!');
-                          var LParamValue: Integer;
-                          begin
-                            if not LJSONRequestObj.TryGetValue<Integer>(LParamName, LParamValue) then
-                              begin
-                                var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
-                                var LParamElem := LParamsArr[I];
-                                LParamValue := LParamElem.AsType<Integer>;
-                              end;
-                            LArg := TValue.From(LParamValue);
-                          end;
+                            LArg := TValue.From(
+                              StrToInt(LParseParamValue)
+                            );
                         end;
                         otUByte: begin // Byte
                           Assert(SameText(LTypeName, 'Byte'), 'Type mismatch!');
-                          var LParamValue: Byte;
-                          begin
-                            if not LJSONRequestObj.TryGetValue<Byte>(LParamName, LParamValue) then
-                              begin
-                                var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
-                                var LParamElem := LParamsArr[I];
-                                LParamValue := LParamElem.AsType<Byte>;
-                              end;
-                            LArg := TValue.From(LParamValue);
-                          end;
+                          LArg := TValue.From(Byte(StrToInt(LParseParamValue)));
                         end;
                         otUWord: begin // Word
                           Assert(SameText(LTypeName, 'Word'), 'Type mismatch!');
-                          var LParamValue: Word;
-                          begin
-                            if not LJSONRequestObj.TryGetValue<Word>(LParamName, LParamValue) then
-                              begin
-                                var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
-                                var LParamElem := LParamsArr[I];
-                                LParamValue := LParamElem.AsType<Word>;
-                              end;
-                            LArg := TValue.From(LParamValue);
-                          end;
+                          LArg := TValue.From(StrToUInt(LParseParamValue));
                         end;
                         otULong: begin // Cardinal
                           Assert(SameText(LTypeName, 'Cardinal'), 'Type mismatch!');
-                          var LParamValue: Cardinal;
-                          begin
-                            if not LJSONRequestObj.TryGetValue<Cardinal>(LParamName, LParamValue) then
-                              begin
-                                var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
-                                var LParamElem := LParamsArr[I];
-                                LParamValue := LParamElem.AsType<Cardinal>;
-                              end;
-                            LArg := TValue.From(LParamValue);
-                          end;
+                          LArg := TValue.From(StrToUInt(LParseParamValue));
                         end;
                       end;
                     end;
 
-//                    if SameText(LTypeName, 'Byte') then
-//                      begin
-//                        var LParamValue: Byte;
-//                        if not LJSONRequestObj.TryGetValue<Byte>(LParamName, LParamValue) then
-//                          begin
-//                            var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
-//                            var LParamElem := LParamsArr[I];
-//                            LParamValue := LParamElem.AsType<Byte>;
-//                          end;
-//                        LArg := TValue.From(LParamValue);
-//                      end else
-//                    if SameText(LTypeName, 'Cardinal') then
-//                      begin
-//                        var LParamValue: Cardinal;
-//                        if not LJSONRequestObj.TryGetValue<Cardinal>(LParamName, LParamValue) then
-//                          begin
-//                            var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
-//                            var LParamElem := LParamsArr[I];
-//                            LParamValue := LParamElem.AsType<Cardinal>;
-//                          end;
-//                        LArg := TValue.From(LParamValue);
-//                      end else
-//                    if SameText(LTypeName, 'Integer') then
-//                      begin
-//                        var LParamValue: Integer;
-//                        if not LJSONRequestObj.TryGetValue<Integer>(LParamName, LParamValue) then
-//                          begin
-//                            var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
-//                            var LParamElem := LParamsArr[I];
-//                            LParamValue := LParamElem.AsType<Integer>;
-//                          end;
-//                        LArg := TValue.From(LParamValue);
-//                      end else
-//                    if SameText(LTypeName, 'ShortInt') then
-//                      begin
-//                        var LParamValue: ShortInt;
-//                        if not LJSONRequestObj.TryGetValue<ShortInt>(LParamName, LParamValue) then
-//                          begin
-//                            var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
-//                            var LParamElem := LParamsArr[I];
-//                            LParamValue := LParamElem.AsType<ShortInt>;
-//                          end;
-//                        LArg := TValue.From(LParamValue);
-//                      end else
-//                    if SameText(LTypeName, 'Int64') then
-//                      begin
-//                        var LParamValue: Int64;
-//                        if not LJSONRequestObj.TryGetValue<Int64>(LParamName, LParamValue) then
-//                          begin
-//                            var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
-//                            var LParamElem := LParamsArr[I];
-//                            LParamValue := LParamElem.AsType<Int64>;
-//                          end;
-//                        LArg := TValue.From(LParamValue);
-//                      end else
-//                    if SameText(LTypeName, 'UInt64') then
-//                      begin
-//                        var LParamValue: UInt64;
-//                        if not LJSONRequestObj.TryGetValue<UInt64>(LParamName, LParamValue) then
-//                          begin
-//                            var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
-//                            var LParamElem := LParamsArr[I];
-//                            LParamValue := LParamElem.AsType<UInt64>;
-//                          end;
-//                        LArg := TValue.From(LParamValue);
-//                      end
                   end;
                   tkInt64: begin
                     var LParamValue: Int64;
@@ -2127,26 +1985,26 @@ begin
                             end else
                             begin
                               // ftCurr, ftDouble
-                              var LValue: Double;
-                              var LParamValue := LJSONRequestObj.FindValue(LParamName);
-                              if Assigned(LParamValue) then
-                                begin
-//                                  LValue := // LJSONRequestObj.GetValue<Double>(LParamName);
-//                                    LParamValue.AsType<Double>;
-                                  var LValueStr := LParamValue.Value;
-                                  TextToFloat(LValueStr, LValue, System.SysUtils.FormatSettings);
-                                end else
-                                begin
-                                  var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
-                                  var LParamElem := LParamsArr[I];
-                                  LValue := LParamElem.AsType<Double>;
-                                end;
-//                              if not LJSONRequestObj.TryGetValue<Double>(LParamName, LValue) then
+                              var LValue: Double := StrToFloat(LParseParamValue);
+//                              var LParamValue := LJSONRequestObj.FindValue(LParamName);
+//                              if Assigned(LParamValue) then
+//                                begin
+////                                  LValue := // LJSONRequestObj.GetValue<Double>(LParamName);
+////                                    LParamValue.AsType<Double>;
+//                                  var LValueStr := LParamValue.Value;
+//                                  TextToFloat(LValueStr, LValue, System.SysUtils.FormatSettings);
+//                                end else
 //                                begin
 //                                  var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
 //                                  var LParamElem := LParamsArr[I];
 //                                  LValue := LParamElem.AsType<Double>;
 //                                end;
+////                              if not LJSONRequestObj.TryGetValue<Double>(LParamName, LValue) then
+////                                begin
+////                                  var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
+////                                  var LParamElem := LParamsArr[I];
+////                                  LValue := LParamElem.AsType<Double>;
+////                                end;
                               LArg := TValue.From(LValue);
                             end;
                         end; // ftDouble, ftSingle, etc...
