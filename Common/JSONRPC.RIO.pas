@@ -1430,7 +1430,7 @@ begin
     end;
     tkString, tkLString, tkUString, tkWString: begin
       // TJSONNumber inherits from TJSONString so we gotta make sure this is not a number
-      Result := (AJSONParam is TJSONString) and not (AJSONParam is TJSONNumber);
+      Result := (not (AJSONParam is TJSONNumber)) and (AJSONParam is TJSONString);
     end;
   else
     Result := False;

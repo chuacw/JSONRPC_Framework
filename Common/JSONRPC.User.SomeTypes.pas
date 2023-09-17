@@ -118,9 +118,9 @@ type
     function SendData(const A: TArray<Double>): TArray<Double>; overload;
     function SendData(const A: TArray<string>; const AMsg: string): string; overload;
     function SendData(const A: TArray<string>; const ANumber: Integer): string; overload;
-    function SendData(const A: TArray<TArray<string>>): string; overload;
-    function SendData(const A: TArray<TArray<Integer>>): string; overload;
-    function SendData(const A: TArray<TArray<Boolean>>): string; overload;
+    function SendData(const A: TArray<TArray<string>>): string; overload; safecall;
+    function SendData(const A: TArray<TArray<Integer>>): string; overload; safecall;
+    function SendData(const A: TArray<TArray<Boolean>>): string; overload; safecall;
 
     function SendSomeObj(AObj: TMyObject): TMyObject;
 

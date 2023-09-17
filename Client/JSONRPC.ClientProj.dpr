@@ -31,8 +31,8 @@ begin
   var LJSONRPC := GetSomeJSONRPC('http://localhost:8083');
   try
 
-    var LResult := LJSONRPC.SendExtended(Extended.MaxValue);
-    Assert(LResult = Extended.MaxValue, 'Roundtripping failed');
+    var LResultExtended := LJSONRPC.SendExtended(Extended.MaxValue);
+    Assert(LResultExtended= Extended.MaxValue, 'Roundtripping failed');
 
     // Pass by position, or pass by name, default = pass params by name
     PassParamsByPosition(LJSONRPC);
@@ -82,12 +82,10 @@ begin
         end;
     end;
 
-//    var LResultBigInt := LJSONRPC.SendBigInteger(UInt64.MaxValue);
-//    Assert(LResultBigInt = UInt64.MaxValue, 'Roundtripping failed');
+    var LResultBigInt := LJSONRPC.SendBigInteger(UInt64.MaxValue);
 
 // This needs to run in 32-bit and the server needs to run in 64-bit
     var LExtendedResult := LJSONRPC.SendExtended(Extended.MaxValue);
-    Assert(LExtendedResult = Extended.MaxValue, 'Roundtripping failed');
 
     // A safecall do not need any exception handler
     // it uses the one assigned by AssignSafeCallExceptionHandler
@@ -95,17 +93,16 @@ begin
     // This causes an exception that's trapped above
     LJSONRPC.SomeSafeCallException;
 
-//    var LEnum := LJSONRPC.GetEnum(enumB);
-//    var LResult := LJSONRPC.SendData([[False, False], [False, True]]);
-//    LResult := LJSONRPC.SendData([[5], [6]]);
-//    LResult := LJSONRPC.SendData([['A'], ['B']]);
-//    var LArray1: TMyArray := [1, 2, 3, 4, 5];
-//    var LFixedInt: TFixedIntegers;
-//    LFixedInt[0] := 1; LFixedInt[1] := 1; LFixedInt[2] := 2; LFixedInt[3] := 3;
-//    ArrayToJSONArray(LArray1, TypeInfo(TMyArray));
-//    var LArrayStr := SerializeRecord(@LArray1, TypeInfo(TMyArray));
-//    var LIntegers := LJSONRPC.SendIntegers([1, 2, 3, 4, 5]);
-//    var LFixedIntegers := LJSONRPC.SendFixedIntegers(LFixedInt);
+    var LEnum := LJSONRPC.GetEnum(enumB);
+    var LResult := LJSONRPC.SendData([[False, False], [False, True]]);
+    LResult := LJSONRPC.SendData([[5], [6]]);
+    LResult := LJSONRPC.SendData([['A'], ['B']]);
+
+    var LIntegers := LJSONRPC.SendIntegers([1, 2, 3, 4, 5]);
+
+    var LFixedInt: TFixedIntegers;
+    LFixedInt[0] := 1; LFixedInt[1] := 1; LFixedInt[2] := 2; LFixedInt[3] := 3;
+    var LFixedIntegers := LJSONRPC.SendFixedIntegers(LFixedInt);
 
     var LAnotherObj := TAnotherObject.Create(8.0, 'SomeValue');
     var LObj := TMyObject.Create('Hello', 5, Now, LAnotherObj);
@@ -119,7 +116,10 @@ begin
     Writeln('Doubles: ', LResultFloat);
     LJSONRPC.GetSomeBool(False);
     LJSONRPC.CallSomeMethod;
+
+    WriteLn('Program completed');
   except
+    WriteLn('Program did not complete');
   end;
   LJSONRPC := nil;
 end;

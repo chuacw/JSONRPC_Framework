@@ -147,8 +147,6 @@ begin
   inherited Create;
   FRequest := TMemoryStream.Create;
   FResponse := TMemoryStream.Create;
-//  FServer := TIdHTTPServer.Create(nil);
-//  FServer.OnCommandGet := HandlePostGet;
   CreateServer;
   FServerWrapper := TJSONRPCServerWrapper.Create(nil);
 end;
@@ -157,8 +155,6 @@ destructor TJSONRPCServerRunner.Destroy;
 begin
   FServerWrapper.Free;
   FIntf := nil;
-//  FServer.StopListening;
-//  FServer.Free;
   FreeServer;
 
   FResponse.Free;

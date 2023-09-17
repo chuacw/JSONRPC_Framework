@@ -29,8 +29,9 @@ type
 
     [TearDownFixture]
     procedure TearDown;
-    // Sample Methods
-    // Simple single Test
+
+    [Test]
+    procedure SendBigNumbers;
 
     [Test, TestCase('AddDoubles', '5.1,6.3')]
     procedure AddDoubles(A, B: Float64);
@@ -147,6 +148,19 @@ uses
   IPPeerServer, IPPeerAPI, JSONRPC.User.SomeTypes.Impl,
   JSONRPC.ServerIdHTTP.Runner, System.DateUtils,
   JSONRPC.Common.FixBuggyNativeTypes, System.Math;
+
+procedure TTestJSONRPCClient.SendBigNumbers;
+var
+  LBigNumber, LResult: BigDecimal;
+begin
+  LBigNumber := BigDecimal.Create('1.18973149535723176505e+4933');
+  LResult := FSomeRPC.SendExtended(LBigNumber);
+  Assert.IsTrue(LResult = LBigNumber, 'BigIntegers are not equal!');
+
+  LBigNumber := BigDecimal.Create('-1.18973149535723176505e+4933');
+  LResult := FSomeRPC.SendExtended(LBigNumber);
+  Assert.IsTrue(LResult = LBigNumber, 'BigIntegers are not equal!');
+end;
 
 procedure TTestJSONRPCClient.AddDoubles(A, B: Float64);
 begin
