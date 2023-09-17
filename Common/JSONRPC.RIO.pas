@@ -1406,6 +1406,9 @@ function MatchElementType(ARttiType: TRttiType; const AJSONParam: TJSONValue): B
 function MatchElementType(ATypeInfo: PTypeInfo; ATypeKind: TTypeKind; const AJSONParam: TJSONValue): Boolean; overload;
 begin
   case ATypeKind of
+    tkDynArray: begin
+      Assert(False, 'This code path is not tested');
+    end;
     tkEnumeration: begin // Boolean only
       if IsBoolType(ATypeInfo) then
         begin
@@ -1492,7 +1495,24 @@ begin
       DumpParamType(LMethodParam);
         case AIsObj of
           False: begin  // AJSONParams is an array
-            raise Exception.Create('This code path is not tested!');
+            Result := AJSONParams is TJSONArray;
+            LJSONValue := AJSONParams;
+            case LMethodParam.ParamType.TypeKind of
+              tkArray: begin
+                Result :=
+                  MatchElementType(
+                    TRttiArrayType(LMethodParam.ParamType).ElementType,
+                    TJSONArray(LJSONValue).Items[0]
+                  );
+              end;
+              tkDynArray: begin
+                Result :=
+                  MatchElementType(
+                    TRttiDynamicArrayType(LMethodParam.ParamType).ElementType,
+                    TJSONArray(LJSONValue).Items[0]
+                  );
+              end;
+            end;
           end;
           True: begin   // AJSONParams is an object
             LJSONPair := LJSONObj.Pairs[I];
