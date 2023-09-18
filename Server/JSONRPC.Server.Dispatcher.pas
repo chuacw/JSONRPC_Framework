@@ -16,29 +16,29 @@ type
     FServerWrapper: TJSONRPCServerWrapper;
 
     FOnDispatchedJSONRPC: TOnDispatchedJSONRPC;
-    FOnReceivedJSONRPC: TOnReceivedJSONRPC;
-    FOnSentJSONRPC: TOnSentJSONRPC;
+    FOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest;
+    FOnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse;
 
     procedure SetJSONRPCDispatcher(const Value: IJSONRPCDispatch);
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
 
     { IJSONRPCGetSetDispatchEvents }
     function GetOnDispatchedJSONRPC: TOnDispatchedJSONRPC;
-    function GetOnReceivedJSONRPC: TOnReceivedJSONRPC;
-    function GetOnSentJSONRPC: TOnSentJSONRPC;
+    function GetOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest;
+    function GetOnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse;
 
 
     procedure SetOnDispatchedJSONRPC(const AProc: TOnDispatchedJSONRPC);
-    procedure SetOnReceivedJSONRPC(const AProc: TOnReceivedJSONRPC);
-    procedure SetOnSentJSONRPC(const AProc: TOnSentJSONRPC);
+    procedure SetOnLogIncomingJSONRequest(const AProc: TOnLogIncomingJSONRequest);
+    procedure SetOnLogOutgoingJSONResponse(const AProc: TOnLogOutgoingJSONResponse);
 
 
     property OnDispatchedJSONRPC: TOnDispatchedJSONRPC read GetOnDispatchedJSONRPC
       write SetOnDispatchedJSONRPC;
-    property OnReceivedJSONRPC: TOnReceivedJSONRPC read GetOnReceivedJSONRPC
-      write SetOnReceivedJSONRPC;
-    property OnSentJSONRPC: TOnSentJSONRPC read GetOnSentJSONRPC
-      write SetOnSentJSONRPC;
+    property OnLogIncomingJSONRequest: TOnLogIncomingJSONRequest
+      read GetOnLogIncomingJSONRequest write SetOnLogIncomingJSONRequest;
+    property OnSentJSONRPC: TOnLogOutgoingJSONResponse read GetOnLogOutgoingJSONResponse
+      write SetOnLogOutgoingJSONResponse;
   public
     procedure DispatchJSONRPC(const ARequest: TStream; AResponse: TStream); virtual;
     destructor Destroy; override;
@@ -72,28 +72,28 @@ begin
     end;
 end;
 
-procedure TJSONRPCDispatchNode.SetOnReceivedJSONRPC(
-  const AProc: TOnReceivedJSONRPC);
+procedure TJSONRPCDispatchNode.SetOnLogIncomingJSONRequest(
+  const AProc: TOnLogIncomingJSONRequest);
 var
   LJSONRPCGetSetDispatchEvents: IJSONRPCGetSetDispatchEvents;
 begin
-  FOnReceivedJSONRPC := AProc;
+  FOnLogIncomingJSONRequest := AProc;
   if Supports(FJSONRPCDispatcher, IJSONRPCGetSetDispatchEvents, LJSONRPCGetSetDispatchEvents) or
     Supports(FServerWrapper, IJSONRPCGetSetDispatchEvents, LJSONRPCGetSetDispatchEvents) then
     begin
-      LJSONRPCGetSetDispatchEvents.OnReceivedJSONRPC := AProc;
+      LJSONRPCGetSetDispatchEvents.OnLogIncomingJSONRequest := AProc;
     end;
 end;
 
-procedure TJSONRPCDispatchNode.SetOnSentJSONRPC(const AProc: TOnSentJSONRPC);
+procedure TJSONRPCDispatchNode.SetOnLogOutgoingJSONResponse(const AProc: TOnLogOutgoingJSONResponse);
 var
   LJSONRPCGetSetDispatchEvents: IJSONRPCGetSetDispatchEvents;
 begin
-  FOnSentJSONRPC := AProc;
+  FOnLogOutgoingJSONResponse := AProc;
   if Supports(FJSONRPCDispatcher, IJSONRPCGetSetDispatchEvents, LJSONRPCGetSetDispatchEvents) or
     Supports(FServerWrapper, IJSONRPCGetSetDispatchEvents, LJSONRPCGetSetDispatchEvents) then
     begin
-      LJSONRPCGetSetDispatchEvents.OnSentJSONRPC := AProc;
+      LJSONRPCGetSetDispatchEvents.OnLogOutgoingJSONResponse := AProc;
     end;
 end;
 
@@ -107,7 +107,8 @@ end;
 destructor TJSONRPCDispatchNode.Destroy;
 begin
   FOnDispatchedJSONRPC := nil;
-  FOnReceivedJSONRPC := nil;
+  FOnLogIncomingJSONRequest := nil;
+  FOnLogOutgoingJSONResponse := nil;
   FServerWrapper.Free;
   inherited;
 end;
@@ -120,7 +121,7 @@ begin
       if Supports(Dispatcher, IJSONRPCGetSetDispatchEvents, LJSONRPCGetSetDispatchEvents) then
         begin
           LJSONRPCGetSetDispatchEvents.OnDispatchedJSONRPC := FOnDispatchedJSONRPC;
-          LJSONRPCGetSetDispatchEvents.OnReceivedJSONRPC := FOnReceivedJSONRPC;
+          LJSONRPCGetSetDispatchEvents.OnLogIncomingJSONRequest := FOnLogIncomingJSONRequest;
         end;
       Dispatcher.DispatchJSONRPC(ARequest, AResponse);
     end else
@@ -131,8 +132,8 @@ begin
         end;
 
       FServerWrapper.OnDispatchedJSONRPC := GOnDispatchedJSONRPC;
-      FServerWrapper.OnReceivedJSONRPC := GOnReceivedJSONRPC;
-      FServerWrapper.OnSentJSONRPC := GOnSentJSONRPC;
+      FServerWrapper.OnLogIncomingJSONRequest := GOnLogIncomingJSONRequest;
+      FServerWrapper.OnLogOutgoingJSONResponse := GOnLogOutgoingJSONResponse;
 
       FServerWrapper.DispatchJSONRPC(ARequest, AResponse);
     end;
@@ -150,7 +151,7 @@ begin
     end;
 end;
 
-function TJSONRPCDispatchNode.GetOnReceivedJSONRPC: TOnReceivedJSONRPC;
+function TJSONRPCDispatchNode.GetOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest;
 var
   LJSONRPCGetSetDispatchEvents: IJSONRPCGetSetDispatchEvents;
 begin
@@ -158,13 +159,13 @@ begin
   if Supports(FJSONRPCDispatcher, IJSONRPCGetSetDispatchEvents, LJSONRPCGetSetDispatchEvents) or
     Supports(FServerWrapper, IJSONRPCGetSetDispatchEvents, LJSONRPCGetSetDispatchEvents) then
     begin
-      Result := LJSONRPCGetSetDispatchEvents.OnReceivedJSONRPC;
+      Result := LJSONRPCGetSetDispatchEvents.OnLogIncomingJSONRequest;
     end;
 end;
 
-function TJSONRPCDispatchNode.GetOnSentJSONRPC: TOnSentJSONRPC;
+function TJSONRPCDispatchNode.GetOnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse;
 begin
-  Result := FOnSentJSONRPC;
+  Result := FOnLogOutgoingJSONResponse;
 end;
 
 end.

@@ -22,11 +22,12 @@ type
     function GetJSONRPCDispatch: IJSONRPCDispatch;
     function GetJSONRPCDispatchEvents: IJSONRPCDispatchEvents;
     function GetOnDispatchedJSONRPC: TOnDispatchedJSONRPC;
-    function GetOnReceivedJSONRPC: TOnReceivedJSONRPC;
-    function GetOnSentJSONRPC: TOnSentJSONRPC;
+    function GetOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest;
+    function GetOnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse;
+
     procedure SetOnDispatchedJSONRPC(const Value: TOnDispatchedJSONRPC);
-    procedure SetOnReceivedJSONRPC(const Value: TOnReceivedJSONRPC);
-    procedure SetOnSentJSONRPC(const Value: TOnSentJSONRPC);
+    procedure SetOnLogIncomingJSONRequest(const Value: TOnLogIncomingJSONRequest);
+    procedure SetOnLogOutgoingJSONResponse(const Value: TOnLogOutgoingJSONResponse);
 
   protected
 //    FServer: TIdHTTPServer;
@@ -96,10 +97,10 @@ type
 
     property OnDispatchedJSONRPC: TOnDispatchedJSONRPC read GetOnDispatchedJSONRPC
       write SetOnDispatchedJSONRPC;
-    property OnReceivedJSONRPC: TOnReceivedJSONRPC read GetOnReceivedJSONRPC
-      write SetOnReceivedJSONRPC;
-    property OnSentJSONRPC: TOnSentJSONRPC read GetOnSentJSONRPC
-      write SetOnSentJSONRPC;
+    property OnLogIncomingJSONRequest: TOnLogIncomingJSONRequest
+      read GetOnLogIncomingJSONRequest write SetOnLogIncomingJSONRequest;
+    property OnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse
+      read GetOnLogOutgoingJSONResponse write SetOnLogOutgoingJSONResponse;
 
     property Active: Boolean read GetActive write SetActive;
     property Address: string read GetAddress write SetAddress;
@@ -217,14 +218,14 @@ begin
   Result := FServerWrapper.OnDispatchedJSONRPC;
 end;
 
-function TJSONRPCServerRunner.GetOnReceivedJSONRPC: TOnReceivedJSONRPC;
+function TJSONRPCServerRunner.GetOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest;
 begin
-  Result := FServerWrapper.OnReceivedJSONRPC;
+  Result := FServerWrapper.OnLogIncomingJSONRequest;
 end;
 
-function TJSONRPCServerRunner.GetOnSentJSONRPC: TOnSentJSONRPC;
+function TJSONRPCServerRunner.GetOnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse;
 begin
-  Result := FServerWrapper.OnSentJSONRPC;
+  Result := FServerWrapper.OnLogOutgoingJSONResponse;
 end;
 
 //function TJSONRPCServerRunner.GetPort: Integer;
@@ -272,15 +273,16 @@ begin
   FServerWrapper.OnDispatchedJSONRPC := Value;
 end;
 
-procedure TJSONRPCServerRunner.SetOnReceivedJSONRPC(
-  const Value: TOnReceivedJSONRPC);
+procedure TJSONRPCServerRunner.SetOnLogIncomingJSONRequest(
+  const Value: TOnLogIncomingJSONRequest);
 begin
-  FServerWrapper.OnReceivedJSONRPC := Value;
+  FServerWrapper.OnLogIncomingJSONRequest := Value;
 end;
 
-procedure TJSONRPCServerRunner.SetOnSentJSONRPC(const Value: TOnSentJSONRPC);
+procedure TJSONRPCServerRunner.SetOnLogOutgoingJSONResponse(
+  const Value: TOnLogOutgoingJSONResponse);
 begin
-  FServerWrapper.OnSentJSONRPC := Value;
+  FServerWrapper.OnLogOutgoingJSONResponse := Value;
 end;
 
 //procedure TJSONRPCServerRunner.SetActive(const Value: Boolean);

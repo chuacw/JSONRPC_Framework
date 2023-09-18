@@ -41,6 +41,7 @@ type
     FMessage: string;
     FCode: Integer;
     FMethodName: string;
+
 {$IFNDEF AUTOREFCOUNT}
     FRefCount: Integer;
 {$ENDIF !AUTOREFCOUNT}
@@ -78,6 +79,7 @@ type
     {$WARN HIDING_MEMBER OFF}
     property MethodName: string read GetMethodName write SetMethodName;
     {$WARN HIDING_MEMBER ON}
+
   end;
   TInvokableClassClass = class of TInvokableClass;
 

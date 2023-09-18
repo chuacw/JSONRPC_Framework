@@ -16,6 +16,14 @@ type
   TOnReceivedJSONRPC = reference to procedure (const AJSONRequest: string);
   TOnSentJSONRPC = reference to procedure (const AJSONResponse: string);
 
+  // For client side
+  TOnLogOutgoingJSONRequest  = reference to procedure(const AJSONRPCRequest: string);
+  TOnLogIncomingJSONResponse = reference to procedure(const AJSONRPCResponse: string);
+
+  // For server side
+  TOnLogIncomingJSONRequest  = reference to procedure(const AJSONRPCRequest: string);
+  TOnLogOutgoingJSONResponse = reference to procedure(const AJSONRPCResponse: string);
+
   TOnSyncEvent = reference to procedure(ARequest, AResponse: TStream);
 
   TOnSafeCallException = reference to function (ExceptObject: TObject;
@@ -31,6 +39,14 @@ type
   end;
 
   JSONNotifyAttribute = JSONNotificationAttribute;
+
+  UrlSuffixAttribute = class(TCustomAttribute)
+  protected
+    FUrlSuffix: string;
+  public
+    constructor Create(const AUrlSuffix: string);
+    property UrlSuffix: string read FUrlSuffix;
+  end;
 
   {$METHODINFO ON}
   {$TYPEINFO ON}
@@ -48,8 +64,8 @@ type
   IJSONRPCDispatchEvents = interface
     ['{85A741DE-6B8C-4481-A001-9A62D76D027A}']
     procedure DoDispatchedJSONRPC(const AJSONRequest: string);
-    procedure DoReceivedJSONRPC(const AJSONRequest: string);
-    procedure DoSentJSONRPC(const AJSONResponse: string);
+    procedure DoLogIncomingRequest(const ARequest: string);
+    procedure DoLogOutgoingResponse(const AResponse: string);
   end;
 
   ISafeCallException = interface
@@ -65,19 +81,21 @@ type
     ['{48A201AB-42B9-4EB2-B6D8-8B6E47EED9F5}']
 
     function GetOnDispatchedJSONRPC: TOnDispatchedJSONRPC;
-    function GetOnReceivedJSONRPC: TOnReceivedJSONRPC;
-    function GetOnSentJSONRPC: TOnSentJSONRPC;
-
     procedure SetOnDispatchedJSONRPC(const AProc: TOnDispatchedJSONRPC);
-    procedure SetOnReceivedJSONRPC(const AProc: TOnReceivedJSONRPC);
-    procedure SetOnSentJSONRPC(const AProc: TOnSentJSONRPC);
+
+    function GetOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest;
+    procedure SetOnLogIncomingJSONRequest(const AProc: TOnLogIncomingJSONRequest);
+
+    function GetOnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse;
+    procedure SetOnLogOutgoingJSONResponse(const AProc: TOnLogOutgoingJSONResponse);
 
     property OnDispatchedJSONRPC: TOnDispatchedJSONRPC read GetOnDispatchedJSONRPC
       write SetOnDispatchedJSONRPC;
-    property OnReceivedJSONRPC: TOnReceivedJSONRPC read GetOnReceivedJSONRPC
-      write SetOnReceivedJSONRPC;
-    property OnSentJSONRPC: TOnSentJSONRPC read GetOnSentJSONRPC
-      write SetOnSentJSONRPC;
+
+    property OnLogIncomingJSONRequest: TOnLogIncomingJSONRequest
+      read GetOnLogIncomingJSONRequest write SetOnLogIncomingJSONRequest;
+    property OnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse
+      read GetOnLogOutgoingJSONResponse write SetOnLogOutgoingJSONResponse;
   end;
 
   IJSONRPCInvocationSettings = interface
@@ -216,8 +234,8 @@ type
 
 var
   GOnDispatchedJSONRPC: TOnDispatchedJSONRPC;
-  GOnReceivedJSONRPC: TOnReceivedJSONRPC;
-  GOnSentJSONRPC: TOnSentJSONRPC;
+  GOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest;
+  GOnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse;
   GJSONRPCTransportWrapperClass: TJSONRPCTransportWrapperClass;
 
 {$IF SizeOf(Extended) > SizeOf(Double)}
@@ -302,6 +320,13 @@ begin
   if Assigned(FProc) then
     FProc(Self);
   inherited;
+end;
+
+{ UrlSuffixAttribute }
+
+constructor UrlSuffixAttribute.Create(const AUrlSuffix: string);
+begin
+  FUrlSuffix := AUrlSuffix;
 end;
 
 initialization

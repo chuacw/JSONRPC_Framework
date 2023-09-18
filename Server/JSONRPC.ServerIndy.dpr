@@ -85,12 +85,12 @@ begin
     WriteLn('Dispatched JSON RPC: ', AJSONRequest);
   end;
 
-  LServer.OnReceivedJSONRPC := procedure (const AJSONRequest: string)
+  LServer.OnLogIncomingJSONRequest := procedure (const AJSONRequest: string)
   begin
     WriteLn('Received JSON RPC: ', AJSONRequest);
   end;
 
-  LServer.OnSentJSONRPC := procedure (const AJSONResponse: string)
+  LServer.OnLogOutgoingJSONResponse := procedure (const AJSONResponse: string)
   begin
     WriteLn('Sent JSON RPC: ', AJSONResponse);
   end;

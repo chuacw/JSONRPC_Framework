@@ -35,6 +35,7 @@ type
   protected
   var
     FIntfMD: TIntfMetaData;
+    FOwnsObjects: Boolean;
     procedure InitClient; virtual; abstract;
     procedure SetInvokeMethod; virtual; abstract;
     procedure DoDispatch(const AContext: TInvContext; AMethNum: Integer;
@@ -68,6 +69,8 @@ type
       property OnSafeCallException: TOnSafeCallException read GetOnSafeCallException
         write SetOnSafeCallException;
      end;
+  public
+    property OwnsObjects: Boolean read FOwnsObjects write FOwnsObjects;
   end;
 {$ENDIF}
 
@@ -77,6 +80,8 @@ type
     property JSONRPCWrapper: TJSONRPCWrapper read GetJSONRPCWrapper;
   end;
 
+  /// <summary> JSON RPC client side
+  /// </summary>
   TJSONRPCWrapper = class(
     {$IF DEFINED(BASECLASS)}
     TBaseJSONRPCWrapper,
@@ -105,6 +110,9 @@ type
     FOnSafeCallException: TOnSafeCallException;
     FIID: TGUID;
     FRefCount: Integer;
+    FOnLogOutgoingJSONRequest: TOnLogOutgoingJSONRequest;
+    FOnLogIncomingJSONResponse: TOnLogIncomingJSONResponse;
+    FRttiContext: TRttiContext;
 
     class var FRegistry: TDictionary<TGUID, PTypeInfo>;
 
@@ -136,6 +144,8 @@ type
     procedure DoSync(AJSONRequest, AJSONResponse: TStream); virtual;
 
     procedure DoDispatch(const AContext: TInvContext; AMethNum: Integer; const AMethMD: TIntfMethEntry); {$IF DEFINED(BASECLASS)}override;{$ENDIF}
+    procedure DoLogOutgoingRequest(const ARequest: string);
+    procedure DoLogIncomingResponse(const AResponse: string);
     function InternalQI(const IID: TGUID; out Obj): HResult; override; stdcall;
 
     procedure InitClient; {$IF DEFINED(BASECLASS)}override;{$ELSE}virtual;{$ENDIF}
@@ -184,6 +194,8 @@ type
 
     { IJSONRPCWrapper }
     function GetJSONRPCWrapper: TJSONRPCWrapper;
+
+    function GetUrlSuffix(const AMethMD: TIntfMethEntry): string;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -201,6 +213,11 @@ type
     property OnBeforeExecute: TBeforeExecuteEvent read FOnBeforeExecute write FOnBeforeExecute;
 
     property OnBeforeParse: TOnBeforeParseEvent read FOnBeforeParse write FOnBeforeParse;
+
+    property OnLogOutgoingJSONRequest: TOnLogOutgoingJSONRequest
+      read FOnLogOutgoingJSONRequest write FOnLogOutgoingJSONRequest;
+    property OnLogIncomingJSONResponse: TOnLogIncomingJSONResponse
+      read FOnLogIncomingJSONResponse write FOnLogIncomingJSONResponse;
 
     /// <summary> Specifies that safecall exception handler
     /// </summary>
@@ -230,8 +247,11 @@ type
     property ResponseTimeout: Integer read GetResponseTimeout write SetResponseTimeout;
 
     property JSONRPCWrapper: TJSONRPCWrapper read GetJSONRPCWrapper;
+
   end;
 
+  /// <summary> JSON RPC server side
+  /// </summary>
   TJSONRPCServerWrapper = class(
     {$IF DEFINED(BASECLASS)}
     TBaseJSONRPCWrapper,
@@ -240,24 +260,25 @@ type
     {$ENDIF}
     IJSONRPCDispatch, IJSONRPCDispatchEvents, IJSONRPCGetSetDispatchEvents)
   protected
-    FOnReceivedJSONRPC: TOnReceivedJSONRPC;
+    FOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest;
+    FOnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse;
+
     FOnBeforeDispatchJSONRPC: TOnBeforeDispatchJSONRPC;
     FOnDispatchedJSONRPC: TOnDispatchedJSONRPC;
-    FOnSentJSONRPC: TOnSentJSONRPC;
 
     procedure DoBeforeDispatchJSONRPC(var AJSONResponse: string);
-    procedure DoReceivedJSONRPC(const AJSONRequest: string);
     procedure DoDispatchedJSONRPC(const AJSONRequest: string);
-    procedure DoSentJSONRPC(const AJSONResponse: string);
+    procedure DoLogIncomingRequest(const ARequest: string);
+    procedure DoLogOutgoingResponse(const AResponse: string);
 
     { IJSONRPCGetSetDispatchEvents }
     function GetOnDispatchedJSONRPC: TOnDispatchedJSONRPC;
-    function GetOnReceivedJSONRPC: TOnReceivedJSONRPC;
-    function GetOnSentJSONRPC: TOnSentJSONRPC;
+    function GetOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest;
+    function GetOnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse;
 
     procedure SetOnDispatchedJSONRPC(const AProc: TOnDispatchedJSONRPC);
-    procedure SetOnReceivedJSONRPC(const AProc: TOnReceivedJSONRPC);
-    procedure SetOnSentJSONRPC(const AProc: TOnSentJSONRPC);
+    procedure SetOnLogIncomingJSONRequest(const AProc: TOnLogIncomingJSONRequest);
+    procedure SetOnLogOutgoingJSONResponse(const AProc: TOnLogOutgoingJSONResponse);
 
 //    procedure GenericServerMethod(AMethod: TRttiMethod; const AArgs: TArray<TValue>; out Result: TValue);
     procedure InitClient; override;
@@ -276,10 +297,11 @@ type
       FOnBeforeDispatchJSONRPC write FOnBeforeDispatchJSONRPC;
     property OnDispatchedJSONRPC: TOnDispatchedJSONRPC read FOnDispatchedJSONRPC
       write FOnDispatchedJSONRPC;
-    property OnReceivedJSONRPC: TOnReceivedJSONRPC read FOnReceivedJSONRPC
-      write FOnReceivedJSONRPC;
-    property OnSentJSONRPC: TOnSentJSONRPC read FOnSentJSONRPC
-      write FOnSentJSONRPC;
+
+    property OnLogIncomingJSONRequest: TOnLogIncomingJSONRequest
+      read FOnLogIncomingJSONRequest write FOnLogIncomingJSONRequest;
+    property OnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse
+      read FOnLogOutgoingJSONResponse write FOnLogOutgoingJSONResponse;
   end;
 
 procedure RegisterJSONRPCWrapper(const ATypeInfo: PTypeInfo);
@@ -572,6 +594,17 @@ begin
     FOnBeforeParse(AContext, AMethNum, AMethMD, AMethodID, AJSONResponse);
 end;
 
+function TJSONRPCWrapper.GetUrlSuffix(const AMethMD: TIntfMethEntry): string;
+var
+  LType: TRttiType;
+  LUrlSuffix: UrlSuffixAttribute;
+begin
+  LType := FRttiContext.GetType(AMethMD.SelfInfo);
+  LUrlSuffix := LType.GetAttribute(UrlSuffixAttribute) as UrlSuffixAttribute;
+  if Assigned(LUrlSuffix) then
+    Result := LUrlSuffix.UrlSuffix;
+end;
+
 // Client side JSON RPC parameter conversion
 procedure TJSONRPCWrapper.DoDispatch(const AContext: TInvContext;
   AMethNum: Integer; const AMethMD: TIntfMethEntry);
@@ -583,6 +616,7 @@ var
   LJSONMethodObj: TJSONObject;
   LResultP: Pointer;
   LJSONResponseObj: TJSONValue;
+  LServerURL: string;
 begin
 
 // create something like this, with PassParamsByName
@@ -595,6 +629,7 @@ begin
 
   LJSONMethodObj := TJSONObject.Create;
   try
+    {$REGION 'Convert native Delphi call to a JSON string'}
     LJSONMethodObj.Owned := True;
     AddJSONVersion(LJSONMethodObj);
     LJSONMethodObj.AddPair(SMETHOD, AMethMD.Name);
@@ -612,8 +647,8 @@ begin
             var LParamValuePtr := AContext.GetParamPointer(I-1);
             var LParamName := AMethMD.Params[I-1].Name;
 
-            // parse outgoing data from client to server
-
+            // parse outgoing / handle outgoing data from client to server
+            {$REGION 'Parse outgoing data from client to server'}
             var LParamTypeInfo := AMethMD.Params[I-1].Info;
             case LParamTypeInfo.Kind of
               tkArray,
@@ -631,23 +666,6 @@ begin
                     LHandlers.NativeToJSON(FPassByPosOrName, LParamTypeInfo,
                       LParamName, LParamValuePtr, LParamsObj, LParamsArray);
                   end else
-//                if LParamTypeInfo = TypeInfo(BigDecimal) then
-//                  begin
-//                    var LJSON := TJSONString.Create(BigDecimal(LParamValuePtr^).ToString);
-//                    case FPassByPosOrName of
-//                      tppByName: LParamsObj.AddPair(LParamName, LJSON);
-//                      tppByPos:  LParamsArray.AddElement(LJSON);
-//                    end;
-//                  end else
-//                if LParamTypeInfo = TypeInfo(BigInteger) then
-//                  begin
-//                    BigInteger.Hex;
-//                    var LJSON := TJSONString.Create('0x'+BigInteger(LParamValuePtr^).ToString(16));
-//                    case FPassByPosOrName of
-//                      tppByName: LParamsObj.AddPair(LParamName, LJSON);
-//                      tppByPos:  LParamsArray.AddElement(LJSON);
-//                    end;
-//                  end else
                   begin
                     var LJSON := SerializeRecord(LParamValuePtr^, LParamTypeInfo);
                     var LJSONObj := TJSONObject.ParseJSONValue(LJSON);
@@ -673,6 +691,10 @@ begin
                       otSLong, otULong: begin
                         LValue := PLongBool(LParamValuePtr)^;
                       end;
+                    else
+                      // This currently won't happen, because there's only
+                      // 6 ordinal types as defined.
+                      Assert(False, 'Unhandled new ordinal type!');
                     end;
                     case FPassByPosOrName of
                       tppByName: LParamsObj.AddPair(LParamName, TJSONBool.Create(LValue));
@@ -815,13 +837,20 @@ begin
                 end;
               end;
             end;
-            else
+            tkClass: begin
+              //
+
             end;
+            else
+              Assert(False, 'Unexpected type not handled');
+            end;
+            {$ENDREGION}
           end;
         if FPassByPosOrName = tppByName then
           LJSONMethodObj.AddPair(SPARAMS, LParamsObj) else
           LJSONMethodObj.AddPair(SPARAMS, LParamsArray);
       end;
+
 
     // Only add ID if it's not a Notification call
     var LRttiContext := TRttiContext.Create;
@@ -838,6 +867,8 @@ begin
 
     // client request converted to JSON string
     var LRequest := LJSONMethodObj.ToJSON;
+    DoLogOutgoingRequest(LRequest);
+    {$ENDREGION}
 
     // then send it
     LRequestStream := FClient.RequestStream;
@@ -852,7 +883,17 @@ begin
           begin
             LRequestStream.Position := 0;
             var LHeaders: TNetHeaders := InitializeHeaders(LRequestStream);
-            SendGetPost(FServerURL, LRequestStream, LResponseStream, LHeaders);
+            LServerURL := FServerURL;
+            var LUrlSuffix := GetURLSuffix(AMethMD);
+            if LUrlSuffix <> '' then
+              begin
+                if not LServerURL.EndsWith('/') then
+                  LServerURL := LServerURL + '/';
+                if LUrlSuffix.StartsWith('/') then
+                  Delete(LUrlSuffix, Low(LUrlSuffix), 1);
+                LServerURL := LServerURL + LUrlSuffix;
+              end;
+            SendGetPost(LServerURL, LRequestStream, LResponseStream, LHeaders);
           end;
 
         DoAfterExecute(AMethMD.Name, LResponseStream);
@@ -866,11 +907,13 @@ begin
         LResponseStream.Read(LBytes, LResponseStream.Size);
         // parse incoming response from server
         LResponse := TEncoding.UTF8.GetString(LBytes);
+        DoLogIncomingResponse(LResponse);
 
         LResultP := AContext.GetResultPointer;
         LJSONResponseObj := TJSONObject.ParseJSONValue(TArray<Byte>(LBytes), 0);
         var LError: TJSONValue;
         try
+          {$REGION 'Check for any errors from the server'}
           LError := LJSONResponseObj.FindValue(SERROR);
           if Assigned(LError) then
             begin
@@ -880,7 +923,9 @@ begin
               if Assigned(LMethodName) then
                 raise EJSONRPCMethodException.Create(LCode, LMsg, LMethodName.Value) else
                 raise EJSONRPCException.Create(LCode, LMsg);
-            end else
+            end;
+          {$ENDREGION}
+          {$REGION 'Parse results from server, if any'}
           if LResultP <> nil then
             begin
                 var LResultPathName := SRESULT;
@@ -892,7 +937,9 @@ begin
                     var LJSONObj := LJSONResponseObj.FindValue(LResultPathName);
                     var LClassName := LJSONObj.ClassName;
                     if Assigned(LJSONObj) and (AMethMD.ResultInfo = TypeInfo(TJSONObject)) then
-                      TJSONObject(LResultP^) := TJSONObject(LJSONObj);
+                      begin
+                        TJSONObject(LResultP^) := TJSONObject(LJSONObj);
+                      end;
                   end;
                 {$ELSE}
                   tkClass: begin
@@ -1028,8 +1075,10 @@ begin
                   end;
                 else
                   // not handled
+                  Assert(False, 'Unhandled type in handling response from server');
                 end;
             end;
+          {$ENDREGION}
         finally
           FreeAndNil(LJSONResponseObj);
         end;
@@ -1042,6 +1091,18 @@ begin
   finally
     LJSONMethodObj.Free;
   end;
+end;
+
+procedure TJSONRPCWrapper.DoLogOutgoingRequest(const ARequest: string);
+begin
+  if Assigned(FOnLogOutgoingJSONRequest) then
+    FOnLogOutgoingJSONRequest(ARequest);
+end;
+
+procedure TJSONRPCWrapper.DoLogIncomingResponse(const AResponse: string);
+begin
+  if Assigned(FOnLogIncomingJSONResponse) then
+    FOnLogIncomingJSONResponse(AResponse);
 end;
 
 procedure TJSONRPCWrapper.DoSync(AJSONRequest, AJSONResponse: TStream);
@@ -1371,10 +1432,10 @@ end;
 
 destructor TJSONRPCServerWrapper.Destroy;
 begin
-  FOnReceivedJSONRPC := nil;
+  FOnLogIncomingJSONRequest := nil;
   FOnBeforeDispatchJSONRPC := nil;
   FOnDispatchedJSONRPC := nil;
-  FOnSentJSONRPC := nil;
+  FOnLogOutgoingJSONResponse := nil;
   inherited;
 end;
 
@@ -1731,7 +1792,7 @@ begin
   try
     try
       var LJSONRequestStr := TEncoding.UTF8.GetString(LJSONRequestBytes);
-      DoReceivedJSONRPC(LJSONRequestStr);
+      DoLogIncomingRequest(LJSONRequestStr);
 
       LJSONRequestObj := TJSONObject.ParseJSONValue(LJSONRequestStr) as TJSONObject;
       var LJSONRequest := LJSONRequestObj.Format();
@@ -2221,7 +2282,7 @@ begin
           AResponse.Write(LJSONResultBytes, LCount);
 
           DoDispatchedJSONRPC(LJSONRequest);
-          DoSentJSONRPC(LJSONResultObj.Format());
+          DoLogOutgoingResponse(LJSONResultObj.Format());
         finally
           LJSONResultObj.Free;
         end;
@@ -2275,7 +2336,7 @@ begin
         DoBeforeDispatchJSONRPC(LJSONResult);
         JsonToTBytesCount(LJSONResult, LJSONResultBytes, LCount);
         AResponse.Write(LJSONResultBytes, LCount);
-        DoSentJSONRPC(LJSONResponseObj.Format());
+        DoLogOutgoingResponse(LJSONResponseObj.Format());
       end;
   finally
     FreeAndNil(LJSONRequestObj);
@@ -2295,16 +2356,16 @@ begin
     FOnBeforeDispatchJSONRPC(AJSONResponse);
 end;
 
-procedure TJSONRPCServerWrapper.DoReceivedJSONRPC(const AJSONRequest: string);
+procedure TJSONRPCServerWrapper.DoLogIncomingRequest(const ARequest: string);
 begin
-  if Assigned(FOnReceivedJSONRPC) then
-    FOnReceivedJSONRPC(AJSONRequest);
+  if Assigned(FOnLogIncomingJSONRequest) then
+    FOnLogIncomingJSONRequest(ARequest);
 end;
 
-procedure TJSONRPCServerWrapper.DoSentJSONRPC(const AJSONResponse: string);
+procedure TJSONRPCServerWrapper.DoLogOutgoingResponse(const AResponse: string);
 begin
-  if Assigned(FOnSentJSONRPC) then
-    FOnSentJSONRPC(AJSONResponse);
+  if Assigned(FOnLogOutgoingJSONResponse) then
+    FOnLogOutgoingJSONResponse(AResponse);
 end;
 
 function TJSONRPCServerWrapper.GetOnDispatchedJSONRPC: TOnDispatchedJSONRPC;
@@ -2312,14 +2373,15 @@ begin
   Result := FOnDispatchedJSONRPC;
 end;
 
-function TJSONRPCServerWrapper.GetOnReceivedJSONRPC: TOnReceivedJSONRPC;
+
+function TJSONRPCServerWrapper.GetOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest;
 begin
-  Result := FOnReceivedJSONRPC;
+  Result := FOnLogIncomingJSONRequest;
 end;
 
-function TJSONRPCServerWrapper.GetOnSentJSONRPC: TOnSentJSONRPC;
+function TJSONRPCServerWrapper.GetOnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse;
 begin
-  Result := FOnSentJSONRPC;
+  Result := FOnLogOutgoingJSONResponse;
 end;
 
 procedure TJSONRPCServerWrapper.InitClient;
@@ -2349,15 +2411,14 @@ begin
   FOnDispatchedJSONRPC := AProc;
 end;
 
-procedure TJSONRPCServerWrapper.SetOnReceivedJSONRPC(
-  const AProc: TOnReceivedJSONRPC);
+procedure TJSONRPCServerWrapper.SetOnLogIncomingJSONRequest(const AProc: TOnLogIncomingJSONRequest);
 begin
-  FOnReceivedJSONRPC := AProc;
+  FOnLogIncomingJSONRequest := AProc;
 end;
 
-procedure TJSONRPCServerWrapper.SetOnSentJSONRPC(const AProc: TOnSentJSONRPC);
+procedure TJSONRPCServerWrapper.SetOnLogOutgoingJSONResponse(const AProc: TOnLogOutgoingJSONResponse);
 begin
-  FOnSentJSONRPC := AProc;
+  FOnLogOutgoingJSONResponse := AProc;
 end;
 
 end.

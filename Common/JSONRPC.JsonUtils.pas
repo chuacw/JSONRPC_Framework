@@ -6,7 +6,7 @@ interface
 
 uses
   System.SysUtils, JSONRPC.RIO, System.Rtti, System.Classes, System.TypInfo,
-  System.JSON;
+  System.JSON, System.Generics.Collections;
 
 /// <summary>
 /// Convert the given JSON string into UTF8-encoded bytes, and the length into VCount.
@@ -94,6 +94,14 @@ procedure CheckTypeInfo(ATypeInfo: PTypeInfo); inline;
 /// Adds the "jsonrpc": "2.0" into the header
 /// </summary>
 procedure AddJSONVersion(const AJSONObj: TJSONObject); inline;
+
+type
+  TCollectionsHelper = class
+  public
+    class function ListToArray<T>(const AList: TList<T>): TArray<T>; static;
+    class function DictionaryToArray<K, V>(
+      const ADictionary: TDictionary<K, V>): TArray<TPair<K, V>>;
+  end;
 
 implementation
 
@@ -414,6 +422,20 @@ end;
 //    var LJSONObj := LParams.Get('AObj').JsonValue;
 //    var LNewObject: TMyObject;
 //    DeserializeJSON(LJSONObj, System.TypeInfo(TMyObject), LNewObject);
+
+{ TCollectionsHelper }
+
+class function TCollectionsHelper.DictionaryToArray<K, V>(
+  const ADictionary: TDictionary<K, V>): TArray<TPair<K, V>>;
+begin
+  Result := ADictionary.ToArray;
+end;
+
+class function TCollectionsHelper.ListToArray<T>(
+  const AList: TList<T>): TArray<T>;
+begin
+  Result := AList.ToArray;
+end;
 
 end.
 

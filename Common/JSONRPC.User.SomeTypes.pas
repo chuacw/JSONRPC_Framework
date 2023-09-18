@@ -6,7 +6,8 @@ interface
 
 uses
   JSONRPC.Common.Types, System.Classes, System.JSON.Serializers,
-  JSONRPC.RIO, Velthuis.BigDecimals, Velthuis.BigIntegers;
+  JSONRPC.RIO, Velthuis.BigDecimals, Velthuis.BigIntegers,
+  System.Generics.Collections;
 
 {$IF NOT DECLARED(Velthuis.BigDecimals) AND NOT DECLARED(Velthuis.BigIntegers)}
   {$MESSAGE HINT 'Include Velthuis.BigDecimals to automatically enable SendExtended'}
@@ -72,6 +73,9 @@ type
     function subtract(minuend, subtrahend: NativeInt): NativeInt;
     function AddString(const X, Y: string): string;
     function GetSomeBool(const ABoolean: Boolean): Boolean; safecall;
+
+    function SendSomeList(const AList: TList<Integer>): TList<Integer>;
+    function SendSomeDictionary(const AList: TDictionary<Integer, string>): TDictionary<Integer, string>;
 
     function GetEnum(const A: TEnum): TEnum;
     function SendEnum(const A: TEnum): string;

@@ -6,7 +6,7 @@ interface
 
 uses
   System.Types, JSONRPC.User.SomeTypes, JSONRPC.InvokeRegistry,
-  Velthuis.BigDecimals, Velthuis.BigIntegers;
+  Velthuis.BigDecimals, Velthuis.BigIntegers, System.Generics.Collections;
 
 {$IF NOT DECLARED(Velthuis.BigDecimals) AND NOT DECLARED(Velthuis.BigIntegers)}
   {$MESSAGE HINT 'Include Velthuis.BigDecimals to automatically enable SendExtended'}
@@ -68,6 +68,8 @@ type
     function SendShort(const Value: ShortInt): ShortInt;
     function SendSingle(const Value: Single): Single;
     function SendSmallInt(const Value: SmallInt): SmallInt;
+    function SendSomeList(const AList: TList<Integer>): TList<Integer>;
+    function SendSomeDictionary(const AList: TDictionary<Integer, string>): TDictionary<Integer, string>;
     function SendString(const Value: string): string;
     function SendUInt64(const Value: UInt64): UInt64;
     function SendWord(const Value: Word): Word;
@@ -245,6 +247,18 @@ end;
 function TSomeJSONRPC.SendSmallInt(const Value: SmallInt): SmallInt;
 begin
   Result := Value;
+end;
+
+function TSomeJSONRPC.SendSomeList(const AList: TList<Integer>): TList<Integer>;
+begin
+  Result := AList;
+end;
+
+function TSomeJSONRPC.SendSomeDictionary(
+  const AList: TDictionary<Integer, string>
+): TDictionary<Integer, string>;
+begin
+  Result := AList;
 end;
 
 function TSomeJSONRPC.SendSomeObj(AObj: TMyObject): TMyObject;
