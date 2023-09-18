@@ -37,7 +37,7 @@ type
       write SetOnDispatchedJSONRPC;
     property OnLogIncomingJSONRequest: TOnLogIncomingJSONRequest
       read GetOnLogIncomingJSONRequest write SetOnLogIncomingJSONRequest;
-    property OnSentJSONRPC: TOnLogOutgoingJSONResponse read GetOnLogOutgoingJSONResponse
+    property OnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse read GetOnLogOutgoingJSONResponse
       write SetOnLogOutgoingJSONResponse;
   public
     procedure DispatchJSONRPC(const ARequest: TStream; AResponse: TStream); virtual;

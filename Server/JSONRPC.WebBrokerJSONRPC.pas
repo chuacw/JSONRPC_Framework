@@ -25,8 +25,9 @@ type
     destructor Destroy; override;
 
     property OnDispatchedJSONRPC;
-    property OnReceivedJSONRPC;
-    property OnSentJSONRPC;
+    property OnLogIncomingJSONRequest;
+    property OnSentJSONRPC: TOnLogOutgoingJSONResponse read GetOnLogOutgoingJSONResponse
+      write SetOnLogOutgoingJSONResponse;
 
     property OnException: TJSONRPCDispatcherException read FOnException write FOnException;
   end;
@@ -34,8 +35,8 @@ type
 function GetJSONRPCWebModule: TWebModule;
 
 procedure SetOnDispatchedJSONRPC(const AProc: TOnDispatchedJSONRPC);
-procedure SetOnReceivedJSONRPC(const AProc: TOnReceivedJSONRPC);
-procedure SetOnSentJSONRPC(const AProc: TOnSentJSONRPC);
+procedure SetOnLogIncomingJSONRequest(const AProc: TOnLogIncomingJSONRequest);
+procedure SetOnLogOutgoingJSONResponse(const AProc: TOnLogOutgoingJSONResponse);
 
 implementation
 
@@ -58,7 +59,8 @@ constructor TJSONRPCDispatcher.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   FOnDispatchedJSONRPC := GOnDispatchedJSONRPC;
-  FOnReceivedJSONRPC   := GOnReceivedJSONRPC;
+  FOnLogIncomingJSONRequest := GOnLogIncomingJSONRequest;
+  FOnLogOutgoingJSONResponse := GOnLogOutgoingJSONResponse;
 end;
 
 destructor TJSONRPCDispatcher.Destroy;
@@ -159,14 +161,14 @@ begin
   GOnDispatchedJSONRPC := AProc;
 end;
 
-procedure SetOnReceivedJSONRPC(const AProc: TOnReceivedJSONRPC);
+procedure SetOnLogIncomingJSONRequest(const AProc: TOnLogIncomingJSONRequest);
 begin
-  GOnReceivedJSONRPC := AProc;
+  GOnLogIncomingJSONRequest := AProc;
 end;
 
-procedure SetOnSentJSONRPC(const AProc: TOnSentJSONRPC);
+procedure SetOnLogOutgoingJSONResponse(const AProc: TOnLogOutgoingJSONResponse);
 begin
-  GOnSentJSONRPC := AProc;
+  GOnLogOutgoingJSONResponse := AProc;
 end;
 
 
