@@ -990,27 +990,32 @@ begin
                       var LJSONObj := LJSONResponseObj.FindValue(LResultPathName);
                       if LJSONObj <> nil then
                         begin
-                          if Assigned(LJSONObj) and (AMethMD.ResultInfo = TypeInfo(TJSONObject)) then
+                          if Assigned(LJSONObj) and
+                          (
+                            (AMethMD.ResultInfo = TypeInfo(TJSONObject)) or
+                            (AMethMD.ResultInfo^.TypeData^.ClassType.InheritsFrom(TJSONValue))
+                          ) then
                             begin
                               var LResultObj := TJSONObject(LJSONObj).Clone as TJSONObject;
                               TrackJSONObjectToFree(LResultObj);
                               TJSONObject(LResultP^) := LResultObj;
                             end else
                             begin
-                              Assert(False, 'Untested code path: 973');
+                              Assert(False, 'Untested code path: 1004');
                             end;
                         end else
                         begin
                           // There's no "result" on Aptos, the entire block
                           // is a JSON object
-                          if (AMethMD.ResultInfo = TypeInfo(TJSONObject)) then
+                          if (AMethMD.ResultInfo = TypeInfo(TJSONObject)) or
+                            (AMethMD.ResultInfo^.TypeData^.ClassType.InheritsFrom(TJSONValue)) then
                             begin
                               var LResultObj := TJSONObject(LJSONResponseObj).Clone as TJSONObject;
                               TrackJSONObjectToFree(LResultObj);
                               TJSONObject(LResultP^) := LResultObj;
                             end else
                             begin
-                              Assert(False, 'Untested code path: 985');
+                              Assert(False, 'Untested code path: 1018');
                             end;
                         end;
                   end;
@@ -1131,7 +1136,7 @@ begin
                       otUByte: begin // Byte
                         LJSONResponseObj.TryGetValue<Byte>(LResultPathName, PByte(LResultP)^);
                       end;
-                      otUWord: begin
+                      otUWord: begin // Word
                         LJSONResponseObj.TryGetValue<Word>(LResultPathName, PWord(LResultP)^);
                       end;
                       otULong: begin // Cardinal

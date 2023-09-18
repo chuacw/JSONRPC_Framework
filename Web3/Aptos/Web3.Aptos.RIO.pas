@@ -62,7 +62,7 @@ begin
               LParamTypeInfo := AMethMD.Params[I].Info;
               LParamPointer := AContext.GetParamPointer(I);
               case LParamTypeInfo.Kind of
-                tkString:
+                tkString, tkUString:
                   VServerURL := StringReplace(VServerURL, LParamName, string(LParamPointer^), [rfReplaceAll]);
                 tkInteger: begin
                   var LValue := IntToStr(PInteger(LParamPointer)^);
@@ -74,6 +74,7 @@ begin
                 end;
               end;
             end;
+          Inc(I);
         end;
     end;
 end;

@@ -74,10 +74,14 @@ end;
 
 procedure RunAptosClient;
 begin
-  var LAptosClient := GetAptosClient('https://fullnode.devnet.aptoslabs.com/');
+  var LAptosClient := GetAptosClient(AptosMainNet);
   // LAptosClient.GetAccount()
   var LJSONObject := LAptosClient.GetBlocksByHeight(1075502);
   var LJSONGetBlocksByVersion := LAptosClient.GetBlocksByVersion(2309044);
+  var LAccountResource := LAptosClient.GetAccountResource(
+    '0xba84afe10531ab85186e99d1648401be9f0b2354f22999ecd1ccaff49977b055',
+    '0xe9fa01aaa1a483c6c598d470ae9b8174226590499b25812d8f0e86192a3b8711::game::GameStore'
+  );
 end;
 
 begin
