@@ -158,11 +158,11 @@ begin
         end);
         SetOnLogIncomingJSONRequest(procedure (const AJSONRequest: string)
         begin
-          WriteLn('Received JSON RPC: ', AJSONRequest);
+          WriteLn('Incoming JSON RPC: ', AJSONRequest);
         end);
         SetOnLogOutgoingJSONResponse(procedure (const AJSONResponse: string)
         begin
-          WriteLn('Sent JSON RPC: ', AJSONResponse);
+          WriteLn('Outgoing JSON RPC: ', AJSONResponse);
         end);
       end;
     RunServer(8083);
