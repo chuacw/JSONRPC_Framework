@@ -31,6 +31,12 @@ type
     procedure TearDown;
 
     [Test]
+    procedure TestOnLogIncomingJSONResponse;
+
+    [Test]
+    procedure TestOnLogOutgoingJSONRequest;
+
+    [Test]
     procedure SendBigNumbers;
 
     [Test, TestCase('AddDoubles', '5.1,6.3')]
@@ -483,6 +489,54 @@ procedure TTestJSONRPCClient.TearDown;
 begin
   FSomeRPC := nil;
   FreeAndNil(FServerRunner);
+end;
+
+procedure TTestJSONRPCClient.TestOnLogIncomingJSONResponse;
+var
+  LJsonRpcClientLog: IJsonRpcClientLog;
+  LJSON, LJSON1: string;
+  LLogged: Boolean;
+  LPassed: Boolean;
+begin
+  LLogged := False;
+  if Supports(FSomeRPC, IJsonRpcClientLog, LJsonRpcClientLog) then
+    begin
+      LJsonRpcClientLog.OnLogIncomingJSONResponse := procedure(const AJSON: string)
+      begin
+        LJSON1 := AJSON;
+        LLogged := True;
+      end;
+      FSomeRPC.AddSomeXY(3,4);
+      LJSON := LJSON1;
+      LPassed := LJSON = '{"jsonrpc":"2.0","result":7,"id":1}';
+
+      LJsonRpcClientLog.OnLogIncomingJSONResponse := nil;
+    end;
+  Assert.IsTrue(LPassed and LLogged, 'JSON is not equal!');
+end;
+
+procedure TTestJSONRPCClient.TestOnLogOutgoingJSONRequest;
+var
+  LJsonRpcClientLog: IJsonRpcClientLog;
+  LJSON, LJSON1: string;
+  LLogged: Boolean;
+  LPassed: Boolean;
+begin
+  LLogged := False;
+  if Supports(FSomeRPC, IJsonRpcClientLog, LJsonRpcClientLog) then
+    begin
+      LJsonRpcClientLog.OnLogOutgoingJSONRequest  := procedure(const AJSON: string)
+      begin
+        LJSON1 := AJSON;
+        LLogged := True;
+      end;
+      FSomeRPC.AddSomeXY(1,2);
+      LJSON := LJSON1;
+      LPassed := LJSON = '{"jsonrpc":"2.0","method":"AddSomeXY","params":{"X":1,"Y":2},"id":2}';
+
+      LJsonRpcClientLog.OnLogOutgoingJSONRequest := nil;
+    end;
+  Assert.IsTrue(LPassed and LLogged, 'JSON is not equal!');
 end;
 
 initialization

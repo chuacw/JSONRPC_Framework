@@ -85,7 +85,8 @@ type
     {$ELSE}
     TComponent,
     {$ENDIF}
-    IInvokable, IJSONRPCInvocationSettings, ISafeCallException, IJSONRPCWrapper)
+    IInvokable, IJSONRPCInvocationSettings, ISafeCallException, IJSONRPCWrapper,
+    IJsonRpcClientLog)
   protected
   {$IF NOT DEFINED(BASECLASS)}
   type
@@ -210,6 +211,16 @@ type
 
     procedure TrackJSONObjectToFree(const AJSONObj: TJSONObject);
     procedure FreeLastResponse;
+
+    function GetOnLogOutgoingJSONRequest: TOnLogOutgoingJSONRequest;
+    procedure SetOnLogOutgoingJSONRequest(const AProc: TOnLogOutgoingJSONRequest);
+
+    function GetOnLogIncomingJSONResponse: TOnLogIncomingJSONResponse;
+    procedure SetOnLogIncomingJSONResponse(const AProc: TOnLogIncomingJSONResponse);
+
+    function GetOnLogServerURL: TOnLogServerURL;
+    procedure SetOnLogServerURL(const AProc: TOnLogServerURL);
+
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -229,11 +240,11 @@ type
     property OnBeforeParse: TOnBeforeParseEvent read FOnBeforeParse write FOnBeforeParse;
 
     property OnLogOutgoingJSONRequest: TOnLogOutgoingJSONRequest
-      read FOnLogOutgoingJSONRequest write FOnLogOutgoingJSONRequest;
+      read GetOnLogOutgoingJSONRequest write SetOnLogOutgoingJSONRequest;
     property OnLogIncomingJSONResponse: TOnLogIncomingJSONResponse
-      read FOnLogIncomingJSONResponse write FOnLogIncomingJSONResponse;
+      read GetOnLogIncomingJSONResponse write SetOnLogIncomingJSONResponse;
     property OnLogServerURL: TOnLogServerURL
-      read FOnLogServerURL write FOnLogServerURL;
+      read GetOnLogServerURL write SetOnLogServerURL;
 
     /// <summary> Specifies that safecall exception handler
     /// </summary>
@@ -274,7 +285,8 @@ type
     {$ELSE}
     TJSONRPCWrapper,
     {$ENDIF}
-    IJSONRPCDispatch, IJSONRPCDispatchEvents, IJSONRPCGetSetDispatchEvents)
+    IJSONRPCDispatch, IJSONRPCDispatchEvents, IJSONRPCGetSetDispatchEvents,
+    IJsonRpcServerLog)
   protected
     FOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest;
     FOnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse;
@@ -289,11 +301,12 @@ type
 
     { IJSONRPCGetSetDispatchEvents }
     function GetOnDispatchedJSONRPC: TOnDispatchedJSONRPC;
-    function GetOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest;
-    function GetOnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse;
-
     procedure SetOnDispatchedJSONRPC(const AProc: TOnDispatchedJSONRPC);
+
+    function GetOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest;
     procedure SetOnLogIncomingJSONRequest(const AProc: TOnLogIncomingJSONRequest);
+
+    function GetOnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse;
     procedure SetOnLogOutgoingJSONResponse(const AProc: TOnLogOutgoingJSONResponse);
 
 //    procedure GenericServerMethod(AMethod: TRttiMethod; const AArgs: TArray<TValue>; out Result: TValue);
@@ -645,6 +658,31 @@ begin
   LUrlSuffix := LType.GetAttribute(UrlSuffixAttribute) as UrlSuffixAttribute;
   if Assigned(LUrlSuffix) then
     Result := LUrlSuffix.UrlSuffix;
+end;
+
+function TJSONRPCWrapper.GetOnLogOutgoingJSONRequest: TOnLogOutgoingJSONRequest;
+begin
+  Result := FOnLogOutgoingJSONRequest;
+end;
+procedure TJSONRPCWrapper.SetOnLogOutgoingJSONRequest(const AProc: TOnLogOutgoingJSONRequest);
+begin
+  FOnLogOutgoingJSONRequest := AProc;
+end;
+function TJSONRPCWrapper.GetOnLogIncomingJSONResponse: TOnLogIncomingJSONResponse;
+begin
+  Result := FOnLogIncomingJSONResponse;
+end;
+procedure TJSONRPCWrapper.SetOnLogIncomingJSONResponse(const AProc: TOnLogIncomingJSONResponse);
+begin
+  FOnLogIncomingJSONResponse := AProc;
+end;
+function TJSONRPCWrapper.GetOnLogServerURL: TOnLogServerURL;
+begin
+  Result := FOnLogServerURL;
+end;
+procedure TJSONRPCWrapper.SetOnLogServerURL(const AProc: TOnLogServerURL);
+begin
+  FOnLogServerURL := AProc;
 end;
 
 procedure TJSONRPCWrapper.UpdateServerURL(
@@ -1848,7 +1886,8 @@ end;
 procedure TJSONRPCServerWrapper.DispatchJSONRPC(const ARequest, AResponse: TStream);
 type
   TJSONState = (tjParsing, tjGettingMethod, tjLookupMethod, tjLookupParams,
-    tjParseDateTime, tjParseString, tjParseInteger, tjCallMethod);
+    tjParseDateTime, tjParseString, tjParseInteger, tjCallMethod,
+    tjParseResponse);
 
 const CErrorFmt = '%s - Method Name: ''%s'', Param Name: ''%s'', Param Value: ''%s'', position: ''%d'', Param Kind: ''%s''';
 
@@ -2235,6 +2274,7 @@ begin
                 LResult := LMethod.Invoke(LObj, LArgs); // working
 //                LResult := LMethod.Invoke(LInstance, LArgs); // working
 
+                LJSONState := tjParseResponse;
                 if Assigned(LMethod.ReturnType) then
                   begin
                     // Add result into the response

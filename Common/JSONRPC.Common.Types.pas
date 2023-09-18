@@ -78,25 +78,52 @@ type
       write SetOnSafeCallException;
   end;
 
-  IJSONRPCGetSetDispatchEvents = interface
-    ['{48A201AB-42B9-4EB2-B6D8-8B6E47EED9F5}']
+  IJsonRpcClientLog = interface
+    ['{846F7319-7FFF-4634-BDB4-6D518C65E5A6}']
+//  TOnLogOutgoingJSONRequest  = reference to procedure(const AJSONRPCRequest: string);
+//  TOnLogIncomingJSONResponse = reference to procedure(const AJSONRPCResponse: string);
+//  TOnLogServerURL = reference to procedure(const AServerURL: string);
 
-    function GetOnDispatchedJSONRPC: TOnDispatchedJSONRPC;
-    procedure SetOnDispatchedJSONRPC(const AProc: TOnDispatchedJSONRPC);
+    function GetOnLogOutgoingJSONRequest: TOnLogOutgoingJSONRequest;
+    procedure SetOnLogOutgoingJSONRequest(const AProc: TOnLogOutgoingJSONRequest);
 
+    function GetOnLogIncomingJSONResponse: TOnLogIncomingJSONResponse;
+    procedure SetOnLogIncomingJSONResponse(const AProc: TOnLogIncomingJSONResponse);
+
+    function GetOnLogServerURL: TOnLogServerURL;
+    procedure SetOnLogServerURL(const AProc: TOnLogServerURL);
+
+    property OnLogOutgoingJSONRequest: TOnLogOutgoingJSONRequest
+      read GetOnLogOutgoingJSONRequest write SetOnLogOutgoingJSONRequest;
+    property OnLogIncomingJSONResponse: TOnLogIncomingJSONResponse
+      read GetOnLogIncomingJSONResponse write SetOnLogIncomingJSONResponse;
+    property OnLogServerURL: TOnLogServerURL
+      read GetOnLogServerURL write SetOnLogServerURL;
+  end;
+
+  IJsonRpcServerLog = interface
+    ['{3CD1A72D-3A00-4A07-8295-E0EDDBB32F20}']
     function GetOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest;
     procedure SetOnLogIncomingJSONRequest(const AProc: TOnLogIncomingJSONRequest);
 
     function GetOnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse;
     procedure SetOnLogOutgoingJSONResponse(const AProc: TOnLogOutgoingJSONResponse);
 
-    property OnDispatchedJSONRPC: TOnDispatchedJSONRPC read GetOnDispatchedJSONRPC
-      write SetOnDispatchedJSONRPC;
-
     property OnLogIncomingJSONRequest: TOnLogIncomingJSONRequest
       read GetOnLogIncomingJSONRequest write SetOnLogIncomingJSONRequest;
     property OnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse
       read GetOnLogOutgoingJSONResponse write SetOnLogOutgoingJSONResponse;
+  end;
+
+  IJSONRPCGetSetDispatchEvents = interface
+    ['{48A201AB-42B9-4EB2-B6D8-8B6E47EED9F5}']
+
+    function GetOnDispatchedJSONRPC: TOnDispatchedJSONRPC;
+    procedure SetOnDispatchedJSONRPC(const AProc: TOnDispatchedJSONRPC);
+
+    property OnDispatchedJSONRPC: TOnDispatchedJSONRPC read GetOnDispatchedJSONRPC
+      write SetOnDispatchedJSONRPC;
+
   end;
 
   IJSONRPCInvocationSettings = interface
