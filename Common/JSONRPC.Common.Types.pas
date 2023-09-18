@@ -19,6 +19,7 @@ type
   // For client side
   TOnLogOutgoingJSONRequest  = reference to procedure(const AJSONRPCRequest: string);
   TOnLogIncomingJSONResponse = reference to procedure(const AJSONRPCResponse: string);
+  TOnLogServerURL = reference to procedure(const AServerURL: string);
 
   // For server side
   TOnLogIncomingJSONRequest  = reference to procedure(const AJSONRPCRequest: string);

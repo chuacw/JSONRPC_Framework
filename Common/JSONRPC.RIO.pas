@@ -35,7 +35,6 @@ type
   protected
   var
     FIntfMD: TIntfMetaData;
-    FOwnsObjects: Boolean;
     procedure InitClient; virtual; abstract;
     procedure SetInvokeMethod; virtual; abstract;
     procedure DoDispatch(const AContext: TInvContext; AMethNum: Integer;
@@ -69,8 +68,6 @@ type
       property OnSafeCallException: TOnSafeCallException read GetOnSafeCallException
         write SetOnSafeCallException;
      end;
-  public
-    property OwnsObjects: Boolean read FOwnsObjects write FOwnsObjects;
   end;
 {$ENDIF}
 
@@ -112,7 +109,10 @@ type
     FRefCount: Integer;
     FOnLogOutgoingJSONRequest: TOnLogOutgoingJSONRequest;
     FOnLogIncomingJSONResponse: TOnLogIncomingJSONResponse;
+    FOnLogServerURL: TOnLogServerURL;
     FRttiContext: TRttiContext;
+    FOwnsObjects: Boolean;
+    FJSONObjects: TList<TJSONValue>;
 
     class var FRegistry: TDictionary<TGUID, PTypeInfo>;
 
@@ -146,6 +146,13 @@ type
     procedure DoDispatch(const AContext: TInvContext; AMethNum: Integer; const AMethMD: TIntfMethEntry); {$IF DEFINED(BASECLASS)}override;{$ENDIF}
     procedure DoLogOutgoingRequest(const ARequest: string);
     procedure DoLogIncomingResponse(const AResponse: string);
+
+    /// <summary>
+    /// Called when the final server URL has changed before a request is going to be submitted.
+    /// This is for JSON RPC servers like Aptos, where every method has a different URL.
+    /// </summary>
+    procedure DoLogServerURL(const AURL: string);
+
     function InternalQI(const IID: TGUID; out Obj): HResult; override; stdcall;
 
     procedure InitClient; {$IF DEFINED(BASECLASS)}override;{$ELSE}virtual;{$ENDIF}
@@ -195,7 +202,14 @@ type
     { IJSONRPCWrapper }
     function GetJSONRPCWrapper: TJSONRPCWrapper;
 
-    function GetUrlSuffix(const AMethMD: TIntfMethEntry): string;
+    function GetUrlSuffix(const AMethodType: TRttiType;
+      const AMethMD: TIntfMethEntry): string;
+    procedure UpdateServerURL(
+      const AContext: TInvContext;
+      const AMethMD: TIntfMethEntry; var VServerURL: string); virtual;
+
+    procedure TrackJSONObjectToFree(const AJSONObj: TJSONObject);
+    procedure FreeLastResponse;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -218,6 +232,8 @@ type
       read FOnLogOutgoingJSONRequest write FOnLogOutgoingJSONRequest;
     property OnLogIncomingJSONResponse: TOnLogIncomingJSONResponse
       read FOnLogIncomingJSONResponse write FOnLogIncomingJSONResponse;
+    property OnLogServerURL: TOnLogServerURL
+      read FOnLogServerURL write FOnLogServerURL;
 
     /// <summary> Specifies that safecall exception handler
     /// </summary>
@@ -247,7 +263,7 @@ type
     property ResponseTimeout: Integer read GetResponseTimeout write SetResponseTimeout;
 
     property JSONRPCWrapper: TJSONRPCWrapper read GetJSONRPCWrapper;
-
+    property OwnsObjects: Boolean read FOwnsObjects write FOwnsObjects;
   end;
 
   /// <summary> JSON RPC server side
@@ -556,10 +572,29 @@ begin
   JSONRPC.JsonUtils.DeserializeJSON(AJsonValue, ATypeInfo, VValue);
 end;
 
+procedure TJSONRPCWrapper.TrackJSONObjectToFree(const AJSONObj: TJSONObject);
+begin
+  if FOwnsObjects then
+    begin
+      FJSONObjects.Add(AJSONObj);
+    end;
+end;
+
+procedure TJSONRPCWrapper.FreeLastResponse;
+begin
+  if FOwnsObjects then
+    begin
+      for var LObj in FJSONObjects do
+        LObj.Free;
+      FJSONObjects.Clear;
+    end;
+end;
+
 destructor TJSONRPCWrapper.Destroy;
 var
   LRio: TRIOVirtualInterface;
 begin
+  FreeLastResponse;
   FreeException;
   FOnBeforeExecute := nil;
   FOnAfterExecute := nil;
@@ -594,15 +629,24 @@ begin
     FOnBeforeParse(AContext, AMethNum, AMethMD, AMethodID, AJSONResponse);
 end;
 
-function TJSONRPCWrapper.GetUrlSuffix(const AMethMD: TIntfMethEntry): string;
+function TJSONRPCWrapper.GetUrlSuffix(
+  const AMethodType: TRttiType;
+  const AMethMD: TIntfMethEntry): string;
 var
   LType: TRttiType;
   LUrlSuffix: UrlSuffixAttribute;
 begin
-  LType := FRttiContext.GetType(AMethMD.SelfInfo);
+  LType := AMethodType;
   LUrlSuffix := LType.GetAttribute(UrlSuffixAttribute) as UrlSuffixAttribute;
   if Assigned(LUrlSuffix) then
     Result := LUrlSuffix.UrlSuffix;
+end;
+
+procedure TJSONRPCWrapper.UpdateServerURL(
+  const AContext: TInvContext;
+  const AMethMD: TIntfMethEntry;
+  var VServerURL: string);
+begin
 end;
 
 // Client side JSON RPC parameter conversion
@@ -627,6 +671,7 @@ begin
 // create something like this, with PassParamsByPosition
 // {"jsonrpc": "2.0", "method": "AddSomeXY", "params": {5, 6}, "id": 2}
 
+  FreeLastResponse;
   LJSONMethodObj := TJSONObject.Create;
   try
     {$REGION 'Convert native Delphi call to a JSON string'}
@@ -855,7 +900,7 @@ begin
     // Only add ID if it's not a Notification call
     var LRttiContext := TRttiContext.Create;
     var LIntfType := LRttiContext.GetType(AMethMD.SelfInfo);
-    var LMethodType := LIntfType.GetMethod(AMethMD.Name);
+    var LMethodType := LIntfType;
     var LJSONNotify := LMethodType.GetAttribute<JSONNotifyAttribute>;
     var LIsNotification := LJSONNotify <> nil;
     var LMethodID := -1;
@@ -884,7 +929,7 @@ begin
             LRequestStream.Position := 0;
             var LHeaders: TNetHeaders := InitializeHeaders(LRequestStream);
             LServerURL := FServerURL;
-            var LUrlSuffix := GetURLSuffix(AMethMD);
+            var LUrlSuffix := GetURLSuffix(LMethodType, AMethMD);
             if LUrlSuffix <> '' then
               begin
                 if not LServerURL.EndsWith('/') then
@@ -892,6 +937,11 @@ begin
                 if LUrlSuffix.StartsWith('/') then
                   Delete(LUrlSuffix, Low(LUrlSuffix), 1);
                 LServerURL := LServerURL + LUrlSuffix;
+                // Prevent duplicates
+                if LServerURL.EndsWith('//') then
+                  Delete(LServerURL, Length(LServerURL), 1);
+                UpdateServerURL(AContext, AMethMD, LServerURL);
+                DoLogServerURL(LServerURL);
               end;
             SendGetPost(LServerURL, LRequestStream, LResponseStream, LHeaders);
           end;
@@ -934,12 +984,32 @@ begin
                 {$IF DEFINED(SUPPORTS_JSONOBJECT_AS_RESULT)}
                   tkClass: begin
                     // take a TJSONObject as a result
-                    var LJSONObj := LJSONResponseObj.FindValue(LResultPathName);
-                    var LClassName := LJSONObj.ClassName;
-                    if Assigned(LJSONObj) and (AMethMD.ResultInfo = TypeInfo(TJSONObject)) then
-                      begin
-                        TJSONObject(LResultP^) := TJSONObject(LJSONObj);
-                      end;
+                      var LJSONObj := LJSONResponseObj.FindValue(LResultPathName);
+                      if LJSONObj <> nil then
+                        begin
+                          if Assigned(LJSONObj) and (AMethMD.ResultInfo = TypeInfo(TJSONObject)) then
+                            begin
+                              var LResultObj := TJSONObject(LJSONObj).Clone as TJSONObject;
+                              TrackJSONObjectToFree(LResultObj);
+                              TJSONObject(LResultP^) := LResultObj;
+                            end else
+                            begin
+                              Assert(False, 'Untested code path: 973');
+                            end;
+                        end else
+                        begin
+                          // There's no "result" on Aptos, the entire block
+                          // is a JSON object
+                          if (AMethMD.ResultInfo = TypeInfo(TJSONObject)) then
+                            begin
+                              var LResultObj := TJSONObject(LJSONResponseObj).Clone as TJSONObject;
+                              TrackJSONObjectToFree(LResultObj);
+                              TJSONObject(LResultP^) := LResultObj;
+                            end else
+                            begin
+                              Assert(False, 'Untested code path: 985');
+                            end;
+                        end;
                   end;
                 {$ELSE}
                   tkClass: begin
@@ -1105,6 +1175,12 @@ begin
     FOnLogIncomingJSONResponse(AResponse);
 end;
 
+procedure TJSONRPCWrapper.DoLogServerURL(const AURL: string);
+begin
+  if Assigned(FOnLogServerURL) then
+    FOnLogServerURL(AURL);
+end;
+
 procedure TJSONRPCWrapper.DoSync(AJSONRequest, AJSONResponse: TStream);
 begin
   if Assigned(FOnSync) then
@@ -1137,6 +1213,8 @@ begin
         begin
           LMethNum := I;
           LMethMD := FIntfMD.MDA[I];
+          // Patch up the SelfInfo
+          LMethMD.SelfInfo := AMethod.Handle;
           LContext.SetMethodInfo(LMethMD);
           Break;
         end;

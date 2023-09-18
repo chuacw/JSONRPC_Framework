@@ -175,9 +175,12 @@
         <DCCReference Include="..\..\Common\JSONRPC.InvokeRegistry.pas"/>
         <DCCReference Include="..\..\Common\JSONRPC.Common.Types.pas"/>
         <DCCReference Include="..\..\Common\JSONRPC.Common.Consts.pas"/>
-        <DCCReference Include="..\..\Web3\Aptos\JSONRPC.Web3.AptosAPI.pas"/>
         <DCCReference Include="..\..\Common\JSONRPC.Common.RecordHandlers.pas"/>
         <DCCReference Include="JSONRPC.Web3.AptosClient.Impl.pas"/>
+        <DCCReference Include="..\..\Web3\Aptos\JSONRPC.Web3.AptosAPI.pas"/>
+        <DCCReference Include="JSONRPC.TransportWrapper.AptosHTTP.pas"/>
+        <DCCReference Include="..\..\Web3\Aptos\JSONRPC.Web3.Aptos.Common.Types.pas"/>
+        <DCCReference Include="..\..\Web3\Aptos\Web3.Aptos.RIO.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
