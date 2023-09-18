@@ -1407,7 +1407,17 @@ function MatchElementType(ATypeInfo: PTypeInfo; ATypeKind: TTypeKind; const AJSO
 begin
   case ATypeKind of
     tkDynArray: begin
-      Assert(False, 'This code path is not tested');
+      // Possible to have an empty array, and if that's the case, this code will
+      // throw an exception, since the first element is accessed, so, assume
+      // it matches
+      try
+        Result := MatchElementType(ATypeInfo.TypeData.DynArrElType^,
+          ATypeInfo.TypeData.DynArrElType^.Kind,
+          TJSONArray(AJSONParam).Items[0]
+        );
+      except
+        Result := True;
+      end;
     end;
     tkEnumeration: begin // Boolean only
       if IsBoolType(ATypeInfo) then
@@ -1444,23 +1454,37 @@ function MatchElementType(ARttiType: TRttiType; const AJSONParam: TJSONValue): B
 begin
   if ARttiType is TRttiArrayType then
     begin
-      if AJSONParam is TJSONArray then
-        begin
-          Result := MatchElementType(
-            TRttiArrayType(ARttiType).ElementType,
-            TJSONArray(AJSONParam)[0]
-          );
-        end else
-        begin
-          var LType := TRttiDynamicArrayType(ARttiType).ElementType;
-          Result := AJSONParam is TJSONArray and
-            MatchElementType(LType.Handle, LType.TypeKind, AJSONParam);
-        end;
+      try
+        if AJSONParam is TJSONArray then
+          begin
+            Result := MatchElementType(
+              TRttiArrayType(ARttiType).ElementType,
+              TJSONArray(AJSONParam)[0]
+            );
+          end else
+          begin
+            var LType := TRttiDynamicArrayType(ARttiType).ElementType;
+            Result := AJSONParam is TJSONArray and
+              MatchElementType(LType.Handle, LType.TypeKind, AJSONParam);
+          end;
+      except
+        Result := True;
+      end;
     end else
   if ARttiType is TRttiDynamicArrayType then
     begin
-      Result := (AJSONParam is TJSONArray) and
-        MatchElementType(TRttiDynamicArrayType(ARttiType).Handle, ARttiType.TypeKind, AJSONParam);
+      // Possible to have an empty array, and if that's the case, this code will
+      // throw an exception, since the first element is accessed, so, assume
+      // it matches
+      try
+        Result := (AJSONParam is TJSONArray) and
+          MatchElementType(
+            TRttiDynamicArrayType(ARttiType).Handle, ARttiType.TypeKind,
+            TJSONArray(AJSONParam)[0]
+          );
+      except
+        Result := True; // assume match
+      end;
     end else
     begin
       Result := MatchElementType(ARttiType.Handle, ARttiType.TypeKind, AJSONParam);
