@@ -17,12 +17,12 @@ type
     FJSONRPCDispatcher: TJSONRPCDispatcher;
 
     function GetOnDispatchedJSONRPC: TOnDispatchedJSONRPC;
-    function GetOnReceivedJSONRPC: TOnReceivedJSONRPC;
-    function GetOnSentJSONRPC: TOnSentJSONRPC;
+    function GetOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest;
+    function GetOnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse;
 
     procedure SetOnDispatchedJSONRPC(const AProc: TOnDispatchedJSONRPC);
-    procedure SetOnReceivedJSONRPC(const AProc: TOnReceivedJSONRPC);
-    procedure SetOnSentJSONRPC(const AProc: TOnSentJSONRPC);
+    procedure SetOnLogIncomingJSONRequest(const AProc: TOnLogIncomingJSONRequest);
+    procedure SetOnLogOutgoingJSONResponse(const AProc: TOnLogOutgoingJSONResponse);
 
   public
     { Public declarations }
@@ -31,10 +31,10 @@ type
 
     property OnDispatchedJSONRPC: TOnDispatchedJSONRPC read GetOnDispatchedJSONRPC
       write SetOnDispatchedJSONRPC;
-    property OnReceivedJSONRPC: TOnReceivedJSONRPC read GetOnReceivedJSONRPC
-      write SetOnReceivedJSONRPC;
-    property OnSentJSONRPC: TOnSentJSONRPC read GetOnSentJSONRPC
-      write SetOnSentJSONRPC;
+    property OnOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest
+      read GetOnLogIncomingJSONRequest write SetOnLogIncomingJSONRequest;
+    property OnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse
+      read GetOnLogOutgoingJSONResponse write SetOnLogOutgoingJSONResponse;
   end;
 
 var
@@ -65,14 +65,14 @@ begin
   Result := FJSONRPCDispatcher.OnDispatchedJSONRPC;
 end;
 
-function TJSONRPCWebModule1.GetOnReceivedJSONRPC: TOnReceivedJSONRPC;
+function TJSONRPCWebModule1.GetOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest;
 begin
-  Result := FJSONRPCDispatcher.OnReceivedJSONRPC;
+  Result := FJSONRPCDispatcher.OnLogIncomingJSONRequest;
 end;
 
-function TJSONRPCWebModule1.GetOnSentJSONRPC: TOnSentJSONRPC;
+function TJSONRPCWebModule1.GetOnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse;
 begin
-  Result := FJSONRPCDispatcher.OnSentJSONRPC;
+  Result := FJSONRPCDispatcher.OnLogOutgoingJSONResponse;
 end;
 
 procedure TJSONRPCWebModule1.SetOnDispatchedJSONRPC(
@@ -81,15 +81,15 @@ begin
   FJSONRPCDispatcher.OnDispatchedJSONRPC := AProc;
 end;
 
-procedure TJSONRPCWebModule1.SetOnReceivedJSONRPC(
-  const AProc: TOnReceivedJSONRPC);
+procedure TJSONRPCWebModule1.SetOnLogIncomingJSONRequest(
+  const AProc: TOnLogIncomingJSONRequest);
 begin
-  FJSONRPCDispatcher.OnReceivedJSONRPC := AProc;
+  FJSONRPCDispatcher.OnLogIncomingJSONRequest := AProc;
 end;
 
-procedure TJSONRPCWebModule1.SetOnSentJSONRPC(const AProc: TOnSentJSONRPC);
+procedure TJSONRPCWebModule1.SetOnLogOutgoingJSONResponse(const AProc: TOnLogOutgoingJSONResponse);
 begin
-
+  FJSONRPCDispatcher.OnLogOutgoingJSONResponse := AProc;
 end;
 
 procedure TJSONRPCWebModule1.WebModule1DefaultHandlerAction(Sender: TObject;

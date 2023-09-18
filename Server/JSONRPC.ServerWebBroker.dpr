@@ -156,11 +156,11 @@ begin
         begin
           WriteLn('Dispatched JSON RPC: ', AJSONRequest);
         end);
-        SetOnReceivedJSONRPC(procedure (const AJSONRequest: string)
+        SetOnLogIncomingJSONRequest(procedure (const AJSONRequest: string)
         begin
           WriteLn('Received JSON RPC: ', AJSONRequest);
         end);
-        SetOnSentJSONRPC(procedure (const AJSONResponse: string)
+        SetOnLogOutgoingJSONResponse(procedure (const AJSONResponse: string)
         begin
           WriteLn('Sent JSON RPC: ', AJSONResponse);
         end);

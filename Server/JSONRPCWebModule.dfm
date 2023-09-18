@@ -6,7 +6,7 @@ object JSONRPCWebModule1: TJSONRPCWebModule1
       PathInfo = '/'
       OnAction = WebModule1DefaultHandlerAction
     end>
-  Height = 575
-  Width = 1038
-  PixelsPerInch = 240
+  Height = 518
+  Width = 934
+  PixelsPerInch = 216
 end

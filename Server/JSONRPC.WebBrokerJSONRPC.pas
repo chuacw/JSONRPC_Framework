@@ -26,8 +26,7 @@ type
 
     property OnDispatchedJSONRPC;
     property OnLogIncomingJSONRequest;
-    property OnSentJSONRPC: TOnLogOutgoingJSONResponse read GetOnLogOutgoingJSONResponse
-      write SetOnLogOutgoingJSONResponse;
+    property OnLogOutgoingJSONResponse;
 
     property OnException: TJSONRPCDispatcherException read FOnException write FOnException;
   end;
