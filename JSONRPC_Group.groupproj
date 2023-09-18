@@ -18,13 +18,10 @@
         <Projects Include="..\NetSocket\Client\NetSocket.Client.dproj">
             <Dependencies/>
         </Projects>
-        <Projects Include="Client\JSONRPC.EthereumProj.dproj">
+        <Projects Include="Client\Ethereum\JSONRPC.EthereumClient.dproj">
             <Dependencies/>
         </Projects>
-        <Projects Include="..\Bugs\Multiline0001Bug\JsonBigNumber.dproj">
-            <Dependencies/>
-        </Projects>
-        <Projects Include="..\BiggerNumbers\BiggerNumbers.dproj">
+        <Projects Include="Client\Aptos\JSONRPC.AptosClient.dproj">
             <Dependencies/>
         </Projects>
     </ItemGroup>
@@ -80,41 +77,32 @@
     <Target Name="NetSocket_Client:Make">
         <MSBuild Projects="..\NetSocket\Client\NetSocket.Client.dproj" Targets="Make"/>
     </Target>
-    <Target Name="JSONRPC_EthereumProj">
-        <MSBuild Projects="Client\JSONRPC.EthereumProj.dproj"/>
+    <Target Name="JSONRPC_EthereumClient">
+        <MSBuild Projects="Client\Ethereum\JSONRPC.EthereumClient.dproj"/>
     </Target>
-    <Target Name="JSONRPC_EthereumProj:Clean">
-        <MSBuild Projects="Client\JSONRPC.EthereumProj.dproj" Targets="Clean"/>
+    <Target Name="JSONRPC_EthereumClient:Clean">
+        <MSBuild Projects="Client\Ethereum\JSONRPC.EthereumClient.dproj" Targets="Clean"/>
     </Target>
-    <Target Name="JSONRPC_EthereumProj:Make">
-        <MSBuild Projects="Client\JSONRPC.EthereumProj.dproj" Targets="Make"/>
+    <Target Name="JSONRPC_EthereumClient:Make">
+        <MSBuild Projects="Client\Ethereum\JSONRPC.EthereumClient.dproj" Targets="Make"/>
     </Target>
-    <Target Name="JsonBigNumber">
-        <MSBuild Projects="..\Bugs\Multiline0001Bug\JsonBigNumber.dproj"/>
+    <Target Name="JSONRPC_AptosClient">
+        <MSBuild Projects="Client\Aptos\JSONRPC.AptosClient.dproj"/>
     </Target>
-    <Target Name="JsonBigNumber:Clean">
-        <MSBuild Projects="..\Bugs\Multiline0001Bug\JsonBigNumber.dproj" Targets="Clean"/>
+    <Target Name="JSONRPC_AptosClient:Clean">
+        <MSBuild Projects="Client\Aptos\JSONRPC.AptosClient.dproj" Targets="Clean"/>
     </Target>
-    <Target Name="JsonBigNumber:Make">
-        <MSBuild Projects="..\Bugs\Multiline0001Bug\JsonBigNumber.dproj" Targets="Make"/>
-    </Target>
-    <Target Name="BiggerNumbers">
-        <MSBuild Projects="..\BiggerNumbers\BiggerNumbers.dproj"/>
-    </Target>
-    <Target Name="BiggerNumbers:Clean">
-        <MSBuild Projects="..\BiggerNumbers\BiggerNumbers.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="BiggerNumbers:Make">
-        <MSBuild Projects="..\BiggerNumbers\BiggerNumbers.dproj" Targets="Make"/>
+    <Target Name="JSONRPC_AptosClient:Make">
+        <MSBuild Projects="Client\Aptos\JSONRPC.AptosClient.dproj" Targets="Make"/>
     </Target>
     <Target Name="Build">
-        <CallTarget Targets="TestJSONRPC;JSONRPC_ServerIndy;JSONRPC_ClientProj;JSONRPC_ServerWebBroker;NetSocket_Client;JSONRPC_EthereumProj;JsonBigNumber;BiggerNumbers"/>
+        <CallTarget Targets="TestJSONRPC;JSONRPC_ServerIndy;JSONRPC_ClientProj;JSONRPC_ServerWebBroker;NetSocket_Client;JSONRPC_EthereumClient;JSONRPC_AptosClient"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="TestJSONRPC:Clean;JSONRPC_ServerIndy:Clean;JSONRPC_ClientProj:Clean;JSONRPC_ServerWebBroker:Clean;NetSocket_Client:Clean;JSONRPC_EthereumProj:Clean;JsonBigNumber:Clean;BiggerNumbers:Clean"/>
+        <CallTarget Targets="TestJSONRPC:Clean;JSONRPC_ServerIndy:Clean;JSONRPC_ClientProj:Clean;JSONRPC_ServerWebBroker:Clean;NetSocket_Client:Clean;JSONRPC_EthereumClient:Clean;JSONRPC_AptosClient:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="TestJSONRPC:Make;JSONRPC_ServerIndy:Make;JSONRPC_ClientProj:Make;JSONRPC_ServerWebBroker:Make;NetSocket_Client:Make;JSONRPC_EthereumProj:Make;JsonBigNumber:Make;BiggerNumbers:Make"/>
+        <CallTarget Targets="TestJSONRPC:Make;JSONRPC_ServerIndy:Make;JSONRPC_ClientProj:Make;JSONRPC_ServerWebBroker:Make;NetSocket_Client:Make;JSONRPC_EthereumClient:Make;JSONRPC_AptosClient:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>
