@@ -1,4 +1,4 @@
-unit JSONRPC.User.SomeTypes.Impl;
+unit JSONRPC.Web3.AptosClient.Impl;
 
 {$CODEALIGN 16}
 
@@ -6,16 +6,12 @@ interface
 
 uses
   JSONRPC.Common.Types, System.Classes, System.JSON.Serializers,
-  JSONRPC.RIO, JSONRPC.User.SomeTypes;
+  JSONRPC.RIO, JSONRPC.Web3.AptosAPI;
 
-function GetSomeJSONRPC(const ServerURL: string = '';
+function GetAptosJSONRPC(const ServerURL: string = '';
   const AOnLoggingOutgoingJSONRequest: TOnLogOutgoingJSONRequest = nil;
-  const AOnLoggingIncomingJSONResponse: TOnLogIncomingJSONResponse = nil;
-  const AWrapperType: TTransportWrapperType = twtHTTP;
-  const AOnBeforeParse: TOnBeforeParseEvent = nil;
-  const AOnSyncProc: TOnSyncEvent = nil;
-  const AUseDefaultProcs: Boolean = True
-): ISomeJSONRPC;
+  const AOnLoggingIncomingJSONResponse: TOnLogIncomingJSONResponse = nil
+): IAptosJSONRPC;
 
 implementation
 
@@ -26,22 +22,17 @@ uses
   System.JSON, System.Rtti, JSONRPC.InvokeRegistry,
   JSONRPC.JsonUtils;
 
-function GetSomeJSONRPC(
-  const ServerURL: string = '';
+function GetAptosJSONRPC(const ServerURL: string = '';
   const AOnLoggingOutgoingJSONRequest: TOnLogOutgoingJSONRequest = nil;
-  const AOnLoggingIncomingJSONResponse: TOnLogIncomingJSONResponse = nil;
-  const AWrapperType: TTransportWrapperType = twtHTTP;
-  const AOnBeforeParse: TOnBeforeParseEvent = nil;
-  const AOnSyncProc: TOnSyncEvent = nil;
-  const AUseDefaultProcs: Boolean = True
-): ISomeJSONRPC;
+  const AOnLoggingIncomingJSONResponse: TOnLogIncomingJSONResponse = nil
+): IAptosJSONRPC;
 begin
 {$IF DEFINED(TEST)}
   // Developed to send rubbish data to check server tolerance
   RegisterJSONRPCWrapper(TypeInfo(ISomeExtendedJSONRPC));
 {$ENDIF}
 
-  RegisterJSONRPCWrapper(TypeInfo(ISomeJSONRPC));
+  RegisterJSONRPCWrapper(TypeInfo(IAptosJSONRPC));
 
   var LJSONRPCWrapper := TJSONRPCWrapper.Create(nil);
   LJSONRPCWrapper.ServerURL := ServerURL;
@@ -49,7 +40,7 @@ begin
   LJSONRPCWrapper.OnLogOutgoingJSONRequest := AOnLoggingOutgoingJSONRequest;
   LJSONRPCWrapper.OnLogIncomingJSONResponse := AOnLoggingIncomingJSONResponse;
 
-  Result := LJSONRPCWrapper as ISomeJSONRPC;
+  Result := LJSONRPCWrapper as IAptosJSONRPC;
 
 {$IF DECLARED(IsDebuggerPresent)}
   if IsDebuggerPresent then
@@ -122,7 +113,7 @@ begin
 end;
 
 initialization
-  InvRegistry.RegisterInterface(TypeInfo(ISomeJSONRPC));
+  InvRegistry.RegisterInterface(TypeInfo(IAptosJSONRPC));
 {$IF DEFINED(TEST)}
   // Developed to send rubbish data to check server tolerance
   InvRegistry.RegisterInterface(TypeInfo(ISomeExtendedJSONRPC));

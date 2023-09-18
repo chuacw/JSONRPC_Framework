@@ -1,4 +1,4 @@
-unit Web3.AptosAPI;
+unit JSONRPC.Web3.AptosAPI;
 
 interface
 
@@ -18,4 +18,9 @@ type
 
 implementation
 
+uses
+  JSONRPC.InvokeRegistry;
+
+initialization
+  InvRegistry.RegisterInterface(TypeInfo(IAptosJSONRPC));
 end.

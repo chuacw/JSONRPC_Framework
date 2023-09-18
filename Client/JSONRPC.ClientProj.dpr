@@ -6,7 +6,7 @@ program JSONRPC.ClientProj;
 
 uses
   JSONRPC.RIO in '..\Common\JSONRPC.RIO.pas',
-  System.Classes,
+  System.Classes, System.Generics.Collections,
   System.Rtti,
   System.JSON,
   System.SysUtils,
@@ -28,11 +28,24 @@ uses
 
 procedure Main;
 begin
-  var LJSONRPC := GetSomeJSONRPC('http://localhost:8083');
+  var LJSONRPC := GetSomeJSONRPC('http://localhost:8083',
+    procedure(const AJSONRPCRequest: string)
+    begin
+      WriteLn(Format('Outgoing JSON RPC Request: %s', [AJSONRPCRequest]));
+    end,
+    procedure(const AJSONRPCResponse: string)
+    begin
+      WriteLn(Format('Incoming JSON RPC Response: %s', [AJSONRPCResponse]));
+    end
+  );
   try
 
+    var AList := TList<Integer>.Create;
+    AList.AddRange([1, 2, 3, 4, 5]);
+    var LResultList := LJSONRPC.SendSomeList(AList);
+
     var LResultExtended := LJSONRPC.SendExtended(Extended.MaxValue);
-    Assert(LResultExtended= Extended.MaxValue, 'Roundtripping failed');
+    Assert(LResultExtended = Extended.MaxValue, 'Roundtripping failed');
 
     // Pass by position, or pass by name, default = pass params by name
     PassParamsByPosition(LJSONRPC);
@@ -121,6 +134,9 @@ begin
   except
     WriteLn('Program did not complete');
   end;
+
+  // This is automatically released, so your code can choose not to nil
+  // it
   LJSONRPC := nil;
 end;
 

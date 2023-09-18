@@ -1,4 +1,4 @@
-program JSONRPC.AptosProj;
+program JSONRPC.AptosClient;
 
 {$APPTYPE CONSOLE}
 
@@ -6,13 +6,15 @@ program JSONRPC.AptosProj;
 
 uses
   System.SysUtils,
-  JSONRPC.TransportWrapper.HTTP in '..\Common\JSONRPC.TransportWrapper.HTTP.pas',
-  JSONRPC.RIO in '..\Common\JSONRPC.RIO.pas',
-  JSONRPC.JsonUtils in '..\Common\JSONRPC.JsonUtils.pas',
-  JSONRPC.InvokeRegistry in '..\Common\JSONRPC.InvokeRegistry.pas',
-  JSONRPC.Common.Types in '..\Common\JSONRPC.Common.Types.pas',
-  JSONRPC.Common.Consts in '..\Common\JSONRPC.Common.Consts.pas',
-  Web3.AptosAPI in '..\Web3\Aptos\Web3.AptosAPI.pas';
+  JSONRPC.TransportWrapper.HTTP in '..\..\Common\JSONRPC.TransportWrapper.HTTP.pas',
+  JSONRPC.RIO in '..\..\Common\JSONRPC.RIO.pas',
+  JSONRPC.JsonUtils in '..\..\Common\JSONRPC.JsonUtils.pas',
+  JSONRPC.InvokeRegistry in '..\..\Common\JSONRPC.InvokeRegistry.pas',
+  JSONRPC.Common.Types in '..\..\Common\JSONRPC.Common.Types.pas',
+  JSONRPC.Common.Consts in '..\..\Common\JSONRPC.Common.Consts.pas',
+  JSONRPC.Web3.AptosAPI in '..\..\Web3\Aptos\JSONRPC.Web3.AptosAPI.pas',
+  JSONRPC.Common.RecordHandlers in '..\..\Common\JSONRPC.Common.RecordHandlers.pas',
+  JSONRPC.Web3.AptosClient.Impl in 'JSONRPC.Web3.AptosClient.Impl.pas';
 
 procedure AssignSafeCallException(const AJSONRPC: IAptosJSONRPC);
 begin

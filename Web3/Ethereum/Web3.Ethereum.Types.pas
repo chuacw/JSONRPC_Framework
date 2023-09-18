@@ -139,6 +139,7 @@ initialization
   RegisterRecordHandler(TypeInfo(BigInteger),
     procedure(
       const APassParamByPosOrName: TPassParamByPosOrName;
+      ATypeInfo: PTypeInfo;
       const AParamName: string;
       const AParamValuePtr: Pointer;
       const AParamsObj: TJSONObject;
@@ -183,13 +184,13 @@ initialization
       LJSON := LBigInteger.ToString;
       AJSONObject.AddPair(SRESULT, LJSON);
     end,
-    function(const AJSONRequestObj: TJSONObject; const AParamName: string): TValue
+    function(const AJSON: string): TValue
     // JSONToTValue
     var
       LParamValue: string;
       LBigInteger: BigInteger;
     begin
-      AJSONRequestObj.TryGetValue<string>(AParamName, LParamValue);
+      LParamValue := AJSON;
       if LParamValue.StartsWith('0x', True) then
         LParamValue := Copy(LParamValue, Low(LParamValue) + 2);
       BigInteger.TryParse(LParamValue, 16, LBigInteger);
