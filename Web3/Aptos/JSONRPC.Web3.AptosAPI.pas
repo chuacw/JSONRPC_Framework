@@ -18,6 +18,10 @@ type
 
     [UrlSuffix('/v1/blocks/by_height/{AHeight}')]
     function GetBlocksByHeight(const AHeight: UInt64): TJSONObject;
+
+    [UrlSuffix('/v1/blocks/by_version/{version}')]
+    function GetBlocksByVersion(const version: Integer): TJSONObject; safecall;
+
   end;
 
 implementation

@@ -50,11 +50,9 @@ begin
   );
 end;
 
-procedure RunAptosClient;
-var
-  LJSONObj: TJSONObject;
+function GetAptosClient(const AURL: string): IAptosJSONRPC;
 begin
-  var LAptosClient := GetAptosJSONRPC('https://fullnode.devnet.aptoslabs.com/',
+  Result := GetAptosJSONRPC('https://fullnode.devnet.aptoslabs.com/',
     procedure(const AJSONRPCRequest: string)
     begin
       WriteLn('Sending outgoing request: ', AJSONRPCRequest);
@@ -62,13 +60,28 @@ begin
     procedure(const AJSONRPCResponse: string)
     begin
       WriteLn('Received incoming response: ', AJSONRPCResponse);
+      WriteLn(StringOfChar('-', 80));
+      WriteLn;
+    end,
+    procedure(const AServerURL: string)
+    begin
+      WriteLn('Sending request to ', AServerURL);
+      WriteLn(StringOfChar('-', 80));
+      WriteLn;
     end
   );
+end;
+
+procedure RunAptosClient;
+begin
+  var LAptosClient := GetAptosClient('https://fullnode.devnet.aptoslabs.com/');
   // LAptosClient.GetAccount()
   var LJSONObject := LAptosClient.GetBlocksByHeight(1075502);
+  var LJSONGetBlocksByVersion := LAptosClient.GetBlocksByVersion(2309044);
 end;
 
 begin
+  ReportMemoryLeaksOnShutdown := True;
   try
     RunAptosClient;
   except

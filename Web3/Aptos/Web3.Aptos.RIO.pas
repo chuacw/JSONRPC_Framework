@@ -64,6 +64,10 @@ begin
               case LParamTypeInfo.Kind of
                 tkString:
                   VServerURL := StringReplace(VServerURL, LParamName, string(LParamPointer^), [rfReplaceAll]);
+                tkInteger: begin
+                  var LValue := IntToStr(PInteger(LParamPointer)^);
+                  VServerURL := StringReplace(VServerURL, LParamName, LValue, [rfReplaceAll]);
+                end;
                 tkInt64: begin
                   var LValue := IntToStr(PUInt64(LParamPointer)^);
                   VServerURL := StringReplace(VServerURL, LParamName, LValue, [rfReplaceAll]);

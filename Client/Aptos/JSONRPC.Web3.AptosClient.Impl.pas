@@ -10,7 +10,8 @@ uses
 
 function GetAptosJSONRPC(const ServerURL: string = '';
   const AOnLoggingOutgoingJSONRequest: TOnLogOutgoingJSONRequest = nil;
-  const AOnLoggingIncomingJSONResponse: TOnLogIncomingJSONResponse = nil
+  const AOnLoggingIncomingJSONResponse: TOnLogIncomingJSONResponse = nil;
+  const AOnLogServerURL: TOnLogServerURL = nil
 ): IAptosJSONRPC;
 
 implementation
@@ -24,7 +25,8 @@ uses
 
 function GetAptosJSONRPC(const ServerURL: string = '';
   const AOnLoggingOutgoingJSONRequest: TOnLogOutgoingJSONRequest = nil;
-  const AOnLoggingIncomingJSONResponse: TOnLogIncomingJSONResponse = nil
+  const AOnLoggingIncomingJSONResponse: TOnLogIncomingJSONResponse = nil;
+  const AOnLogServerURL: TOnLogServerURL = nil
 ): IAptosJSONRPC;
 begin
   RegisterJSONRPCWrapper(TypeInfo(IAptosJSONRPC));
@@ -34,6 +36,7 @@ begin
 
   LJSONRPCWrapper.OnLogOutgoingJSONRequest := AOnLoggingOutgoingJSONRequest;
   LJSONRPCWrapper.OnLogIncomingJSONResponse := AOnLoggingIncomingJSONResponse;
+  LJSONRPCWrapper.OnLogServerURL := AOnLogServerURL;
 
   Result := LJSONRPCWrapper as IAptosJSONRPC;
 
@@ -43,8 +46,6 @@ begin
       LJSONRPCWrapper.SendTimeout := 10*60*1000;
       LJSONRPCWrapper.ResponseTimeout := LJSONRPCWrapper.SendTimeout;
       LJSONRPCWrapper.ConnectionTimeout := LJSONRPCWrapper.SendTimeout;
-//      LJSONRPCWrapper.ResponseTimeout := 150;
-//      LJSONRPCWrapper.SendTimeout := 150;
     end;
 {$ENDIF}
 

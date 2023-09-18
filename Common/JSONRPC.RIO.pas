@@ -542,6 +542,8 @@ begin
           FExceptObj := EJSONRPCException.Create(AExceptObject);
       end;
   end;
+  FOwnsObjects := True;
+  FJSONObjects := TList<TJSONValue>.Create;
 end;
 
 //procedure TJSONRPCWrapper.DeserializeJSON(const AJsonValue: TJSONValue;
@@ -601,6 +603,7 @@ begin
   FOnBeforeParse := nil;
   FOnSync := nil;
   FOnSafeCallException := nil;
+  FJSONObjects.Free;
   FClient.Free;
   LRio := TInterlocked.Exchange(Pointer(FInterface), nil);
   LRio.Free;
