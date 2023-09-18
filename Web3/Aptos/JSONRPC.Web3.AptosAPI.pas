@@ -3,7 +3,8 @@ unit JSONRPC.Web3.AptosAPI;
 interface
 
 uses
-  JSONRPC.RIO, JSONRPC.Common.Types, System.JSON;
+  JSONRPC.RIO, JSONRPC.Common.Types, System.JSON,
+  JSONRPC.Web3.Aptos.Common.Types;
 
 const
   AptosMainNet = 'https://fullnode.mainnet.aptoslabs.com/';
@@ -21,7 +22,7 @@ type
     function GetAccount(const Address: AptosAddress): TJSONObject; safecall;
 
     [UrlSuffix('/v1/blocks/by_height/{height}')]
-    function GetBlocksByHeight(const height: UInt64): TJSONValue; safecall;
+    function GetBlocksByHeight(const height: UInt64): TBlocksByHeightResult; safecall;
 
     [UrlSuffix('/v1/blocks/by_version/{version}')]
     function GetBlocksByVersion(const version: Integer): TJSONValue; safecall;

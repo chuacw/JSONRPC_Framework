@@ -5,7 +5,8 @@ program JSONRPC.AptosClient;
 {$R *.res}
 
 uses
-  System.SysUtils, System.JSON,
+  System.SysUtils,
+  System.JSON,
   JSONRPC.TransportWrapper.HTTP in '..\..\Common\JSONRPC.TransportWrapper.HTTP.pas',
   JSONRPC.RIO in '..\..\Common\JSONRPC.RIO.pas',
   JSONRPC.JsonUtils in '..\..\Common\JSONRPC.JsonUtils.pas',
@@ -52,7 +53,7 @@ end;
 
 function GetAptosClient(const AURL: string): IAptosJSONRPC;
 begin
-  Result := GetAptosJSONRPC('https://fullnode.devnet.aptoslabs.com/',
+  Result := GetAptosJSONRPC(AURL,
     procedure(const AJSONRPCRequest: string)
     begin
       WriteLn('Sending outgoing request: ', AJSONRPCRequest);
@@ -75,12 +76,11 @@ end;
 procedure RunAptosClient;
 begin
   var LAptosClient := GetAptosClient(AptosMainNet);
-  // LAptosClient.GetAccount()
-  var LJSONObject := LAptosClient.GetBlocksByHeight(1075502);
   var LJSONGetBlocksByVersion := LAptosClient.GetBlocksByVersion(2309044);
+  var LGetBlocksByHeight := LAptosClient.GetBlocksByHeight(67193037);
   var LAccountResource := LAptosClient.GetAccountResource(
-    '0xba84afe10531ab85186e99d1648401be9f0b2354f22999ecd1ccaff49977b055',
-    '0xe9fa01aaa1a483c6c598d470ae9b8174226590499b25812d8f0e86192a3b8711::game::GameStore'
+    '0xe54a8cf97f4a788b0a792654c6fcb02d10250cc2dacb09a424d67f7c48e2533f',
+    '0x1::coin::CoinStore<0x1::aptos_coin::AptosCoin>'
   );
 end;
 

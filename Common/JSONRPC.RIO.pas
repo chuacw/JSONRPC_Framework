@@ -530,7 +530,7 @@ begin
     LExc: EJSONRPCException absolute AExceptObject;
     LExcMethod: EJSONRPCMethodException absolute AExceptObject;
   begin
-    Result := E_UNEXPECTED;
+    Result := S_OK; // ------- ???
     FreeException;
     if ExceptObject is EJSONRPCMethodException then
       begin
@@ -576,6 +576,8 @@ end;
 
 procedure TJSONRPCWrapper.TrackJSONObjectToFree(const AJSONObj: TJSONObject);
 begin
+  if AJSONObj = nil then
+    Exit;
   if FOwnsObjects then
     begin
       FJSONObjects.Add(AJSONObj);
@@ -1054,7 +1056,11 @@ begin
                       begin
                         var LJSONObj := LJSONResponseObj.FindValue(LResultPathName);
                         if Assigned(LJSONObj) then
-                          DeserializeJSON(LJSONObj, AMethMD.ResultInfo, LResultP^);
+                          DeserializeJSON(LJSONObj, AMethMD.ResultInfo, LResultP^) else
+                        begin
+                          // JSON Response
+                          DeserializeJSON(LJSONResponseObj, AMethMD.ResultInfo, LResultP^);
+                        end;
                       end;
                   end;
                   tkEnumeration: begin

@@ -22,7 +22,6 @@ uses
   JSONRPC.JsonUtils in '..\..\Common\JSONRPC.JsonUtils.pas',
   JSONRPC.TransportWrapper.HTTP in '..\..\Common\JSONRPC.TransportWrapper.HTTP.pas',
   JSONRPC.TransportWrapper.TCP in '..\..\Common\JSONRPC.TransportWrapper.TCP.pas',
-  JSONRPC.User.SomeTypes.Impl in '..\JSONRPC.User.SomeTypes.Impl.pas',
   System.Net.ClientSocket in '..\..\..\NetSocket\Client\System.Net.ClientSocket.pas',
   System.Net.Socket.Common in '..\..\..\NetSocket\Common\System.Net.Socket.Common.pas',
   Web3.Common.Types in '..\..\Web3\Web3.Common.Types.pas',

@@ -134,7 +134,6 @@
         <DCCReference Include="..\..\Common\JSONRPC.JsonUtils.pas"/>
         <DCCReference Include="..\..\Common\JSONRPC.TransportWrapper.HTTP.pas"/>
         <DCCReference Include="..\..\Common\JSONRPC.TransportWrapper.TCP.pas"/>
-        <DCCReference Include="..\JSONRPC.User.SomeTypes.Impl.pas"/>
         <DCCReference Include="..\..\..\NetSocket\Client\System.Net.ClientSocket.pas"/>
         <DCCReference Include="..\..\..\NetSocket\Common\System.Net.Socket.Common.pas"/>
         <DCCReference Include="..\..\Web3\Web3.Common.Types.pas"/>
