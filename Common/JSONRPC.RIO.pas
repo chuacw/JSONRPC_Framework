@@ -954,16 +954,29 @@ begin
       end;
 
     // client request converted to JSON string
-    var LRequest := LJSONMethodObj.ToJSON;
-    DoLogOutgoingRequest(LRequest);
+    var LRequestJSON := LJSONMethodObj.ToJSON;
     {$ENDREGION}
 
     // then send it
     LRequestStream := FClient.RequestStream;
     try
-      var LBytes := TEncoding.UTF8.GetBytes(LRequest);
+      var LBytes := TEncoding.UTF8.GetBytes(LRequestJSON);
+      var LSizeBefore := LRequestStream.Size;
       LRequestStream.Write(LBytes, Length(LBytes));
       DoBeforeExecute(AMethMD.Name, LRequestStream);
+      var LSizeAfter := LRequestStream.Size;
+      var LTempJSON := LRequestJSON;
+      if LSizeBefore <> LSizeAfter then
+        begin
+          var LStringStream := TStringStream.Create;
+          try
+            LStringStream.CopyFrom(LRequestStream);
+            LTempJSON := LStringStream.DataString;
+          finally
+            LStringStream.Free;
+          end;
+        end;
+      DoLogOutgoingRequest(LTempJSON);
       LResponseStream := FClient.ResponseStream;
       try
         // Execute
@@ -1217,6 +1230,9 @@ end;
 
 procedure TJSONRPCWrapper.DoLogOutgoingRequest(const ARequest: string);
 begin
+{$IF DECLARED(OutputDebugString)}
+  OutputDebugString(PChar(ARequest));
+{$ENDIF}
   if Assigned(FOnLogOutgoingJSONRequest) then
     FOnLogOutgoingJSONRequest(ARequest);
 end;
@@ -1265,8 +1281,6 @@ begin
         begin
           LMethNum := I;
           LMethMD := FIntfMD.MDA[I];
-          // Patch up the SelfInfo
-          LMethMD.SelfInfo := AMethod.Handle;
           LContext.SetMethodInfo(LMethMD);
           Break;
         end;

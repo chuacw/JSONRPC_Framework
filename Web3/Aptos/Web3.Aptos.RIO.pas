@@ -8,11 +8,14 @@ uses
 type
   TWeb3AptosJSONRPCWrapper = class(TJSONRPCWrapper)
   protected
+    procedure DoBeforeExecute(const AMethodName: string; AJSONRequest: TStream); override;
+
     function InitializeHeaders(const ARequestStream: TStream): TNetHeaders; override;
+
     procedure UpdateServerURL(
       const AContext: TInvContext;
       const AMethMD: TIntfMethEntry; var VServerURL: string); override;
-  public
+ public
     constructor Create(AOwner: TComponent); override;
   end;
 
@@ -28,6 +31,14 @@ constructor TWeb3AptosJSONRPCWrapper.Create(AOwner: TComponent);
 begin
   inherited;
   FPassByPosOrName := tppByPos;
+end;
+
+procedure TWeb3AptosJSONRPCWrapper.DoBeforeExecute(const AMethodName: string;
+  AJSONRequest: TStream);
+begin
+// Aptos is a REST server, not a JSON RPC server, so no need to include a JSON RPC request
+  AJSONRequest.Size := 0;
+  inherited;
 end;
 
 function TWeb3AptosJSONRPCWrapper.InitializeHeaders(

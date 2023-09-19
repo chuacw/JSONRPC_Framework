@@ -115,6 +115,27 @@ Events
 ---
 Each stage of the JSON RPC process is marked with events.
 
+#### Client side events
+---
+The JSON RPC wrapper has 3 events that you can assign your own routines to, in order to monitor outgoing client requests, incoming server responses, and the URL that requests are sent to (only if the final URL is different from the base URL).
+
+* OnLogOutgoingJSONRequest
+  * reference to procedure(const AJSONRPCRequest: string)
+* OnLogIncomingJSONResponse
+  * reference to procedure(const AJSONRPCResponse: string);
+* OnLogServerURL
+  * reference to procedure(const AServerURL: string);
+
+#### Server side events
+---
+The JSON RPC server wrapper has 2 events that you can also assign your own routines to, in order to monitor incoming client requests, and outgoing server responses.
+
+* OnLogIncomingJSONRequest
+  * reference to procedure(const AJSONRPCRequest: string);
+* OnLogOutgoingJSONResponse
+  * reference to procedure(const AJSONRPCResponse: string);
+  
+
 Logging
 ---
 The JSON RPC framework supports logging outgoing request and incoming response on the client side, as well as logging incoming request and outgoing response on the server side.
@@ -188,7 +209,7 @@ However, if you do not wish to follow the recommendations, you can still use any
 
 Troubleshooting
 ---
-When implementing your JSON RPC interface, besides inheriting from IJSONRPCMethods, you'll need to add a GUID to your interface, failuter to do so will get you the compile-time error "E2015 Operator not applicable to this operand type"
+When implementing your JSON RPC interface, besides inheriting from IJSONRPCMethods, you'll need to add a GUID to your interface, failure to do so will get you the compile-time error "E2015 Operator not applicable to this operand type"
 
 Extensibility
 ---

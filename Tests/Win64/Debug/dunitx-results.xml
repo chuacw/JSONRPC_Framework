@@ -1,139 +1,55 @@
 ﻿<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
-<test-results name="K:\Development\Delphi\JSONRPC_Experiment\Tests\Win64\Debug\TestJSONRPC.exe" total="37" errors="7" failures="3" ignored="0" inconclusive="0" not-run="0" skipped="0" invalid="0" date="2023-09-10" time="2.189">
+<test-results name="K:\Development\Delphi\JSONRPC_Experiment\Tests\Win64\Debug\TestJSONRPC.exe" total="43" errors="0" failures="0" ignored="0" inconclusive="0" not-run="0" skipped="0" invalid="0" date="2023-09-19" time="4.658">
   <culture-info current-culture="en" current-uiculture="en" />
-  <test-suite type="Assembly" name="TestJSONRPC.exe" executed="true" result="Failure" success="False" time="2.189" asserts="0">
+  <test-suite type="Assembly" name="TestJSONRPC.exe" executed="true" result="Success" success="True" time="4.658" asserts="0">
     <results>
-        <test-suite type="Namespace" name="TestJSONRPC" executed="true" result="Failure" success="False" time="2.188" asserts="0" >
+        <test-suite type="Namespace" name="TestJSONRPC" executed="true" result="Success" success="True" time="4.658" asserts="0" >
           <results>
-              <test-suite type="Fixture" name="TTestJSONRPCClient" executed="True" result="Failure" success="False" time="2.188" >
+              <test-suite type="Fixture" name="TTestJSONRPCClient" executed="True" result="Success" success="True" time="4.658" >
                 <results>
-                  <test-case name="AddSomeXY.AddSomeXY" executed="True" result="Success" success="True" time="2.012" asserts="0" />
-                  <test-case name="GetSomeDate" executed="True" result="Success" success="True" time="0.001" asserts="0" />
-                  <test-case name="GetSomeBool.TestTrue" executed="True" result="Success" success="True" time="0.001" asserts="0" />
-                  <test-case name="GetSomeBool.TestFalse" executed="True" result="Success" success="True" time="0.001" asserts="0" />
-                  <test-case name="AddDoubles.AddDoubles" executed="True" result="Success" success="True" time="0.001" asserts="0" />
-                  <test-case name="SendEnum" executed="True" result="Success" success="True" time="0.001" asserts="0" />
-                  <test-case name="SomeException" executed="True" result="Success" success="True" time="0.001" asserts="0" />
-                  <test-case name="SomeSafeCallException.AssignHandler" executed="True" result="Success" success="True" time="0.001" asserts="0" />
-                  <test-case name="SomeSafeCallException.NoHandler" executed="True" result="Success" success="True" time="0.000" asserts="0" />
-                  <test-case name="SendBool.SendTrue" executed="True" result="Success" success="True" time="0.001" asserts="0" />
-                  <test-case name="SendBool.SendFalse" executed="True" result="Success" success="True" time="0.001" asserts="0" />
-                  <test-case name="SendByte.SendByte" executed="True" result="Success" success="True" time="0.001" asserts="0" />
-                  <test-case name="SendByte.SendByte" executed="True" result="Success" success="True" time="0.005" asserts="0" />
-                  <test-case name="SendByte.SendByte" executed="True" result="Success" success="True" time="0.001" asserts="0" />
-                  <test-case name="SendByteBool.SendByteBool" executed="True" result="Success" success="True" time="0.001" asserts="0" />
-                  <test-case name="SendByteBool.SendByteBool" executed="True" result="Success" success="True" time="0.001" asserts="0" />
-                  <test-case name="SendCardinal.SendCardinalMinValue" executed="True" result="Success" success="True" time="0.001" asserts="0" />
-                  <test-case name="SendCardinal.SendCardinalMaxValue" executed="True" result="Failure" success="False" time="0.000" asserts="0" >
-                    <failure>
-                      <message>
-                        <![CDATA[ Expected -1 but got 0 Cardinals are not the same! ]]>
-                      </message>
-                      <stack-trace>
-                        <![CDATA[  ]]>
-                      </stack-trace>
-                    </failure>
-                  </test-case>
-                  <test-case name="SendCurrency.SendCurrencyMinValue" executed="True" result="Failure" success="False" time="0.001" asserts="0" >
-                    <failure>
-                      <message>
-                        <![CDATA[ Expected -922337203685477.5808 is not equal to actual 0 Currencies are not the same! ]]>
-                      </message>
-                      <stack-trace>
-                        <![CDATA[  ]]>
-                      </stack-trace>
-                    </failure>
-                  </test-case>
-                  <test-case name="SendCurrency.SendCurrencyMaxValue" executed="True" result="Failure" success="False" time="0.006" asserts="0" >
-                    <failure>
-                      <message>
-                        <![CDATA[ Expected -922337203685477.5808 is not equal to actual 0 Currencies are not the same! ]]>
-                      </message>
-                      <stack-trace>
-                        <![CDATA[  ]]>
-                      </stack-trace>
-                    </failure>
-                  </test-case>
-                  <test-case name="SendDouble.SendDoubleMinValue" executed="True" result="Success" success="True" time="0.000" asserts="0" />
-                  <test-case name="SendDouble.SendDoubleMaxValue" executed="True" result="Success" success="True" time="0.000" asserts="0" />
-                  <test-case name="SendExtended.SendExtendedMinValue" executed="True" result="Error" success="False" time="0.001" asserts="0" >
-                    <failure>
-                      <message>
-                        <![CDATA[ Value 'code' not found ]]>
-                      </message>
-                      <stack-trace>
-                        <![CDATA[  ]]>
-                      </stack-trace>
-                    </failure>
-                  </test-case>
-                  <test-case name="SendExtended.SendExtendedMaxValue" executed="True" result="Error" success="False" time="0.001" asserts="0" >
-                    <failure>
-                      <message>
-                        <![CDATA[ Value 'code' not found ]]>
-                      </message>
-                      <stack-trace>
-                        <![CDATA[  ]]>
-                      </stack-trace>
-                    </failure>
-                  </test-case>
-                  <test-case name="SendGUID" executed="True" result="Success" success="True" time="0.001" asserts="0" />
-                  <test-case name="SendInt64" executed="True" result="Error" success="False" time="0.001" asserts="0" >
-                    <failure>
-                      <message>
-                        <![CDATA[ Value 'code' not found ]]>
-                      </message>
-                      <stack-trace>
-                        <![CDATA[  ]]>
-                      </stack-trace>
-                    </failure>
-                  </test-case>
-                  <test-case name="SendInteger" executed="True" result="Success" success="True" time="0.006" asserts="0" />
-                  <test-case name="SendLongWord" executed="True" result="Success" success="True" time="0.001" asserts="0" />
-                  <test-case name="SendNativeInt" executed="True" result="Error" success="False" time="0.001" asserts="0" >
-                    <failure>
-                      <message>
-                        <![CDATA[ Value 'code' not found ]]>
-                      </message>
-                      <stack-trace>
-                        <![CDATA[  ]]>
-                      </stack-trace>
-                    </failure>
-                  </test-case>
-                  <test-case name="SendNativeUInt" executed="True" result="Error" success="False" time="0.001" asserts="0" >
-                    <failure>
-                      <message>
-                        <![CDATA[ Value 'code' not found ]]>
-                      </message>
-                      <stack-trace>
-                        <![CDATA[  ]]>
-                      </stack-trace>
-                    </failure>
-                  </test-case>
-                  <test-case name="SendShort" executed="True" result="Success" success="True" time="0.001" asserts="0" />
-                  <test-case name="SendSingle" executed="True" result="Success" success="True" time="0.001" asserts="0" />
-                  <test-case name="SendSmallInt" executed="True" result="Success" success="True" time="0.005" asserts="0" />
-                  <test-case name="SendString" executed="True" result="Error" success="False" time="0.000" asserts="0" >
-                    <failure>
-                      <message>
-                        <![CDATA[ Access violation at address 0000000000566347 in module 'TestJSONRPC.exe'. Read of address 00000000002F9B78 ]]>
-                      </message>
-                      <stack-trace>
-                        <![CDATA[  ]]>
-                      </stack-trace>
-                    </failure>
-                  </test-case>
-                  <test-case name="SendUInt64" executed="True" result="Error" success="False" time="0.001" asserts="0" >
-                    <failure>
-                      <message>
-                        <![CDATA[ Value 'code' not found ]]>
-                      </message>
-                      <stack-trace>
-                        <![CDATA[  ]]>
-                      </stack-trace>
-                    </failure>
-                  </test-case>
-                  <test-case name="SendWord" executed="True" result="Success" success="True" time="0.000" asserts="0" />
-                  <test-case name="SendWordBool" executed="True" result="Success" success="True" time="0.001" asserts="0" />
+                  <test-case name="TestOnLogIncomingJSONResponse" executed="True" result="Success" success="True" time="2.161" asserts="0" />
+                  <test-case name="TestOnLogOutgoingJSONRequest" executed="True" result="Success" success="True" time="0.042" asserts="0" />
+                  <test-case name="SendBigNumbers" executed="True" result="Success" success="True" time="0.091" asserts="0" />
+                  <test-case name="AddDoubles.AddDoubles" executed="True" result="Success" success="True" time="0.042" asserts="0" />
+                  <test-case name="AddSomeXY.AddSomeXY" executed="True" result="Success" success="True" time="0.038" asserts="0" />
+                  <test-case name="GetSomeDate" executed="True" result="Success" success="True" time="0.040" asserts="0" />
+                  <test-case name="GetSomeBool.TestTrue" executed="True" result="Success" success="True" time="0.030" asserts="0" />
+                  <test-case name="GetSomeBool.TestFalse" executed="True" result="Success" success="True" time="0.056" asserts="0" />
+                  <test-case name="SendEnum" executed="True" result="Success" success="True" time="0.044" asserts="0" />
+                  <test-case name="SomeException" executed="True" result="Success" success="True" time="0.193" asserts="0" />
+                  <test-case name="SomeSafeCallException.AssignHandler" executed="True" result="Success" success="True" time="0.097" asserts="0" />
+                  <test-case name="SomeSafeCallException.NoHandler" executed="True" result="Success" success="True" time="0.061" asserts="0" />
+                  <test-case name="SendBool.SendTrue" executed="True" result="Success" success="True" time="0.035" asserts="0" />
+                  <test-case name="SendBool.SendFalse" executed="True" result="Success" success="True" time="0.041" asserts="0" />
+                  <test-case name="SendByte.SendByte" executed="True" result="Success" success="True" time="0.045" asserts="0" />
+                  <test-case name="SendByte.SendByte" executed="True" result="Success" success="True" time="0.034" asserts="0" />
+                  <test-case name="SendByte.SendByte" executed="True" result="Success" success="True" time="0.031" asserts="0" />
+                  <test-case name="SendByteBool.SendByteBool" executed="True" result="Success" success="True" time="0.042" asserts="0" />
+                  <test-case name="SendByteBool.SendByteBool" executed="True" result="Success" success="True" time="0.051" asserts="0" />
+                  <test-case name="SendCardinal" executed="True" result="Success" success="True" time="0.099" asserts="0" />
+                  <test-case name="SendCurrency.SendCurrencyMinValue" executed="True" result="Success" success="True" time="0.043" asserts="0" />
+                  <test-case name="SendCurrency.SendCurrencyMaxValue" executed="True" result="Success" success="True" time="0.043" asserts="0" />
+                  <test-case name="SendDouble.SendDoubleMinValue" executed="True" result="Success" success="True" time="0.029" asserts="0" />
+                  <test-case name="SendDouble.SendDoubleMaxValue" executed="True" result="Success" success="True" time="0.055" asserts="0" />
+                  <test-case name="SendExtended.SendExtendedMinValue" executed="True" result="Success" success="True" time="0.045" asserts="0" />
+                  <test-case name="SendExtended.SendExtendedMaxValue" executed="True" result="Success" success="True" time="0.055" asserts="0" />
+                  <test-case name="SendData.SendDataBooleanArray" executed="True" result="Success" success="True" time="0.057" asserts="0" />
+                  <test-case name="SendData.SendDataIntegerArray" executed="True" result="Success" success="True" time="0.059" asserts="0" />
+                  <test-case name="SendData.SendDataSingleArray" executed="True" result="Success" success="True" time="0.064" asserts="0" />
+                  <test-case name="SendData.SendDataDoubleArray" executed="True" result="Success" success="True" time="0.055" asserts="0" />
+                  <test-case name="SendGUID" executed="True" result="Success" success="True" time="0.046" asserts="0" />
+                  <test-case name="SendInt64" executed="True" result="Success" success="True" time="0.029" asserts="0" />
+                  <test-case name="SendInteger" executed="True" result="Success" success="True" time="0.053" asserts="0" />
+                  <test-case name="SendLongWord" executed="True" result="Success" success="True" time="0.043" asserts="0" />
+                  <test-case name="SendNativeInt" executed="True" result="Success" success="True" time="0.046" asserts="0" />
+                  <test-case name="SendNativeUInt" executed="True" result="Success" success="True" time="0.048" asserts="0" />
+                  <test-case name="SendShort" executed="True" result="Success" success="True" time="0.041" asserts="0" />
+                  <test-case name="SendSingle" executed="True" result="Success" success="True" time="0.044" asserts="0" />
+                  <test-case name="SendSmallInt" executed="True" result="Success" success="True" time="0.040" asserts="0" />
+                  <test-case name="SendString" executed="True" result="Success" success="True" time="0.071" asserts="0" />
+                  <test-case name="SendUInt64" executed="True" result="Success" success="True" time="0.056" asserts="0" />
+                  <test-case name="SendWord" executed="True" result="Success" success="True" time="0.044" asserts="0" />
+                  <test-case name="SendWordBool" executed="True" result="Success" success="True" time="0.039" asserts="0" />
                 </results>
               </test-suite>
           </results>

@@ -15,12 +15,6 @@
         <Projects Include="Server\JSONRPC.ServerWebBroker.dproj">
             <Dependencies/>
         </Projects>
-        <Projects Include="..\NetSocket\Client\NetSocket.Client.dproj">
-            <Dependencies/>
-        </Projects>
-        <Projects Include="Client\Ethereum\JSONRPC.EthereumClient.dproj">
-            <Dependencies/>
-        </Projects>
         <Projects Include="Client\Aptos\JSONRPC.AptosClient.dproj">
             <Dependencies/>
         </Projects>
@@ -68,24 +62,6 @@
     <Target Name="JSONRPC_ServerWebBroker:Make">
         <MSBuild Projects="Server\JSONRPC.ServerWebBroker.dproj" Targets="Make"/>
     </Target>
-    <Target Name="NetSocket_Client">
-        <MSBuild Projects="..\NetSocket\Client\NetSocket.Client.dproj"/>
-    </Target>
-    <Target Name="NetSocket_Client:Clean">
-        <MSBuild Projects="..\NetSocket\Client\NetSocket.Client.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="NetSocket_Client:Make">
-        <MSBuild Projects="..\NetSocket\Client\NetSocket.Client.dproj" Targets="Make"/>
-    </Target>
-    <Target Name="JSONRPC_EthereumClient">
-        <MSBuild Projects="Client\Ethereum\JSONRPC.EthereumClient.dproj"/>
-    </Target>
-    <Target Name="JSONRPC_EthereumClient:Clean">
-        <MSBuild Projects="Client\Ethereum\JSONRPC.EthereumClient.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="JSONRPC_EthereumClient:Make">
-        <MSBuild Projects="Client\Ethereum\JSONRPC.EthereumClient.dproj" Targets="Make"/>
-    </Target>
     <Target Name="JSONRPC_AptosClient">
         <MSBuild Projects="Client\Aptos\JSONRPC.AptosClient.dproj"/>
     </Target>
@@ -96,13 +72,13 @@
         <MSBuild Projects="Client\Aptos\JSONRPC.AptosClient.dproj" Targets="Make"/>
     </Target>
     <Target Name="Build">
-        <CallTarget Targets="TestJSONRPC;JSONRPC_ServerIndy;JSONRPC_ClientProj;JSONRPC_ServerWebBroker;NetSocket_Client;JSONRPC_EthereumClient;JSONRPC_AptosClient"/>
+        <CallTarget Targets="TestJSONRPC;JSONRPC_ServerIndy;JSONRPC_ClientProj;JSONRPC_ServerWebBroker;JSONRPC_AptosClient"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="TestJSONRPC:Clean;JSONRPC_ServerIndy:Clean;JSONRPC_ClientProj:Clean;JSONRPC_ServerWebBroker:Clean;NetSocket_Client:Clean;JSONRPC_EthereumClient:Clean;JSONRPC_AptosClient:Clean"/>
+        <CallTarget Targets="TestJSONRPC:Clean;JSONRPC_ServerIndy:Clean;JSONRPC_ClientProj:Clean;JSONRPC_ServerWebBroker:Clean;JSONRPC_AptosClient:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="TestJSONRPC:Make;JSONRPC_ServerIndy:Make;JSONRPC_ClientProj:Make;JSONRPC_ServerWebBroker:Make;NetSocket_Client:Make;JSONRPC_EthereumClient:Make;JSONRPC_AptosClient:Make"/>
+        <CallTarget Targets="TestJSONRPC:Make;JSONRPC_ServerIndy:Make;JSONRPC_ClientProj:Make;JSONRPC_ServerWebBroker:Make;JSONRPC_AptosClient:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

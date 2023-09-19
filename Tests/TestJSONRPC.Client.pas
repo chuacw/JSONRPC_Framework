@@ -498,7 +498,7 @@ var
   LLogged: Boolean;
   LPassed: Boolean;
 begin
-  LLogged := False;
+  LLogged := False; LPassed := False;
   if Supports(FSomeRPC, IJsonRpcClientLog, LJsonRpcClientLog) then
     begin
       LJsonRpcClientLog.OnLogIncomingJSONResponse := procedure(const AJSON: string)
@@ -522,7 +522,7 @@ var
   LLogged: Boolean;
   LPassed: Boolean;
 begin
-  LLogged := False;
+  LLogged := False; LPassed := False;
   if Supports(FSomeRPC, IJsonRpcClientLog, LJsonRpcClientLog) then
     begin
       LJsonRpcClientLog.OnLogOutgoingJSONRequest  := procedure(const AJSON: string)

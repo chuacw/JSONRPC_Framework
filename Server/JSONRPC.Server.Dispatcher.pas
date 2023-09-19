@@ -10,7 +10,8 @@ uses
 
 type
 
-  TJSONRPCDispatchNode = class(TComponent, IJSONRPCGetSetDispatchEvents)
+  TJSONRPCDispatchNode = class(TComponent, IJSONRPCGetSetDispatchEvents,
+    IJsonRpcServerLog)
   protected
     FJSONRPCDispatcher: IJSONRPCDispatch;
     FServerWrapper: TJSONRPCServerWrapper;
@@ -75,25 +76,25 @@ end;
 procedure TJSONRPCDispatchNode.SetOnLogIncomingJSONRequest(
   const AProc: TOnLogIncomingJSONRequest);
 var
-  LJSONRPCGetSetDispatchEvents: IJSONRPCGetSetDispatchEvents;
+  LJsonRpcServerLog: IJsonRpcServerLog;
 begin
   FOnLogIncomingJSONRequest := AProc;
-  if Supports(FJSONRPCDispatcher, IJSONRPCGetSetDispatchEvents, LJSONRPCGetSetDispatchEvents) or
-    Supports(FServerWrapper, IJSONRPCGetSetDispatchEvents, LJSONRPCGetSetDispatchEvents) then
+  if Supports(FJSONRPCDispatcher, IJsonRpcServerLog, LJsonRpcServerLog) or
+    Supports(FServerWrapper, IJSONRPCGetSetDispatchEvents, LJsonRpcServerLog) then
     begin
-      LJSONRPCGetSetDispatchEvents.OnLogIncomingJSONRequest := AProc;
+      LJsonRpcServerLog.OnLogIncomingJSONRequest := AProc;
     end;
 end;
 
 procedure TJSONRPCDispatchNode.SetOnLogOutgoingJSONResponse(const AProc: TOnLogOutgoingJSONResponse);
 var
-  LJSONRPCGetSetDispatchEvents: IJSONRPCGetSetDispatchEvents;
+  LJsonRpcServerLog: IJsonRpcServerLog;
 begin
   FOnLogOutgoingJSONResponse := AProc;
-  if Supports(FJSONRPCDispatcher, IJSONRPCGetSetDispatchEvents, LJSONRPCGetSetDispatchEvents) or
-    Supports(FServerWrapper, IJSONRPCGetSetDispatchEvents, LJSONRPCGetSetDispatchEvents) then
+  if Supports(FJSONRPCDispatcher, IJsonRpcServerLog, LJsonRpcServerLog) or
+    Supports(FServerWrapper, IJSONRPCGetSetDispatchEvents, LJsonRpcServerLog) then
     begin
-      LJSONRPCGetSetDispatchEvents.OnLogOutgoingJSONResponse := AProc;
+      LJsonRpcServerLog.OnLogOutgoingJSONResponse := AProc;
     end;
 end;
 
@@ -121,7 +122,11 @@ begin
       if Supports(Dispatcher, IJSONRPCGetSetDispatchEvents, LJSONRPCGetSetDispatchEvents) then
         begin
           LJSONRPCGetSetDispatchEvents.OnDispatchedJSONRPC := FOnDispatchedJSONRPC;
-          LJSONRPCGetSetDispatchEvents.OnLogIncomingJSONRequest := FOnLogIncomingJSONRequest;
+        end;
+      var LJsonRpcServerLog: IJsonRpcServerLog;
+      if Supports(Dispatcher, IJsonRpcServerLog, LJsonRpcServerLog) then
+        begin
+          LJsonRpcServerLog.OnLogIncomingJSONRequest := FOnLogIncomingJSONRequest;
         end;
       Dispatcher.DispatchJSONRPC(ARequest, AResponse);
     end else
@@ -153,19 +158,26 @@ end;
 
 function TJSONRPCDispatchNode.GetOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest;
 var
-  LJSONRPCGetSetDispatchEvents: IJSONRPCGetSetDispatchEvents;
+  LJsonRpcServerLog: IJsonRpcServerLog;
 begin
   Result := nil;
-  if Supports(FJSONRPCDispatcher, IJSONRPCGetSetDispatchEvents, LJSONRPCGetSetDispatchEvents) or
-    Supports(FServerWrapper, IJSONRPCGetSetDispatchEvents, LJSONRPCGetSetDispatchEvents) then
+  if Supports(FJSONRPCDispatcher, IJsonRpcServerLog, LJsonRpcServerLog) or
+    Supports(FServerWrapper, IJsonRpcServerLog, LJsonRpcServerLog) then
     begin
-      Result := LJSONRPCGetSetDispatchEvents.OnLogIncomingJSONRequest;
+      Result := LJsonRpcServerLog.OnLogIncomingJSONRequest;
     end;
 end;
 
 function TJSONRPCDispatchNode.GetOnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse;
+var
+  LJsonRpcServerLog: IJsonRpcServerLog;
 begin
-  Result := FOnLogOutgoingJSONResponse;
+  Result := nil;
+  if Supports(FJSONRPCDispatcher, IJsonRpcServerLog, LJsonRpcServerLog) or
+    Supports(FServerWrapper, IJsonRpcServerLog, LJsonRpcServerLog) then
+    begin
+      Result := LJsonRpcServerLog.OnLogOutgoingJSONResponse;
+    end;
 end;
 
 end.
