@@ -30,7 +30,6 @@ type
     procedure SetOnLogOutgoingJSONResponse(const Value: TOnLogOutgoingJSONResponse);
 
   protected
-//    FServer: TIdHTTPServer;
     FRequest: TStream;
     FResponse: TStream;
     FIntf: IInterface; // Capture interface

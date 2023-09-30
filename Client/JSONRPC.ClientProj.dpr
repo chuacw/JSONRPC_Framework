@@ -40,6 +40,7 @@ begin
   );
   try
 
+    LJSONRPC.SendBool(True);
     var AList := TList<Integer>.Create;
     AList.AddRange([1, 2, 3, 4, 5]);
     var LResultList := LJSONRPC.SendSomeList(AList);

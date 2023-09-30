@@ -100,7 +100,7 @@ begin
                   var LY: Integer := LJSONObj.GetValue<Integer>('params.Y');
                   var LValue: TValue := LX + LY;
                   AJSONResponse.Size := 0;
-                  WriteJSONResult(AContext, AMethNum, AMethMD, AMethodID, LValue, AJSONResponse);
+                  WriteJSONResult(AMethNum, AMethMD.ResultInfo, AMethodID, LValue, AJSONResponse);
                 finally
                   LJSONObj.Free;
                 end;

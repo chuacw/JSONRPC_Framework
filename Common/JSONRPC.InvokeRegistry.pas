@@ -227,6 +227,11 @@ type
   protected
     FResultP: Pointer;
   public
+  const
+    TEnumSize = SizeOf(Integer);
+  type
+    PEnum = PInteger;
+    TEnum = Integer;
     procedure AllocServerData(const MD: TIntfMethEntry);
     procedure SetMethodInfo(const MD: TIntfMethEntry);
 
@@ -1050,9 +1055,9 @@ begin
 {$ENDIF !NEXTGEN}
     end;
   end;
-  if MD.ResultInfo <> nil then
+  Info := MD.ResultInfo;
+  if Info <> nil then
   begin
-    Info := MD.ResultInfo;
     case Info^.Kind of
 {$IFNDEF NEXTGEN}
       tkLString:
@@ -1078,7 +1083,7 @@ begin
 {$ENDIF}
       tkInteger, tkEnumeration: begin
         // Integers and enums are allocated 4 bytes
-        P := AllocData(SizeOf(Integer));
+        P := AllocData(SizeOf(TInvContext.TEnum));
       end;
       tkInt64:
         P := AllocData(Sizeof(Int64));

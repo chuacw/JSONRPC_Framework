@@ -28,11 +28,9 @@ type
     function GetOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest;
     function GetOnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse;
 
-
     procedure SetOnDispatchedJSONRPC(const AProc: TOnDispatchedJSONRPC);
     procedure SetOnLogIncomingJSONRequest(const AProc: TOnLogIncomingJSONRequest);
     procedure SetOnLogOutgoingJSONResponse(const AProc: TOnLogOutgoingJSONResponse);
-
 
     property OnDispatchedJSONRPC: TOnDispatchedJSONRPC read GetOnDispatchedJSONRPC
       write SetOnDispatchedJSONRPC;

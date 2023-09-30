@@ -88,17 +88,17 @@ begin
   CreateThreadList;
 
   FSocket := System.Net.Socket.TSocket.Create(TSocketType.TCP, TEncoding.UTF8);
+{$IF DECLARED(ConnectTimeout)}
   FSocket.ConnectTimeout := 500;
+{$ENDIF}
   FSocket.ReceiveTimeout := 500;
   FSocket.SendTimeout := 500;
-//  FSocket := TServerSocket.Create(ARunThread);
 
   FThread := TThread.CreateAnonymousThread(procedure
   var
     LNewSocket: System.Net.Socket.TSocket;
     LNewThread: TThread;
     LServerSocket: System.Net.Socket.TSocket;
-//    LServerSocket: TServerSocket;
   begin
     LServerSocket := FSocket;
     while (not (TSocketState.Listening in LServerSocket.State) and (not FTerminated)) do

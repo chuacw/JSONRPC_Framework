@@ -18,6 +18,9 @@
         <Projects Include="Client\Aptos\JSONRPC.AptosClient.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="Web3\Solana\JSONRPC.SolanaClient.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -71,14 +74,23 @@
     <Target Name="JSONRPC_AptosClient:Make">
         <MSBuild Projects="Client\Aptos\JSONRPC.AptosClient.dproj" Targets="Make"/>
     </Target>
+    <Target Name="JSONRPC_SolanaClient">
+        <MSBuild Projects="Web3\Solana\JSONRPC.SolanaClient.dproj"/>
+    </Target>
+    <Target Name="JSONRPC_SolanaClient:Clean">
+        <MSBuild Projects="Web3\Solana\JSONRPC.SolanaClient.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="JSONRPC_SolanaClient:Make">
+        <MSBuild Projects="Web3\Solana\JSONRPC.SolanaClient.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="TestJSONRPC;JSONRPC_ServerIndy;JSONRPC_ClientProj;JSONRPC_ServerWebBroker;JSONRPC_AptosClient"/>
+        <CallTarget Targets="TestJSONRPC;JSONRPC_ServerIndy;JSONRPC_ClientProj;JSONRPC_ServerWebBroker;JSONRPC_AptosClient;JSONRPC_SolanaClient"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="TestJSONRPC:Clean;JSONRPC_ServerIndy:Clean;JSONRPC_ClientProj:Clean;JSONRPC_ServerWebBroker:Clean;JSONRPC_AptosClient:Clean"/>
+        <CallTarget Targets="TestJSONRPC:Clean;JSONRPC_ServerIndy:Clean;JSONRPC_ClientProj:Clean;JSONRPC_ServerWebBroker:Clean;JSONRPC_AptosClient:Clean;JSONRPC_SolanaClient:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="TestJSONRPC:Make;JSONRPC_ServerIndy:Make;JSONRPC_ClientProj:Make;JSONRPC_ServerWebBroker:Make;JSONRPC_AptosClient:Make"/>
+        <CallTarget Targets="TestJSONRPC:Make;JSONRPC_ServerIndy:Make;JSONRPC_ClientProj:Make;JSONRPC_ServerWebBroker:Make;JSONRPC_AptosClient:Make;JSONRPC_SolanaClient:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

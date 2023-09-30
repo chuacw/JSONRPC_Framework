@@ -4,9 +4,6 @@ program JSONRPC.ServerIndy;
 uses
   System.SysUtils,
   System.Types,
-  IPPeerServer,
-  IPPeerAPI,
-  IdHTTPWebBrokerBridge,
   System.Classes,
   System.JSON,
   ServerConst1 in 'ServerConst1.pas',

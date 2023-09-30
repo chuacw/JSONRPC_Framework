@@ -6,7 +6,7 @@ interface
 
 uses
   System.SysUtils, System.Classes, System.JSON, System.JSON.Serializers,
-  System.Net.URLClient;
+  System.Net.URLClient, System.TypInfo;
 
 type
   TPassParamByPosOrName = (tppByPos, tppByName);
@@ -15,6 +15,10 @@ type
   TOnDispatchedJSONRPC = reference to procedure (const AJSONRequest: string);
   TOnReceivedJSONRPC = reference to procedure (const AJSONRequest: string);
   TOnSentJSONRPC = reference to procedure (const AJSONResponse: string);
+
+  // For client side
+  TOnParseEnum = reference to function (AParamTypeInfo: PTypeInfo;
+    AParamValuePtr: Pointer; AParamsObj: TJSONObject; AParamsArray: TJSONArray): Boolean;
 
   // For client side
   TOnLogOutgoingJSONRequest  = reference to procedure(const AJSONRPCRequest: string);
@@ -30,17 +34,29 @@ type
   TOnSafeCallException = reference to function (ExceptObject: TObject;
     ExceptAddr: Pointer): HResult;
 
-  TParamsByPosition = class(TCustomAttribute)
-  end;
+  /// <summary> An attribute to apply on a method to tell the JSON RPC wrapper
+  /// to send params by position.
+  /// </summary>
+  TParamsByPosition = class(TCustomAttribute) end deprecated 'Use PassParamsByPos property';
 
-  TParamsByName = class(TCustomAttribute)
-  end;
+  /// <summary> An attribute to apply on a method to tell the JSON RPC wrapper
+  /// to send params by name.
+  /// </summary>
+  TParamsByName = class(TCustomAttribute) end deprecated 'Use PassParamsByName property';
 
-  JSONNotificationAttribute = class(TCustomAttribute)
-  end;
+  /// <summary> An attribute to apply on a method to tell the JSON RPC wrapper
+  /// to prevent it from sending an ID for the JSON RPC call.
+  /// </summary>
+  JSONNotificationAttribute = class(TCustomAttribute);
 
+  /// <summary> An attribute to apply on a method to tell the JSON RPC wrapper
+  /// to prevent it from sending an ID for the JSON RPC call.
+  /// </summary>
   JSONNotifyAttribute = JSONNotificationAttribute;
 
+  /// <summary> An attribute to apply on a method to tell the JSON RPC wrapper
+  /// to modify the server URL before calling on it.
+  /// </summary>
   UrlSuffixAttribute = class(TCustomAttribute)
   protected
     FUrlSuffix: string;
@@ -51,6 +67,8 @@ type
 
   {$METHODINFO ON}
   {$TYPEINFO ON}
+  /// <summary> All JSON RPC interfaces needs to inherit from this
+  /// </summary>
   IJSONRPCMethods = interface(IInvokable)
     ['{77E7ACCD-3C1E-45CF-8DA9-171444F5338F}']
   end;
@@ -69,6 +87,9 @@ type
     procedure DoLogOutgoingResponse(const AResponse: string);
   end;
 
+  /// <summary> A client class implements this interface in order to
+  /// allow getting and setting safecall exception handlers.
+  /// </summary>
   ISafeCallException = interface
     ['{4CBE5D30-42FD-473A-B784-1B36A7129D6D}']
     function GetOnSafeCallException: TOnSafeCallException;
@@ -78,11 +99,11 @@ type
       write SetOnSafeCallException;
   end;
 
+  /// <summary> A client class implements this interface in order to signify that
+  ///  it allows consumers to monitor incoming responses and outgoing requests.
+  /// </summary>
   IJsonRpcClientLog = interface
     ['{846F7319-7FFF-4634-BDB4-6D518C65E5A6}']
-//  TOnLogOutgoingJSONRequest  = reference to procedure(const AJSONRPCRequest: string);
-//  TOnLogIncomingJSONResponse = reference to procedure(const AJSONRPCResponse: string);
-//  TOnLogServerURL = reference to procedure(const AServerURL: string);
 
     function GetOnLogOutgoingJSONRequest: TOnLogOutgoingJSONRequest;
     procedure SetOnLogOutgoingJSONRequest(const AProc: TOnLogOutgoingJSONRequest);
@@ -101,6 +122,9 @@ type
       read GetOnLogServerURL write SetOnLogServerURL;
   end;
 
+  /// <summary> A server class implements this interface in order to signify that
+  ///  it allows consumers to monitor incoming requests and outgoing responses.
+  /// </summary>
   IJsonRpcServerLog = interface
     ['{3CD1A72D-3A00-4A07-8295-E0EDDBB32F20}']
     function GetOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest;
@@ -109,8 +133,19 @@ type
     function GetOnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse;
     procedure SetOnLogOutgoingJSONResponse(const AProc: TOnLogOutgoingJSONResponse);
 
+    /// <summary>
+    /// Provides access to the OnLogIncomingJSONRequest property of the server
+    /// You can assign your routine to this, and your routine will be called
+    /// before the server reads the incoming JSON request.
+    /// </summary>
     property OnLogIncomingJSONRequest: TOnLogIncomingJSONRequest
       read GetOnLogIncomingJSONRequest write SetOnLogIncomingJSONRequest;
+
+    /// <summary>
+    /// Provides access to the OnLogOutgoingJSONResponse property of the server
+    /// You can assign your routine to this, and your routine will be called
+    /// before the server sends its response.
+    /// </summary>
     property OnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse
       read GetOnLogOutgoingJSONResponse write SetOnLogOutgoingJSONResponse;
   end;
@@ -273,7 +308,7 @@ implementation
 
 uses
   JSONRPC.Common.RecordHandlers, Velthuis.BigDecimals, Velthuis.BigIntegers,
-  System.Rtti, System.TypInfo, JSONRPC.JsonUtils, JSONRPC.Common.Consts;
+  System.Rtti, JSONRPC.JsonUtils, JSONRPC.Common.Consts;
 
 { TJSONRPCBoolean }
 

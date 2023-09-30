@@ -5,7 +5,7 @@ unit JSONRPC.JsonUtils;
 interface
 
 uses
-  System.SysUtils, JSONRPC.RIO, System.Rtti, System.Classes, System.TypInfo,
+  System.SysUtils, System.Rtti, System.Classes, System.TypInfo,
   System.JSON, System.Generics.Collections;
 
 /// <summary>
@@ -83,8 +83,8 @@ function ArrayToJSONArray(const AArray; ATypeInfo: PTypeInfo): TJSONArray;
 /// </summary>
 function ValueToJSONArray(const AValue: TValue; ATypeInfo: PTypeInfo): TJSONArray; inline;
 
-procedure WriteJSONResult(const AContext: TInvContext;
-  AMethNum: Integer; const AMethMD: TIntfMethEntry; const AMethodID: Int64;
+procedure WriteJSONResult(
+  AMethNum: Integer; const ATypeInfo: PTypeInfo; const AMethodID: Int64;
   AResponseValue: TValue; AJSONResponse: TStream);
 
 procedure CheckFloatType(AFloatType: TFloatType); inline;
@@ -94,6 +94,8 @@ procedure CheckTypeInfo(ATypeInfo: PTypeInfo); inline;
 /// Adds the "jsonrpc": "2.0" into the header
 /// </summary>
 procedure AddJSONVersion(const AJSONObj: TJSONObject); inline;
+
+function SameJson(const AJSON1, AJSON2: string): Boolean;
 
 type
   TCollectionsHelper = class
@@ -106,8 +108,7 @@ type
 implementation
 
 uses
-  JSONRPC.Common.Consts, System.JSON.Serializers,
-  System.JSON.Readers, System.JSON.Writers;
+  JSONRPC.Common.Consts, System.JSON.Serializers, System.JSON.Readers, System.JSON.Writers;
 
 procedure AddJSONVersion(const AJSONObj: TJSONObject);
 begin
@@ -376,15 +377,15 @@ begin
   VCount := Length(VBytes);
 end;
 
-procedure WriteJSONResult(const AContext: TInvContext;
-  AMethNum: Integer; const AMethMD: TIntfMethEntry; const AMethodID: Int64;
+procedure WriteJSONResult(
+  AMethNum: Integer; const ATypeInfo: PTypeInfo; const AMethodID: Int64;
   AResponseValue: TValue; AJSONResponse: TStream);
 begin
   // Write this {"jsonrpc": "2.0", "result": 19, "id": 1}
   var LJSONObject := TJSONObject.Create;
   try
     AddJSONVersion(LJSONObject);
-    case AMethMD.ResultInfo.Kind of
+    case ATypeInfo.Kind of
       tkInteger: LJSONObject.AddPair(SRESULT, AResponseValue.AsInteger);
       tkString, tkLString, tkUString:
         LJSONObject.AddPair(SRESULT, AResponseValue.AsString);
@@ -435,6 +436,22 @@ class function TCollectionsHelper.ListToArray<T>(
   const AList: TList<T>): TArray<T>;
 begin
   Result := AList.ToArray;
+end;
+
+function SameJson(const AJSON1, AJSON2: string): Boolean;
+var
+  LJSONV1, LJSONV2: TJSONValue;
+  LJSON1, LJSON2: string;
+begin
+  try
+    LJSONV1 := TJSONObject.ParseJSONValue(AJSON1);
+    LJSONV2 := TJSONObject.ParseJSONValue(AJSON2);
+    LJSON1 := LJSONV1.ToString;
+    LJSON2 := LJSONV2.ToString;
+    Result := LJSON1 = LJSON2;
+  except
+    Result := False;
+  end;
 end;
 
 end.

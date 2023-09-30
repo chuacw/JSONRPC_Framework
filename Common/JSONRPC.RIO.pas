@@ -111,6 +111,7 @@ type
     FOnLogOutgoingJSONRequest: TOnLogOutgoingJSONRequest;
     FOnLogIncomingJSONResponse: TOnLogIncomingJSONResponse;
     FOnLogServerURL: TOnLogServerURL;
+    FOnParseEnum: TOnParseEnum;
     FRttiContext: TRttiContext;
     FOwnsObjects: Boolean;
     FJSONObjects: TList<TJSONValue>;
@@ -147,6 +148,21 @@ type
     procedure DoDispatch(const AContext: TInvContext; AMethNum: Integer; const AMethMD: TIntfMethEntry); {$IF DEFINED(BASECLASS)}override;{$ENDIF}
     procedure DoLogOutgoingRequest(const ARequest: string);
     procedure DoLogIncomingResponse(const AResponse: string);
+
+    function DoParseEnum(AParamTypeInfo: PTypeInfo; AParamValuePtr: Pointer;
+      AParamsObj: TJSONObject; AParamsArray: TJSONArray): Boolean; virtual;
+
+    /// <summary>
+    /// Called when there's no code that can parse the result.
+    /// Return false in order not to cause an error
+    /// </summary>
+    function DoParseUnhandledResult(AJSONResponseObj: TJSONValue; AResultP: Pointer): Boolean;
+
+    /// <summary>
+    /// Called before the result is parsed.
+    /// Return false to continue default parsing
+    /// </summary>
+    function DoParseJSONResult(ATypeInfo: PTypeInfo; AJSONResponseObj: TJSONValue; AResultP: Pointer): Boolean;
 
     /// <summary>
     /// Called when the final server URL has changed before a request is going to be submitted.
@@ -209,7 +225,7 @@ type
       const AContext: TInvContext;
       const AMethMD: TIntfMethEntry; var VServerURL: string); virtual;
 
-    procedure TrackJSONObjectToFree(const AJSONObj: TJSONObject);
+    function CloneAndTrackJSONObjectToFree(const AJSONObj: TJSONValue): TJSONObject;
     procedure FreeLastResponse;
 
     function GetOnLogOutgoingJSONRequest: TOnLogOutgoingJSONRequest;
@@ -245,6 +261,8 @@ type
       read GetOnLogIncomingJSONResponse write SetOnLogIncomingJSONResponse;
     property OnLogServerURL: TOnLogServerURL
       read GetOnLogServerURL write SetOnLogServerURL;
+
+    property OnParseEnum: TOnParseEnum read FOnParseEnum write FOnParseEnum;
 
     /// <summary> Specifies that safecall exception handler
     /// </summary>
@@ -587,13 +605,15 @@ begin
   JSONRPC.JsonUtils.DeserializeJSON(AJsonValue, ATypeInfo, VValue);
 end;
 
-procedure TJSONRPCWrapper.TrackJSONObjectToFree(const AJSONObj: TJSONObject);
+function TJSONRPCWrapper.CloneAndTrackJSONObjectToFree(
+  const AJSONObj: TJSONValue): TJSONObject;
 begin
   if AJSONObj = nil then
-    Exit;
+    Exit(nil);
+  Result := AJSONObj.Clone as TJSONObject;
   if FOwnsObjects then
     begin
-      FJSONObjects.Add(AJSONObj);
+      FJSONObjects.Add(Result);
     end;
 end;
 
@@ -764,12 +784,15 @@ begin
                   end;
               end;
               tkEnumeration: begin
+                // First chance to parse enum
+                if not DoParseEnum(LParamTypeInfo, LParamValuePtr, LParamsObj, LParamsArray) then
                 // Only possible types are boolean, WordBool, LongBool, etc
                 // marshalled as string or as True/False???
                 if IsBoolType(LParamTypeInfo) then
                   begin
                     var LValue: Boolean;
-                    case GetTypeData(LParamTypeInfo)^.OrdType of
+                    case LParamTypeInfo^.TypeData^.OrdType of
+//                    case GetTypeData(LParamTypeInfo)^.OrdType of
                       otSByte, otUByte: begin
                         LValue := PBoolean(LParamValuePtr)^;
                       end;
@@ -1015,7 +1038,7 @@ begin
         LResponse := TEncoding.UTF8.GetString(LBytes);
         DoLogIncomingResponse(LResponse);
 
-        LResultP := AContext.GetResultPointer;
+        LResultP := AContext.ResultPointer;
         LJSONResponseObj := TJSONObject.ParseJSONValue(TArray<Byte>(LBytes), 0);
         var LError: TJSONValue;
         try
@@ -1034,62 +1057,59 @@ begin
           {$REGION 'Parse results from server, if any'}
           if LResultP <> nil then
             begin
-                var LResultPathName := SRESULT;
-                // parse incoming JSON result from server
-                case AMethMD.ResultInfo.Kind of
-                {$IF DEFINED(SUPPORTS_JSONOBJECT_AS_RESULT)}
-                  tkClass: begin
-                    // take a TJSONObject as a result
-                      var LJSONObj := LJSONResponseObj.FindValue(LResultPathName);
-                      if LJSONObj <> nil then
-                        begin
-                          if Assigned(LJSONObj) and
-                          (
-                            (AMethMD.ResultInfo = TypeInfo(TJSONObject)) or
-                            (AMethMD.ResultInfo^.TypeData^.ClassType.InheritsFrom(TJSONValue))
-                          ) then
-                            begin
-                              var LResultObj := TJSONObject(LJSONObj).Clone as TJSONObject;
-                              TrackJSONObjectToFree(LResultObj);
-                              TJSONObject(LResultP^) := LResultObj;
-                            end else
-                            begin
-                              Assert(False, 'Untested code path: 1004');
-                            end;
-                        end else
-                        begin
-                          // There's no "result" on Aptos, the entire block
-                          // is a JSON object
-                          if (AMethMD.ResultInfo = TypeInfo(TJSONObject)) or
-                            (AMethMD.ResultInfo^.TypeData^.ClassType.InheritsFrom(TJSONValue)) then
-                            begin
-                              var LResultObj := TJSONObject(LJSONResponseObj).Clone as TJSONObject;
-                              TrackJSONObjectToFree(LResultObj);
-                              TJSONObject(LResultP^) := LResultObj;
-                            end else
-                            begin
-                              Assert(False, 'Untested code path: 1018');
-                            end;
-                        end;
-                  end;
-                {$ELSE}
-                  tkClass: begin
-                    Assert(False, 'Class not supported as result yet!');
-                  end;
-                {$ENDIF}
-                  tkArray,
-                  tkDynArray: begin
+              var LResultPathName := SRESULT;
+              // parse incoming JSON result from server
+              DoParseJSONResult(AMethMD.ResultInfo, LJSONResponseObj, LResultP);
+              case AMethMD.ResultInfo.Kind of
+              {$IF DEFINED(SUPPORTS_JSONOBJECT_AS_RESULT)}
+                tkClass: begin
+                  // take a TJSONObject as a result
                     var LJSONObj := LJSONResponseObj.FindValue(LResultPathName);
-                    if Assigned(LJSONObj) then
-                      DeserializeJSON(LJSONObj, AMethMD.ResultInfo, LResultP^);
-                  end;
-                  tkRecord: begin
-                    var LTypeInfo := AMethMD.ResultInfo;
-                    var LHandlers: TRecordHandlers;
-                    if LookupRecordHandlers(LTypeInfo, LHandlers) then
+                    if LJSONObj <> nil then
                       begin
-                        LHandlers.JSONToNative(LJSONResponseObj, LResultPathName, LResultP);
+                        if Assigned(LJSONObj) and
+                        (
+                          (AMethMD.ResultInfo = TypeInfo(TJSONObject)) or
+                          (AMethMD.ResultInfo^.TypeData^.ClassType.InheritsFrom(TJSONValue))
+                        ) then
+                          begin
+                            TJSONObject(LResultP^) := CloneAndTrackJSONObjectToFree(LJSONObj);
+                          end else
+                          begin
+                            Assert(False, 'Untested code path: 1004');
+                          end;
                       end else
+                      begin
+                        // There's no "result" on Aptos, the entire block
+                        // is a JSON object
+                        if (AMethMD.ResultInfo = TypeInfo(TJSONObject)) or
+                          (AMethMD.ResultInfo^.TypeData^.ClassType.InheritsFrom(TJSONValue)) then
+                          begin
+                            TJSONObject(LResultP^) := CloneAndTrackJSONObjectToFree(LJSONResponseObj);
+                          end else
+                          begin
+                            Assert(False, 'Untested code path: 1018');
+                          end;
+                      end;
+                end;
+              {$ELSE}
+                tkClass: begin
+                  Assert(False, 'Class not supported as result yet!');
+                end;
+              {$ENDIF}
+                tkArray,
+                tkDynArray: begin
+                  var LJSONObj := LJSONResponseObj.FindValue(LResultPathName);
+                  if Assigned(LJSONObj) then
+                    DeserializeJSON(LJSONObj, AMethMD.ResultInfo, LResultP^);
+                end;
+                tkRecord: begin
+                  var LTypeInfo := AMethMD.ResultInfo;
+                  var LHandlers: TRecordHandlers;
+                  if LookupRecordHandlers(LTypeInfo, LHandlers) then
+                    begin
+                      LHandlers.JSONToNative(LJSONResponseObj, LResultPathName, LResultP);
+                    end else
 //                    if LTypeInfo = TypeInfo(BigDecimal) then
 //                      begin
 //                        var LResultValue: string := '';
@@ -1104,114 +1124,113 @@ begin
 //                          LResultValue := Copy(LResultValue, Low(LResultValue) + 2);
 //                        BigInteger.TryParse(LResultValue, 16, PBigInteger(LResultP)^);
 //                      end else
-                      begin
-                        var LJSONObj := LJSONResponseObj.FindValue(LResultPathName);
-                        if Assigned(LJSONObj) then
-                          DeserializeJSON(LJSONObj, AMethMD.ResultInfo, LResultP^) else
-                        begin
-                          // JSON Response
-                          DeserializeJSON(LJSONResponseObj, AMethMD.ResultInfo, LResultP^);
-                        end;
-                      end;
-                  end;
-                  tkEnumeration: begin
-                    var LResultValue: string := '';
-                    LJSONResponseObj.TryGetValue<string>(LResultPathName, LResultValue);
-                    if IsBoolType(AMethMD.ResultInfo) then
-                      begin
-                        //
-                        case GetTypeData(AMethMD.ResultInfo)^.OrdType of
-                          otSByte, otUByte: begin
-                            PBoolean(LResultP)^ := SameText(LResultValue, 'True');
-                          end;
-                          otSWord, otUWord: begin
-                            PWordBool(LResultP)^ := SameText(LResultValue, 'True');
-                          end;
-                          otSLong, otULong: begin
-                            PLongBool(LResultP)^ := SameText(LResultValue, 'True');
-                          end;
-                        end;
-                      end else
-                      begin // really an enum type
-                        PByte(LResultP)^ := GetEnumValue(AMethMD.ResultInfo, LResultValue); // Most enum values are 1 byte
-                      end;
-                  end;
-                  tkFloat: begin
-                    var LTypeInfo := AMethMD.ResultInfo;
-                    var LFloatType := LTypeInfo^.TypeData.FloatType;
                     begin
-                      CheckTypeInfo(LTypeInfo);
-                      CheckFloatType(LFloatType);
-                      case LFloatType of
-                        ftComp: begin
-                          LJSONResponseObj.TryGetValue<Comp>(LResultPathName, PComp(LResultP)^);
-                        end;
-                        ftCurr: begin
-                          // Currency cannot be extracted successfully, but double can.
-                          PCurrency(LResultP)^ := LJSONResponseObj.GetValue<Double>(LResultPathName, 0.0);
-                        end;
-                        ftDouble, ftExtended, ftSingle:
-                        begin
-                          if (LTypeInfo = System.TypeInfo(TDate)) or
-                             (LTypeInfo = System.TypeInfo(TTime)) or
-                             (LTypeInfo = System.TypeInfo(TDateTime)) then
-                            begin
-                              var LDateTimeStr: string;
-                              LJSONResponseObj.TryGetValue<string>(LResultPathName, LDateTimeStr);
-                              PDateTime(LResultP)^ := ISO8601ToDate(LDateTimeStr, False);
-                            end else
-                          if LTypeInfo = System.TypeInfo(Double) then
-                            begin
-                              LJSONResponseObj.TryGetValue<Double>(LResultPathName, PDouble(LResultP)^);
-                            end else
-                          if LTypeInfo = System.TypeInfo(Extended) then
-                            begin
-                              var LHandlers: TRecordHandlers;
-                              if LookupRecordHandlers(LTypeInfo, LHandlers) then
-                                begin
-                                  LHandlers.JSONToNative(LJSONResponseObj, LResultPathName, LResultP);
-                                end;
-                            end;
-                        end;
-                      end; // end case
-                    end;
-                  end;
-                  tkInteger: begin
-                    var LTypeInfo := AMethMD.ResultInfo;
-                    CheckTypeInfo(LTypeInfo);
-
-                    case LTypeInfo.TypeData.OrdType of
-                      otSByte: begin // ShortInt
-                        LJSONResponseObj.TryGetValue<ShortInt>(LResultPathName, PShortInt(LResultP)^);
-                      end;
-                      otSWord: begin // SmallInt
-                        LJSONResponseObj.TryGetValue<SmallInt>(LResultPathName, PSmallInt(LResultP)^);
-                      end;
-                      otSLong: begin // Integer
-                        LJSONResponseObj.TryGetValue<Integer>(LResultPathName, PInteger(LResultP)^);
-                      end;
-                      otUByte: begin // Byte
-                        LJSONResponseObj.TryGetValue<Byte>(LResultPathName, PByte(LResultP)^);
-                      end;
-                      otUWord: begin // Word
-                        LJSONResponseObj.TryGetValue<Word>(LResultPathName, PWord(LResultP)^);
-                      end;
-                      otULong: begin // Cardinal
-                        LJSONResponseObj.TryGetValue<Cardinal>(LResultPathName, PCardinal(LResultP)^);
+                      var LJSONObj := LJSONResponseObj.FindValue(LResultPathName);
+                      if Assigned(LJSONObj) then
+                        DeserializeJSON(LJSONObj, AMethMD.ResultInfo, LResultP^) else
+                      begin
+                        // JSON Response
+                        DeserializeJSON(LJSONResponseObj, AMethMD.ResultInfo, LResultP^);
                       end;
                     end;
-
-                    // LJSONResponseObj.TryGetValue<Integer>(LResultPathName, PInteger(LResultP)^);
-                  end;
-                  tkInt64:
-                    LJSONResponseObj.TryGetValue<Int64>(LResultPathName, PInt64(LResultP)^);
-                  tkLString, tkString, tkUString, tkWString: begin
-                    LJSONResponseObj.TryGetValue<string>(LResultPathName, PString(LResultP)^);
-                  end;
-                else
-                  // not handled
-                  Assert(False, 'Unhandled type in handling response from server');
                 end;
+                tkEnumeration: begin
+                  var LResultValue: string := '';
+                  LJSONResponseObj.TryGetValue<string>(LResultPathName, LResultValue);
+                  if IsBoolType(AMethMD.ResultInfo) then
+                    begin
+                      case AMethMD.ResultInfo^.TypeData^.OrdType of
+                        otSByte, otUByte: begin
+                          PBoolean(LResultP)^ := SameText(LResultValue, 'True');
+                        end;
+                        otSWord, otUWord: begin
+                          PWordBool(LResultP)^ := SameText(LResultValue, 'True');
+                        end;
+                        otSLong, otULong: begin
+                          PLongBool(LResultP)^ := SameText(LResultValue, 'True');
+                        end;
+                      end;
+                    end else
+                    begin // really an enum type
+                      TInvContext.PEnum(LResultP)^ := GetEnumValue(AMethMD.ResultInfo, LResultValue); // Most enum values are 1 byte
+                    end;
+                end;
+                tkFloat: begin
+                  var LTypeInfo := AMethMD.ResultInfo;
+                  var LFloatType := LTypeInfo^.TypeData.FloatType;
+                  begin
+                    CheckTypeInfo(LTypeInfo);
+                    CheckFloatType(LFloatType);
+                    case LFloatType of
+                      ftComp: begin
+                        LJSONResponseObj.TryGetValue<Comp>(LResultPathName, PComp(LResultP)^);
+                      end;
+                      ftCurr: begin
+                        // Currency cannot be extracted successfully, but double can.
+                        PCurrency(LResultP)^ := LJSONResponseObj.GetValue<Double>(LResultPathName, 0.0);
+                      end;
+                      ftDouble, ftExtended, ftSingle:
+                      begin
+                        if (LTypeInfo = System.TypeInfo(TDate)) or
+                           (LTypeInfo = System.TypeInfo(TTime)) or
+                           (LTypeInfo = System.TypeInfo(TDateTime)) then
+                          begin
+                            var LDateTimeStr: string;
+                            LJSONResponseObj.TryGetValue<string>(LResultPathName, LDateTimeStr);
+                            PDateTime(LResultP)^ := ISO8601ToDate(LDateTimeStr, False);
+                          end else
+                        if LTypeInfo = System.TypeInfo(Double) then
+                          begin
+                            LJSONResponseObj.TryGetValue<Double>(LResultPathName, PDouble(LResultP)^);
+                          end else
+                        if LTypeInfo = System.TypeInfo(Extended) then
+                          begin
+                            var LHandlers: TRecordHandlers;
+                            if LookupRecordHandlers(LTypeInfo, LHandlers) then
+                              begin
+                                LHandlers.JSONToNative(LJSONResponseObj, LResultPathName, LResultP);
+                              end;
+                          end;
+                      end;
+                    end; // end case
+                  end;
+                end;
+                tkInteger: begin
+                  var LTypeInfo := AMethMD.ResultInfo;
+                  CheckTypeInfo(LTypeInfo);
+
+                  case LTypeInfo.TypeData.OrdType of
+                    otSByte: begin // ShortInt
+                      LJSONResponseObj.TryGetValue<ShortInt>(LResultPathName, PShortInt(LResultP)^);
+                    end;
+                    otSWord: begin // SmallInt
+                      LJSONResponseObj.TryGetValue<SmallInt>(LResultPathName, PSmallInt(LResultP)^);
+                    end;
+                    otSLong: begin // Integer
+                      LJSONResponseObj.TryGetValue<Integer>(LResultPathName, PInteger(LResultP)^);
+                    end;
+                    otUByte: begin // Byte
+                      LJSONResponseObj.TryGetValue<Byte>(LResultPathName, PByte(LResultP)^);
+                    end;
+                    otUWord: begin // Word
+                      LJSONResponseObj.TryGetValue<Word>(LResultPathName, PWord(LResultP)^);
+                    end;
+                    otULong: begin // Cardinal
+                      LJSONResponseObj.TryGetValue<Cardinal>(LResultPathName, PCardinal(LResultP)^);
+                    end;
+                  end;
+                  // LJSONResponseObj.TryGetValue<Integer>(LResultPathName, PInteger(LResultP)^);
+                end;
+                tkInt64:
+                  LJSONResponseObj.TryGetValue<Int64>(LResultPathName, PInt64(LResultP)^);
+                tkLString, tkString, tkUString, tkWString: begin
+                  LJSONResponseObj.TryGetValue<string>(LResultPathName, PString(LResultP)^);
+                end;
+              else
+                // not handled
+                if not DoParseUnhandledResult(LJSONResponseObj, LResultP) then
+                  Assert(False, 'Unhandled type in handling response from server');
+              end;
             end;
           {$ENDREGION}
         finally
@@ -1241,6 +1260,26 @@ procedure TJSONRPCWrapper.DoLogIncomingResponse(const AResponse: string);
 begin
   if Assigned(FOnLogIncomingJSONResponse) then
     FOnLogIncomingJSONResponse(AResponse);
+end;
+
+function TJSONRPCWrapper.DoParseEnum(AParamTypeInfo: PTypeInfo; AParamValuePtr: Pointer;
+  AParamsObj: TJSONObject; AParamsArray: TJSONArray): Boolean;
+begin
+  Result := False;
+  if Assigned(FOnParseEnum) then
+    Result := FOnParseEnum(AParamTypeInfo, AParamValuePtr, AParamsObj, AParamsArray);
+end;
+
+function TJSONRPCWrapper.DoParseUnhandledResult(AJSONResponseObj: TJSONValue;
+  AResultP: Pointer): Boolean;
+begin
+  Result := False;
+end;
+
+function TJSONRPCWrapper.DoParseJSONResult(ATypeInfo: PTypeInfo; AJSONResponseObj: TJSONValue;
+  AResultP: Pointer): Boolean;
+begin
+  Result := False;
 end;
 
 procedure TJSONRPCWrapper.DoLogServerURL(const AURL: string);
@@ -1395,8 +1434,20 @@ class procedure TJSONRPCWrapper.RegisterWrapper(const ATypeInfo: PTypeInfo);
 var
   LTypeInfo: PTypeInfo;
 begin
+  if ATypeInfo.TypeData.GUID = TGUID.Empty then
+    raise Exception.Create('No GUID assigned to interface');
+
   if not FRegistry.TryGetValue(ATypeInfo.TypeData.GUID, LTypeInfo) then
-    FRegistry.Add(ATypeInfo.TypeData.GUID, ATypeInfo);
+    FRegistry.Add(ATypeInfo.TypeData.GUID, ATypeInfo) {$IF DEFINED(DEBUG)} else
+  begin
+    {$IF DECLARED(OutputDebugString)}
+      var LMsg := Format('Trying to register duplicate interface: GUID: %s, Name: %s',
+        [ATypeInfo^.TypeData^.GUID.ToString, ATypeInfo^.Name]);
+      OutputDebugString(PChar(LMsg));
+    {$ENDIF}
+  end
+  {$ENDIF}
+  ;
 end;
 
 function TJSONRPCWrapper.SafeCallException(ExceptObject: TObject;
@@ -2009,7 +2060,7 @@ begin
                   // Set up value in case it has an error
                   try
                     if (LJSONRequestObj is TJSONObject) and
-                        not LJSONRequestObj.TryGetValue<string>(LParamName, LParseParamValue) then
+                        (not LJSONRequestObj.TryGetValue<string>(LParamName, LParseParamValue)) then
                       begin
                         var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
                         LParseParamValue := LParamsArr[I].AsType<string>;
@@ -2080,7 +2131,8 @@ begin
                     // Supported types are strings, numbers, boolean, null, objects and arrays
                     if IsBoolType(LParseParamTypeInfo) then
                       begin
-                        case GetTypeData(LParseParamTypeInfo)^.OrdType of
+                        case LParseParamTypeInfo^.TypeData^.OrdType of
+//                        case GetTypeData(LParseParamTypeInfo)^.OrdType of
                           otSByte, otUByte: begin
                             LArg := TValue.From(Boolean(SameText(
                               LParseParamValue,

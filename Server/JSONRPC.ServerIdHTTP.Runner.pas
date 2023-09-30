@@ -10,25 +10,12 @@ type
 
   TJSONRPCServerIdHTTPRunner = class(TJSONRPCServerRunner, IJSONRPCDispatch,
     IJSONRPCGetSetDispatchEvents, IJSONRPCDispatchEvents)
-//  public
-//  type
-//    TProcNotifyPortSet = reference to procedure(const APort: Integer);
-//    TProcNotifyPortInUse = reference to procedure(const APort: Integer);
-//    TProcNotifyServerIsAlreadyRunning = reference to procedure(const AServer: TJSONRPCServerRunner);
-//    TProcNotifyServerIsActive = reference to procedure(const AServer: TJSONRPCServerRunner);
-//    TProcNotifyServerIsInactive = reference to procedure(const AServer: TJSONRPCServerRunner);
   private
     function GetGetSetDispatchEvents: IJSONRPCGetSetDispatchEvents;
     function GetJSONRPCDispatch: IJSONRPCDispatch;
     function GetJSONRPCDispatchEvents: IJSONRPCDispatchEvents;
   protected
     FServer: TIdHTTPServer;
-
-//    FOnNotifyPortSet: TProcNotifyPortSet;
-//    FOnNotifyPortInUse: TProcNotifyPortInUse;
-//    FOnNotifyServerIsAlreadyRunning: TProcNotifyServerIsAlreadyRunning;
-//    FOnNotifyServerIsActive: TProcNotifyServerIsActive;
-//    FOnNotifyServerIsInactive: TProcNotifyServerIsInactive;
 
     function GetActive: Boolean; override;
     procedure SetActive(const Value: Boolean); override;
@@ -62,25 +49,22 @@ type
       read GetJSONRPCDispatchEvents implements IJSONRPCDispatchEvents;
   public
 
-//    constructor Create; virtual;
-//    destructor Destroy; override;
-
     function CheckPort(const APort: Integer): Integer; override;
     function CheckPort(const APort: string): Integer; override;
 
     procedure StartServer(const APort: Integer = 0); override;
     procedure StopServer; override;
 
-    property OnNotifyPortSet: TJSONRPCServerRunner.TProcNotifyPortSet read FOnNotifyPortSet write
-      FOnNotifyPortSet;
-    property OnNotifyPortInUse: TJSONRPCServerRunner.TProcNotifyPortInUse read FOnNotifyPortInUse write
-      FOnNotifyPortInUse;
-    property OnNotifyServerIsActive: TJSONRPCServerRunner.TProcNotifyServerIsActive read
-      FOnNotifyServerIsActive write FOnNotifyServerIsActive;
-    property OnNotifyServerIsInactive: TJSONRPCServerRunner.TProcNotifyServerIsInactive read
-      FOnNotifyServerIsInactive write FOnNotifyServerIsInactive;
-    property OnNotifyServerIsAlreadyRunning: TJSONRPCServerRunner.TProcNotifyServerIsAlreadyRunning read
-      FOnNotifyServerIsAlreadyRunning write FOnNotifyServerIsAlreadyRunning;
+    property OnNotifyPortSet: TJSONRPCServerRunner.TProcNotifyPortSet
+      read FOnNotifyPortSet write FOnNotifyPortSet;
+    property OnNotifyPortInUse: TJSONRPCServerRunner.TProcNotifyPortInUse
+      read FOnNotifyPortInUse write FOnNotifyPortInUse;
+    property OnNotifyServerIsActive: TJSONRPCServerRunner.TProcNotifyServerIsActive
+      read FOnNotifyServerIsActive write FOnNotifyServerIsActive;
+    property OnNotifyServerIsInactive: TJSONRPCServerRunner.TProcNotifyServerIsInactive
+      read FOnNotifyServerIsInactive write FOnNotifyServerIsInactive;
+    property OnNotifyServerIsAlreadyRunning: TJSONRPCServerRunner.TProcNotifyServerIsAlreadyRunning
+      read FOnNotifyServerIsAlreadyRunning write FOnNotifyServerIsAlreadyRunning;
 
     property Active: Boolean read GetActive write SetActive;
     property Port: Integer read GetPort write SetPort;
@@ -120,16 +104,6 @@ begin
   Result := CheckPort(APort.ToInteger);
 end;
 
-//constructor TJSONRPCServerIdHTTPRunner.Create;
-//begin
-//  inherited Create;
-//  FRequest := TMemoryStream.Create;
-//  FResponse := TMemoryStream.Create;
-//  FServer := TIdHTTPServer.Create(nil);
-//  FServer.OnCommandGet := HandlePostGet;
-//  FServerWrapper := TJSONRPCServerWrapper.Create(nil);
-//end;
-
 procedure TJSONRPCServerIdHTTPRunner.CreateServer;
 begin
   FServer := TIdHTTPServer.Create(nil);
@@ -141,16 +115,6 @@ begin
   FServer.StopListening;
   FServer.Free;
 end;
-
-//destructor TJSONRPCServerIdHTTPRunner.Destroy;
-//begin
-//  FServerWrapper.Free;
-//  FServer.StopListening;
-//  FServer.Free;
-//  FResponse.Free;
-//  FRequest.Free;
-//  inherited;
-//end;
 
 procedure TJSONRPCServerIdHTTPRunner.DoNotifyPortInUse(const APort: Integer);
 begin
