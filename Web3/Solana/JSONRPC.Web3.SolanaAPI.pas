@@ -4,7 +4,8 @@ interface
 
 uses
   JSONRPC.RIO, JSONRPC.Common.Types, System.JSON, JSONRPC.Web3.SolanaTypes,
-  JSONRPC.Web3.Solana.Attributes;
+  JSONRPC.Web3.Solana.Attributes,
+  JSONRPC.Web3.SolanaTypes.getAccountInfoResultsType;
   // System.JSON.Converters;
 
 type
@@ -16,14 +17,33 @@ type
     value: T;
   end;
 
+  RPCResponseU64 = RPCResponse<UInt64>;
+
+  TCommitment = (finalized, processed);
+  TTransactionDetails = (full, accounts, signatures, none);
+
+  getAccountInfoConfigObject = record
+    commitment: TCommitment;
+    encoding: TEncoding;
+    transactionDetails: TTransactionDetails;
+    maxSupportedTransactionVersion: UInt64;
+    rewards: Boolean;
+  end;
+
+  getBalanceConfigObject = record
+    commitment: TCommitment;
+    minContextSlot: UInt64;
+  end;
+
   ISolanaJSONRPC = interface(IJSONRPCMethods)
     ['{D03B9695-4452-4FE2-9354-34175017E9A1}']
 
-    function getAccountInfo(const pubKeyAccount: string;
-      [JsonConverter(TEncodingEnumConverter)]
-      encoding: TEncoding = base58): TJSONObject;
+    function getAccountInfo(const pubKeyAccount: string): getAccountInfoResult; overload;
+    function getAccountInfo(const pubKeyAccount: string; config: getAccountInfoConfigObject): getAccountInfoResult; overload;
 
-    procedure getBalance;
+    function getBalance(const pubKeyAccount: string): RPCResponseU64; overload;
+    function getBalance(const pubKeyAccount: string; config: getBalanceConfigObject): RPCResponseU64; overload;
+
     procedure getBlock;
     procedure getBlockCommitment;
     function getBlockHeight: UInt64;

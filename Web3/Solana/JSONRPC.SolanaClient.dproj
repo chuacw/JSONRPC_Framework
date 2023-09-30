@@ -201,6 +201,7 @@
         <DCCReference Include="JSONRPC.Web3.Solana.CustomConverters.pas"/>
         <DCCReference Include="JSONRPC.Web3.Solana.RIO.pas"/>
         <DCCReference Include="JSONRPC.Web3.Solana.Attributes.pas"/>
+        <DCCReference Include="JSONRPC.Web3.SolanaTypes.getAccountInfoResultsType.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

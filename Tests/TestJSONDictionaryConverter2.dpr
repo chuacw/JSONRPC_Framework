@@ -60,7 +60,7 @@ procedure Main;
 var
   LJSON1, LJSON2: string;
   LSerializer: TJsonSerializer;
-  LResult: TResult;
+  LResult: getAccountInfoResult;
 begin
   LJSON1 := '{'#13#10+
   '    "context": {'#13#10+
@@ -81,8 +81,8 @@ begin
   '}'#13#10;
   LSerializer := TJsonSerializer.Create;
   try
-    LResult := LSerializer.Deserialize<TResult>(LJSON1);
-    LJSON2 := LSerializer.Serialize<TResult>(LResult);
+    LResult := LSerializer.Deserialize<getAccountInfoResult>(LJSON1);
+    LJSON2 := LSerializer.Serialize<getAccountInfoResult>(LResult);
     WriteLn('LJSON1: ', LJSON1);
     WriteLn('LJSON2: ', LJSON2);
     WriteLn;

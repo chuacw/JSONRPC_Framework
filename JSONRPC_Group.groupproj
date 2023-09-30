@@ -21,6 +21,9 @@
         <Projects Include="Web3\Solana\JSONRPC.SolanaClient.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="Tests\TestJSONDictionaryConverter2.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -83,14 +86,23 @@
     <Target Name="JSONRPC_SolanaClient:Make">
         <MSBuild Projects="Web3\Solana\JSONRPC.SolanaClient.dproj" Targets="Make"/>
     </Target>
+    <Target Name="TestJSONDictionaryConverter2">
+        <MSBuild Projects="Tests\TestJSONDictionaryConverter2.dproj"/>
+    </Target>
+    <Target Name="TestJSONDictionaryConverter2:Clean">
+        <MSBuild Projects="Tests\TestJSONDictionaryConverter2.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="TestJSONDictionaryConverter2:Make">
+        <MSBuild Projects="Tests\TestJSONDictionaryConverter2.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="TestJSONRPC;JSONRPC_ServerIndy;JSONRPC_ClientProj;JSONRPC_ServerWebBroker;JSONRPC_AptosClient;JSONRPC_SolanaClient"/>
+        <CallTarget Targets="TestJSONRPC;JSONRPC_ServerIndy;JSONRPC_ClientProj;JSONRPC_ServerWebBroker;JSONRPC_AptosClient;JSONRPC_SolanaClient;TestJSONDictionaryConverter2"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="TestJSONRPC:Clean;JSONRPC_ServerIndy:Clean;JSONRPC_ClientProj:Clean;JSONRPC_ServerWebBroker:Clean;JSONRPC_AptosClient:Clean;JSONRPC_SolanaClient:Clean"/>
+        <CallTarget Targets="TestJSONRPC:Clean;JSONRPC_ServerIndy:Clean;JSONRPC_ClientProj:Clean;JSONRPC_ServerWebBroker:Clean;JSONRPC_AptosClient:Clean;JSONRPC_SolanaClient:Clean;TestJSONDictionaryConverter2:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="TestJSONRPC:Make;JSONRPC_ServerIndy:Make;JSONRPC_ClientProj:Make;JSONRPC_ServerWebBroker:Make;JSONRPC_AptosClient:Make;JSONRPC_SolanaClient:Make"/>
+        <CallTarget Targets="TestJSONRPC:Make;JSONRPC_ServerIndy:Make;JSONRPC_ClientProj:Make;JSONRPC_ServerWebBroker:Make;JSONRPC_AptosClient:Make;JSONRPC_SolanaClient:Make;TestJSONDictionaryConverter2:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>
