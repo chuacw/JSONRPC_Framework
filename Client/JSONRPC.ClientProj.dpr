@@ -36,6 +36,7 @@ begin
     procedure(const AJSONRPCResponse: string)
     begin
       WriteLn(Format('Incoming JSON RPC Response: %s', [AJSONRPCResponse]));
+      Writeln(StringOfChar('-', 90));
     end
   );
   try
@@ -43,7 +44,7 @@ begin
     LJSONRPC.SendBool(True);
     var AList := TList<Integer>.Create;
     AList.AddRange([1, 2, 3, 4, 5]);
-    var LResultList := LJSONRPC.SendSomeList(AList);
+//    var LResultList := LJSONRPC.SendSomeList(AList);
 
     var LResultExtended := LJSONRPC.SendExtended(Extended.MaxValue);
     Assert(LResultExtended = Extended.MaxValue, 'Roundtripping failed');

@@ -17,7 +17,7 @@ type
     TProcNotifyServerIsAlreadyRunning = reference to procedure(const AServer: TJSONRPCServerRunner);
     TProcNotifyServerIsActive = reference to procedure(const AServer: TJSONRPCServerRunner);
     TProcNotifyServerIsInactive = reference to procedure(const AServer: TJSONRPCServerRunner);
-  private
+  protected
     function GetGetSetDispatchEvents: IJSONRPCGetSetDispatchEvents;
     function GetJSONRPCDispatch: IJSONRPCDispatch;
     function GetJSONRPCDispatchEvents: IJSONRPCDispatchEvents;
@@ -61,7 +61,7 @@ type
     function GetPort: Integer; virtual; abstract;
     procedure SetPort(const APort: Integer); virtual; abstract;
 
-    procedure DoNotifyPortSet; virtual;
+    procedure DoNotifyPortSet; virtual; abstract;
     procedure DoNotifyPortInUse(const APort: Integer); virtual;
     procedure DoNotifyServerIsActive; virtual;
     procedure DoNotifyServerIsInactive; virtual;
@@ -164,32 +164,32 @@ end;
 
 procedure TJSONRPCServerRunner.DoNotifyPortInUse(const APort: Integer);
 begin
-//  if Assigned(FOnNotifyPortInUse) then
-//    FOnNotifyPortInUse(APort);
+  if Assigned(FOnNotifyPortInUse) then
+    FOnNotifyPortInUse(APort);
 end;
 
-procedure TJSONRPCServerRunner.DoNotifyPortSet;
-begin
+//procedure TJSONRPCServerRunner.DoNotifyPortSet;
+//begin
 //  if Assigned(FOnNotifyPortSet) then
-//    FOnNotifyPortSet(FServer.DefaultPort);
-end;
+//    FOnNotifyPortSet(FServerWrapper.);
+//end;
 
 procedure TJSONRPCServerRunner.DoNotifyServerIsActive;
 begin
-//  if Assigned(FOnNotifyServerIsActive) then
-//    FOnNotifyServerIsActive(Self);
+  if Assigned(FOnNotifyServerIsActive) then
+    FOnNotifyServerIsActive(Self);
 end;
 
 procedure TJSONRPCServerRunner.DoNotifyServerIsAlreadyRunning;
 begin
-//  if Assigned(FOnNotifyServerIsAlreadyRunning) then
-//    FOnNotifyServerIsAlreadyRunning(Self);
+  if Assigned(FOnNotifyServerIsAlreadyRunning) then
+    FOnNotifyServerIsAlreadyRunning(Self);
 end;
 
 procedure TJSONRPCServerRunner.DoNotifyServerIsInactive;
 begin
-//  if Assigned(FOnNotifyServerIsInactive) then
-//    FOnNotifyServerIsInactive(Self);
+  if Assigned(FOnNotifyServerIsInactive) then
+    FOnNotifyServerIsInactive(Self);
 end;
 
 //function TJSONRPCServerRunner.GetActive: Boolean;

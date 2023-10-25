@@ -19,16 +19,16 @@ uses
   JSONRPC.Common.RecordHandlers in '..\..\Common\JSONRPC.Common.RecordHandlers.pas',
   JSONRPC.Common.Consts in '..\..\Common\JSONRPC.Common.Consts.pas',
   JSONRPC.Web3.SolanaTypes in 'JSONRPC.Web3.SolanaTypes.pas',
-  JSONRPC.Web3.SolanaTypes.getVoteAccountResultsType in 'JSONRPC.Web3.SolanaTypes.getVoteAccountResultsType.pas',
   JSONRPC.Web3.Solana.CustomConverters in 'JSONRPC.Web3.Solana.CustomConverters.pas',
   JSONRPC.Web3.Solana.RIO in 'JSONRPC.Web3.Solana.RIO.pas',
   JSONRPC.Web3.Solana.Attributes in 'JSONRPC.Web3.Solana.Attributes.pas',
-  JSONRPC.Web3.SolanaTypes.getAccountInfoResultsType in 'JSONRPC.Web3.SolanaTypes.getAccountInfoResultsType.pas';
+  JSONRPC.Web3.SolanaTypes.getAccountInfoResultsType in 'JSONRPC.Web3.SolanaTypes.getAccountInfoResultsType.pas',
+  JSONRPC.Web3.SolanaTypes.getVoteAccountResultsType in 'JSONRPC.Web3.SolanaTypes.getVoteAccountResultsType.pas';
 
 procedure Main;
-//var
+var
 //  LCtx: TRttiContext;
-//  LTypeInfo: PTypeInfo;
+  LTypeInfo: PTypeInfo;
 //  LType: TRttiType;
 //  LAttribute: EnumAsAttribute;
 begin
@@ -36,7 +36,6 @@ begin
 //  LType := LCtx.GetType(LTypeInfo);
 //  LAttribute := LType.GetAttribute<EnumAsAttribute>;
 //  // LAttribute.Index =
-
 end;
 
 begin

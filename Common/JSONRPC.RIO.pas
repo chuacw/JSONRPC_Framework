@@ -878,13 +878,13 @@ begin
                 var LFloatType := LParamTypeInfo^.TypeData.FloatType;
                 CheckFloatType(LFloatType);
                 case LFloatType of
-                  ftComp: begin
-                    var LParamValue := PComp(LParamValuePtr)^;
-                    case FPassByPosOrName of
-                      tppByName: LParamsObj.AddPair(LParamName, LParamValue);
-                      tppByPos:  LParamsArray.Add(LParamValue);
-                    end;
-                  end;
+//                  ftComp: begin
+//                    var LParamValue := PComp(LParamValuePtr)^;
+//                    case FPassByPosOrName of
+//                      tppByName: LParamsObj.AddPair(LParamName, LParamValue);
+//                      tppByPos:  LParamsArray.Add(LParamValue);
+//                    end;
+//                  end;
                   ftCurr: begin
                     var LParamValue := PCurrency(LParamValuePtr)^;
                     begin

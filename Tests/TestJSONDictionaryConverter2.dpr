@@ -10,7 +10,9 @@ uses
   TestJSONDictionaryConverter.Types in 'TestJSONDictionaryConverter.Types.pas',
   TestJSONDictionaryConverter2.Converters in 'TestJSONDictionaryConverter2.Converters.pas',
   JSONRPC.Web3.Solana.Attributes in '..\Web3\Solana\JSONRPC.Web3.Solana.Attributes.pas',
-  JSONRPC.Web3.Solana.CustomConverters in '..\Web3\Solana\JSONRPC.Web3.Solana.CustomConverters.pas';
+  JSONRPC.Web3.Solana.CustomConverters in '..\Web3\Solana\JSONRPC.Web3.Solana.CustomConverters.pas',
+  JSONRPC.Web3.SolanaTypes.getAccountInfoResultsType in '..\Web3\Solana\JSONRPC.Web3.SolanaTypes.getAccountInfoResultsType.pas',
+  JSONRPC.Web3.SolanaTypes.getVoteAccountResultsType in '..\Web3\Solana\JSONRPC.Web3.SolanaTypes.getVoteAccountResultsType.pas';
 
 function SameJson(const AJSON1, AJSON2: string): Boolean;
 var

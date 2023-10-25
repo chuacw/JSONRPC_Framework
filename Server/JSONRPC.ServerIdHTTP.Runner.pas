@@ -11,9 +11,14 @@ type
   TJSONRPCServerIdHTTPRunner = class(TJSONRPCServerRunner, IJSONRPCDispatch,
     IJSONRPCGetSetDispatchEvents, IJSONRPCDispatchEvents)
   private
-    function GetGetSetDispatchEvents: IJSONRPCGetSetDispatchEvents;
-    function GetJSONRPCDispatch: IJSONRPCDispatch;
-    function GetJSONRPCDispatchEvents: IJSONRPCDispatchEvents;
+//    FOnNotifyServerIsInactive: TJSONRPCServerRunner.TProcNotifyServerIsInactive;
+//    FOnNotifyPortInUse: TJSONRPCServerRunner.TProcNotifyPortInUse;
+//    FOnNotifyServerIsAlreadyRunning: TJSONRPCServerRunner.TProcNotifyServerIsAlreadyRunning;
+//    FOnNotifyServerIsActive: TJSONRPCServerRunner.TProcNotifyServerIsActive;
+//    FOnNotifyPortSet: TJSONRPCServerRunner.TProcNotifyPortSet;
+//    function GetGetSetDispatchEvents: IJSONRPCGetSetDispatchEvents;
+//    function GetJSONRPCDispatch: IJSONRPCDispatch;
+//    function GetJSONRPCDispatchEvents: IJSONRPCDispatchEvents;
   protected
     FServer: TIdHTTPServer;
 
@@ -37,16 +42,17 @@ type
     procedure SetPort(const APort: Integer); override;
 
     procedure DoNotifyPortSet; override;
-    procedure DoNotifyPortInUse(const APort: Integer); override;
-    procedure DoNotifyServerIsActive; override;
-    procedure DoNotifyServerIsInactive; override;
-    procedure DoNotifyServerIsAlreadyRunning; override;
+//    procedure DoNotifyPortInUse(const APort: Integer); override;
+//    procedure DoNotifyServerIsActive; override;
+//    procedure DoNotifyServerIsInactive; override;
+//    procedure DoNotifyServerIsAlreadyRunning; override;
 
     property Dispatcher: IJSONRPCDispatch read GetJSONRPCDispatch implements IJSONRPCDispatch;
     property JSONRPCGetSetDispatchEvents: IJSONRPCGetSetDispatchEvents
       read GetGetSetDispatchEvents implements IJSONRPCGetSetDispatchEvents;
     property JSONRPCDispatchEvents: IJSONRPCDispatchEvents
       read GetJSONRPCDispatchEvents implements IJSONRPCDispatchEvents;
+
   public
 
     function CheckPort(const APort: Integer): Integer; override;
@@ -74,7 +80,7 @@ type
 implementation
 
 uses
-  IdStack, IPPeerAPI, System.SysUtils, JSONRPC.Common.Consts;
+  IdStack, IPPeerAPI, IPPeerServer, System.SysUtils, JSONRPC.Common.Consts;
 
 { TJSONRPCServerIdHTTPRunner }
 
@@ -116,11 +122,11 @@ begin
   FServer.Free;
 end;
 
-procedure TJSONRPCServerIdHTTPRunner.DoNotifyPortInUse(const APort: Integer);
-begin
-  if Assigned(FOnNotifyPortInUse) then
-    FOnNotifyPortInUse(APort);
-end;
+//procedure TJSONRPCServerIdHTTPRunner.DoNotifyPortInUse(const APort: Integer);
+//begin
+//  if Assigned(FOnNotifyPortInUse) then
+//    FOnNotifyPortInUse(APort);
+//end;
 
 procedure TJSONRPCServerIdHTTPRunner.DoNotifyPortSet;
 begin
@@ -128,23 +134,23 @@ begin
     FOnNotifyPortSet(FServer.DefaultPort);
 end;
 
-procedure TJSONRPCServerIdHTTPRunner.DoNotifyServerIsActive;
-begin
-  if Assigned(FOnNotifyServerIsActive) then
-    FOnNotifyServerIsActive(Self);
-end;
-
-procedure TJSONRPCServerIdHTTPRunner.DoNotifyServerIsAlreadyRunning;
-begin
-  if Assigned(FOnNotifyServerIsAlreadyRunning) then
-    FOnNotifyServerIsAlreadyRunning(Self);
-end;
-
-procedure TJSONRPCServerIdHTTPRunner.DoNotifyServerIsInactive;
-begin
-  if Assigned(FOnNotifyServerIsInactive) then
-    FOnNotifyServerIsInactive(Self);
-end;
+//procedure TJSONRPCServerIdHTTPRunner.DoNotifyServerIsActive;
+//begin
+//  if Assigned(FOnNotifyServerIsActive) then
+//    FOnNotifyServerIsActive(Self);
+//end;
+//
+//procedure TJSONRPCServerIdHTTPRunner.DoNotifyServerIsAlreadyRunning;
+//begin
+//  if Assigned(FOnNotifyServerIsAlreadyRunning) then
+//    FOnNotifyServerIsAlreadyRunning(Self);
+//end;
+//
+//procedure TJSONRPCServerIdHTTPRunner.DoNotifyServerIsInactive;
+//begin
+//  if Assigned(FOnNotifyServerIsInactive) then
+//    FOnNotifyServerIsInactive(Self);
+//end;
 
 function TJSONRPCServerIdHTTPRunner.GetActive: Boolean;
 begin
@@ -156,25 +162,25 @@ begin
   Result := '';
 end;
 
-function TJSONRPCServerIdHTTPRunner.GetGetSetDispatchEvents: IJSONRPCGetSetDispatchEvents;
-begin
-  Result := FServerWrapper as IJSONRPCGetSetDispatchEvents;
-end;
+//function TJSONRPCServerIdHTTPRunner.GetGetSetDispatchEvents: IJSONRPCGetSetDispatchEvents;
+//begin
+//  Result := FServerWrapper as IJSONRPCGetSetDispatchEvents;
+//end;
 
 function TJSONRPCServerIdHTTPRunner.GetHost: string;
 begin
   Result := '';
 end;
 
-function TJSONRPCServerIdHTTPRunner.GetJSONRPCDispatch: IJSONRPCDispatch;
-begin
-  Result := FServerWrapper as IJSONRPCDispatch;
-end;
+//function TJSONRPCServerIdHTTPRunner.GetJSONRPCDispatch: IJSONRPCDispatch;
+//begin
+//  Result := FServerWrapper as IJSONRPCDispatch;
+//end;
 
-function TJSONRPCServerIdHTTPRunner.GetJSONRPCDispatchEvents: IJSONRPCDispatchEvents;
-begin
-  Result := FServerWrapper as IJSONRPCDispatchEvents;
-end;
+//function TJSONRPCServerIdHTTPRunner.GetJSONRPCDispatchEvents: IJSONRPCDispatchEvents;
+//begin
+//  Result := FServerWrapper as IJSONRPCDispatchEvents;
+//end;
 
 function TJSONRPCServerIdHTTPRunner.GetPort: Integer;
 begin

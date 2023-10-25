@@ -35,6 +35,10 @@ type
     minContextSlot: UInt64;
   end;
 
+
+  /// <summary>
+  /// Implements the Solana JSON RPC API as documented at https://docs.solana.com/api/http
+  /// </summary>
   ISolanaJSONRPC = interface(IJSONRPCMethods)
     ['{D03B9695-4452-4FE2-9354-34175017E9A1}']
 

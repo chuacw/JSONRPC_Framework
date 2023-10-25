@@ -35,9 +35,9 @@ end;
 
 procedure WriteStatus(const AServerRunner: TJSONRPCServerRunner);
 begin
-//  Writeln(sIndyVersion + AServerRunner.Server.Version);
-//  Writeln(sActive + AServerRunner.Server.Active.ToString(TUseBoolStrs.True));
-//  Writeln(sPort + AServerRunner.Server.DefaultPort.ToString);
+//  Writeln(sIndyVersion + AServerRunner.Version);
+  Writeln(sActive + AServerRunner.Active.ToString(TUseBoolStrs.True));
+  Writeln(sPort + AServerRunner.Port.ToString);
   WritePrompt;
 end;
 
