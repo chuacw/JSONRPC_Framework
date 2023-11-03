@@ -1062,13 +1062,13 @@ begin
 {$IFNDEF NEXTGEN}
       tkLString:
         begin
-          P := AllocData(sizeof(PAnsiString));
+          P := AllocData(SizeOf(PAnsiString));
           PAnsiString(P)^ := '';
           AddStrToClear(P);
         end;
       tkWString:
         begin
-          P := AllocData(sizeof(PWideString));
+          P := AllocData(SizeOf(PWideString));
           PWideString(P)^ := '';
           AddWStrToClear(P);
         end;
@@ -1076,7 +1076,7 @@ begin
 {$IFDEF UNICODE}
       tkUString:
         begin
-          P := AllocData(Sizeof(PUnicodeString));
+          P := AllocData(SizeOf(PUnicodeString));
           PUnicodeString(P)^ := '';
           AddUStrToClear(P);
         end;
@@ -1086,10 +1086,10 @@ begin
         P := AllocData(SizeOf(TInvContext.TEnum));
       end;
       tkInt64:
-        P := AllocData(Sizeof(Int64));
+        P := AllocData(SizeOf(Int64));
       tkVariant:
         begin
-          P := AllocData(Sizeof(TVarData));
+          P := AllocData(SizeOf(TVarData));
           Variant( PVarData(P)^ ) := NULL;
           AddVariantToClear(PVarData(P));
         end;

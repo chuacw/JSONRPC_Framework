@@ -6,7 +6,7 @@ interface
 
 uses
   System.SysUtils, System.Classes, System.JSON, System.JSON.Serializers,
-  System.Net.URLClient, System.TypInfo;
+  System.Net.URLClient, System.TypInfo, System.Rtti, Soap.IntfInfo;
 
 type
   TPassParamByPosOrName = (tppByPos, tppByName);
@@ -17,8 +17,12 @@ type
   TOnSentJSONRPC = reference to procedure (const AJSONResponse: string);
 
   // For client side
-  TOnParseEnum = reference to function (AParamTypeInfo: PTypeInfo;
-    AParamValuePtr: Pointer; AParamsObj: TJSONObject; AParamsArray: TJSONArray): Boolean;
+  TIntfMethEntry = Soap.IntfInfo.TIntfMethEntry;
+  TOnParseEnum = reference to function (const ARttiContext: TRttiContext;
+    const AMethMD: TIntfMethEntry;
+    AParamIndex: Integer;
+    AParamTypeInfo: PTypeInfo; AParamValuePtr: Pointer; AParamsObj: TJSONObject;
+    AParamsArray: TJSONArray): Boolean;
 
   // For client side
   TOnLogOutgoingJSONRequest  = reference to procedure(const AJSONRPCRequest: string);
@@ -48,6 +52,20 @@ type
   /// to prevent it from sending an ID for the JSON RPC call.
   /// </summary>
   JSONNotificationAttribute = class(TCustomAttribute);
+
+  /// <summary> An attribute to override the method name used to call the JSON RPC server.
+  /// </summary>
+  JSONMethodNameAttribute = class(TCustomAttribute)
+  protected
+    FMethodName: string;
+  public
+    constructor Create(const AMethodName: string);
+{$WARN HIDING_MEMBER OFF}
+    property Name: string read FMethodName;
+{$WARN HIDING_MEMBER ON}
+  end;
+
+  JSONMarshalAsNumber = class(TCustomAttribute);
 
   /// <summary> An attribute to apply on a method to tell the JSON RPC wrapper
   /// to prevent it from sending an ID for the JSON RPC call.
@@ -308,7 +326,7 @@ implementation
 
 uses
   JSONRPC.Common.RecordHandlers, Velthuis.BigDecimals, Velthuis.BigIntegers,
-  System.Rtti, JSONRPC.JsonUtils, JSONRPC.Common.Consts;
+  JSONRPC.JsonUtils, JSONRPC.Common.Consts;
 
 { TJSONRPCBoolean }
 
@@ -383,6 +401,13 @@ begin
   if Assigned(FProc) then
     FProc(Self);
   inherited;
+end;
+
+{ JSONMethodNameAttribute }
+
+constructor JSONMethodNameAttribute.Create(const AMethodName: string);
+begin
+  FMethodName := AMethodName;
 end;
 
 { UrlSuffixAttribute }

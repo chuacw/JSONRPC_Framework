@@ -23,12 +23,21 @@ type
 
   IJSONRPCMethods = JSONRPC.Common.Types.IJSONRPCMethods;
 
+//  TIntfMethEntry = Soap.IntfInfo.TIntfMethEntry;
   TOnBeforeParseEvent = reference to procedure(const AContext: TInvContext;
     AMethNum: Integer; const AMethMD: TIntfMethEntry; const AMethodID: Int64;
     AJSONResponse: TStream);
 
+  TNetHeaders = System.Net.URLClient.TNetHeaders;
+  TNameValuePair = System.Net.URLClient.TNameValuePair;
+  TOnBeforeInitializeHeaders = reference to procedure(var ANetHeaders: TNetHeaders);
+  TOnAfterInitializeHeaders = reference to procedure(var ANetHeaders: TNetHeaders);
+
   TInvContext = JSONRPC.InvokeRegistry.TInvContext;
-  TIntfMethEntry = Soap.IntfInfo.TIntfMethEntry;
+  TIntfMethEntryHelper = record helper for TIntfMethEntry
+  public
+    function JSONMethodName(const ARttiContext: TRttiContext): string;
+  end;
 
 {$IF DEFINED(BASECLASS)}
   TBaseJSONRPCWrapper = class abstract(TComponent)
@@ -103,6 +112,11 @@ type
     FOnBeforeExecute: TBeforeExecuteEvent;
     FOnAfterExecute: TAfterExecuteEvent;
     FOnBeforeParse: TOnBeforeParseEvent;
+
+    FOnBeforeInitializeHeaders: TOnBeforeInitializeHeaders;
+    FOnAfterInitializeHeaders: TOnAfterInitializeHeaders;
+    FMethodNames: TArray<string>;
+
     FOnSync: TOnSyncEvent;
     FPassByPosOrName: TPassParamByPosOrName;
     FOnSafeCallException: TOnSafeCallException;
@@ -149,8 +163,14 @@ type
     procedure DoLogOutgoingRequest(const ARequest: string);
     procedure DoLogIncomingResponse(const AResponse: string);
 
-    function DoParseEnum(AParamTypeInfo: PTypeInfo; AParamValuePtr: Pointer;
+    function DoParseEnum(const ARttiContext: TRttiContext;
+      const AMethMD: TIntfMethEntry;
+      AParamIndex: Integer;
+      AParamTypeInfo: PTypeInfo; AParamValuePtr: Pointer;
       AParamsObj: TJSONObject; AParamsArray: TJSONArray): Boolean; virtual;
+
+    procedure DoBeforeInitializeHeaders(var VNetHeaders: TNetHeaders);
+    procedure DoAfterInitializeHeaders(var VNetHeaders: TNetHeaders);
 
     /// <summary>
     /// Called when there's no code that can parse the result.
@@ -178,6 +198,14 @@ type
     procedure GenericClientMethod(AMethod: TRttiMethod; const AArgs: TArray<TValue>; out Result: TValue);
     function _AddRef: Integer; stdcall;
     function _Release: Integer; stdcall;
+
+    function GetMethod(const AMethMD: TIntfMethEntry): TRttiMethod;
+
+    /// <summary>
+    /// Obtains the cached method name. Can be the native name, or a name
+    /// specified by the JSONMethodName attribute.
+    /// </summary>
+    function GetMethodName(const AMethMD: TIntfMethEntry): string;
 
     { IJSONRPCInvocationSettings }
     function GetParamsPassByPosition: Boolean;
@@ -254,6 +282,11 @@ type
     property OnBeforeExecute: TBeforeExecuteEvent read FOnBeforeExecute write FOnBeforeExecute;
 
     property OnBeforeParse: TOnBeforeParseEvent read FOnBeforeParse write FOnBeforeParse;
+
+    property OnBeforeInitializeHeaders: TOnBeforeInitializeHeaders
+      read FOnBeforeInitializeHeaders write FOnBeforeInitializeHeaders;
+    property OnAfterInitializeHeaders: TOnAfterInitializeHeaders
+      read FOnAfterInitializeHeaders write FOnAfterInitializeHeaders;
 
     property OnLogOutgoingJSONRequest: TOnLogOutgoingJSONRequest
       read GetOnLogOutgoingJSONRequest write SetOnLogOutgoingJSONRequest;
@@ -712,6 +745,47 @@ procedure TJSONRPCWrapper.UpdateServerURL(
 begin
 end;
 
+function TIntfMethEntryHelper.JSONMethodName(const ARttiContext: TRttiContext): string;
+var
+  LType: TRttiType;
+  DeclaredMethods: TArray<TRttiMethod>;
+  LMethod: TRttiMethod;
+  LJSONMethodNameAttr: JSONMethodNameAttribute;
+begin
+  LType := ARttiContext.GetType(Self.SelfInfo); // TRttiInterfaceType
+  DeclaredMethods := LType.GetDeclaredMethods;
+  LMethod := DeclaredMethods[Self.Pos-3]; // 3 is number of methods in IInterface
+  LJSONMethodNameAttr := LMethod.GetAttribute<JSONMethodNameAttribute>;
+  if Assigned(LJSONMethodNameAttr) then
+    Result := LJSONMethodNameAttr.Name;
+end;
+
+function TJSONRPCWrapper.GetMethod(const AMethMD: TIntfMethEntry): TRttiMethod;
+begin
+  var LType := FRttiContext.GetType(AMethMD.SelfInfo); // TRttiInterfaceType
+  Result := LType.GetDeclaredMethods[AMethMD.Pos-3];
+end;
+
+function TJSONRPCWrapper.GetMethodName(const AMethMD: TIntfMethEntry): string;
+var
+  LJSONMethodName: string;
+begin
+  if Length(FMethodNames) < AMethMD.Pos then
+    SetLength(FMethodNames, AMethMD.Pos+1);
+  if FMethodNames[AMethMD.Pos] <> '' then
+    Exit(FMethodNames[AMethMD.Pos]);
+  LJSONMethodName := AMethMD.JSONMethodName(FRttiContext);
+  if LJSONMethodName = '' then
+    FMethodNames[AMethMD.Pos] := AMethMD.Name else
+    FMethodNames[AMethMD.Pos] := LJSONMethodName;
+  Result := FMethodNames[AMethMD.Pos];
+end;
+
+procedure DumpType(const AIntfType: TRttiType);
+begin
+  OutputDebugString(PChar(AIntfType.Name));
+end;
+
 // Client side JSON RPC parameter conversion
 procedure TJSONRPCWrapper.DoDispatch(const AContext: TInvContext;
   AMethNum: Integer; const AMethMD: TIntfMethEntry);
@@ -740,7 +814,12 @@ begin
     {$REGION 'Convert native Delphi call to a JSON string'}
     LJSONMethodObj.Owned := True;
     AddJSONVersion(LJSONMethodObj);
-    LJSONMethodObj.AddPair(SMETHOD, AMethMD.Name);
+
+    var LIntfType := FRttiContext.GetType(AMethMD.SelfInfo);
+    DumpType(LIntfType);
+    var LJSONMethodName := GetMethodName(AMethMD);
+    LJSONMethodObj.AddPair(SMETHOD, LJSONMethodName);
+
     if AMethMD.ParamCount > 0 then
       begin
 
@@ -785,35 +864,44 @@ begin
               end;
               tkEnumeration: begin
                 // First chance to parse enum
-                if not DoParseEnum(LParamTypeInfo, LParamValuePtr, LParamsObj, LParamsArray) then
-                // Only possible types are boolean, WordBool, LongBool, etc
-                // marshalled as string or as True/False???
-                if IsBoolType(LParamTypeInfo) then
+                if not DoParseEnum(FRttiContext, AMethMD, I, LParamTypeInfo, LParamValuePtr, LParamsObj, LParamsArray) then
                   begin
-                    var LValue: Boolean;
-                    case LParamTypeInfo^.TypeData^.OrdType of
-//                    case GetTypeData(LParamTypeInfo)^.OrdType of
-                      otSByte, otUByte: begin
-                        LValue := PBoolean(LParamValuePtr)^;
+                  // Only possible types are boolean, WordBool, LongBool, etc
+                  // marshalled as string or as True/False???
+                    if IsBoolType(LParamTypeInfo) then
+                      begin
+                        var LValue: Boolean;
+                        case LParamTypeInfo^.TypeData^.OrdType of
+    //                    case GetTypeData(LParamTypeInfo)^.OrdType of
+                          otSByte, otUByte: begin
+                            LValue := PBoolean(LParamValuePtr)^;
+                          end;
+                          otSWord, otUWord: begin
+                            LValue := PWordBool(LParamValuePtr)^;
+                          end;
+                          otSLong, otULong: begin
+                            LValue := PLongBool(LParamValuePtr)^;
+                          end;
+                        else
+                          // This currently won't happen, because there's only
+                          // 6 ordinal types as defined.
+                          Assert(False, 'Unhandled new ordinal type!');
+                        end;
+                        case FPassByPosOrName of
+                          tppByName: LParamsObj.AddPair(LParamName, TJSONBool.Create(LValue));
+                          tppByPos:  LParamsArray.Add(LValue);
+                        end;
+                      end else
+                      begin // Looks like it's really an enum!
+                        var LValue := GetEnumName(LParamTypeInfo, PByte(LParamValuePtr)^);
+                        case FPassByPosOrName of
+                          tppByName: LParamsObj.AddPair(LParamName, LValue);
+                          tppByPos:  LParamsArray.Add(LValue);
+                        end;
                       end;
-                      otSWord, otUWord: begin
-                        LValue := PWordBool(LParamValuePtr)^;
-                      end;
-                      otSLong, otULong: begin
-                        LValue := PLongBool(LParamValuePtr)^;
-                      end;
-                    else
-                      // This currently won't happen, because there's only
-                      // 6 ordinal types as defined.
-                      Assert(False, 'Unhandled new ordinal type!');
-                    end;
-                    case FPassByPosOrName of
-                      tppByName: LParamsObj.AddPair(LParamName, TJSONBool.Create(LValue));
-                      tppByPos:  LParamsArray.Add(LValue);
-                    end;
                   end else
-                  begin // Looks like it's really an enum!
-                    var LValue := GetEnumName(LParamTypeInfo, PByte(LParamValuePtr)^);
+                  begin
+                    var LValue := PByte(LParamValuePtr)^;
                     case FPassByPosOrName of
                       tppByName: LParamsObj.AddPair(LParamName, LValue);
                       tppByPos:  LParamsArray.Add(LValue);
@@ -964,8 +1052,6 @@ begin
 
 
     // Only add ID if it's not a Notification call
-    var LRttiContext := TRttiContext.Create;
-    var LIntfType := LRttiContext.GetType(AMethMD.SelfInfo);
     var LMethodType := LIntfType;
     var LJSONNotify := LMethodType.GetAttribute<JSONNotifyAttribute>;
     var LIsNotification := LJSONNotify <> nil;
@@ -1044,7 +1130,7 @@ begin
         try
           {$REGION 'Check for any errors from the server'}
           LError := LJSONResponseObj.FindValue(SERROR);
-          if Assigned(LError) then
+          if Assigned(LError) and not (LError is TJSONNull) then
             begin
               var LCode := LError.GetValue<Integer>(SCODE);
               var LMsg := LError.GetValue<string>(SMESSAGE);
@@ -1262,12 +1348,16 @@ begin
     FOnLogIncomingJSONResponse(AResponse);
 end;
 
-function TJSONRPCWrapper.DoParseEnum(AParamTypeInfo: PTypeInfo; AParamValuePtr: Pointer;
+function TJSONRPCWrapper.DoParseEnum(const ARttiContext: TRttiContext;
+  const AMethMD: TIntfMethEntry;
+  AParamIndex: Integer;
+  AParamTypeInfo: PTypeInfo; AParamValuePtr: Pointer;
   AParamsObj: TJSONObject; AParamsArray: TJSONArray): Boolean;
 begin
   Result := False;
   if Assigned(FOnParseEnum) then
-    Result := FOnParseEnum(AParamTypeInfo, AParamValuePtr, AParamsObj, AParamsArray);
+    Result := FOnParseEnum(ARttiContext, AMethMD, AParamIndex, AParamTypeInfo,
+      AParamValuePtr, AParamsObj, AParamsArray);
 end;
 
 function TJSONRPCWrapper.DoParseUnhandledResult(AJSONResponseObj: TJSONValue;
@@ -1308,21 +1398,32 @@ procedure TJSONRPCWrapper.GenericClientMethod(AMethod: TRttiMethod;
   const AArgs: TArray<TValue>; out Result: TValue);
 var
   LMethMD: TIntfMethEntry;
-  I: Integer;
+  I, VirtualIndex: Integer;
   LMethNum: Integer;
   LContext: TInvContext;
 begin
   LContext := TInvContext.Create;
   try
-    LMethNum := 0;
-    for I := 0 to Length(FIntfMD.MDA) do
-      if FIntfMD.MDA[I].Pos = AMethod.VirtualIndex then
-        begin
-          LMethNum := I;
-          LMethMD := FIntfMD.MDA[I];
-          LContext.SetMethodInfo(LMethMD);
-          Break;
-        end;
+    LMethNum := -1;
+
+    VirtualIndex := AMethod.VirtualIndex;
+    I := VirtualIndex;
+    if FIntfMD.MDA[I].Pos = VirtualIndex then
+      begin
+        LMethNum := I;
+        LMethMD := FIntfMD.MDA[I];
+        LContext.SetMethodInfo(LMethMD);
+      end;
+
+    if LMethNum = -1 then
+      for I := 0 to Length(FIntfMD.MDA) do
+        if FIntfMD.MDA[I].Pos = AMethod.VirtualIndex then
+          begin
+            LMethNum := I;
+            LMethMD := FIntfMD.MDA[I];
+            LContext.SetMethodInfo(LMethMD);
+            Break;
+          end;
     for I := 1 to LMethMD.ParamCount do
       LContext.SetParamPointer(I-1, AArgs[I].GetReferenceToRawData);
 
@@ -1377,13 +1478,46 @@ begin
   FClient := GJSONRPCTransportWrapperClass.Create;
 end;
 
+procedure TJSONRPCWrapper.DoBeforeInitializeHeaders(var VNetHeaders: TNetHeaders);
+begin
+  if Assigned(FOnBeforeInitializeHeaders) then
+    FOnBeforeInitializeHeaders(VNetHeaders);
+end;
+
+procedure TJSONRPCWrapper.DoAfterInitializeHeaders(var VNetHeaders: TNetHeaders);
+begin
+  if Assigned(FOnAfterInitializeHeaders) then
+    FOnAfterInitializeHeaders(VNetHeaders);
+end;
+
+type
+  TNameValueArrayHelper = record helper for TNameValueArray
+    function ContainsName(const AName: string): Boolean;
+  end;
+
+function TNameValueArrayHelper.ContainsName(const AName: string): Boolean;
+begin
+  for var I := Low(Self) to High(Self) do
+    begin
+      if SameText(Self[I].Name, AName) then
+        Exit(True);
+    end;
+  Result := False;
+end;
+
 function TJSONRPCWrapper.InitializeHeaders(const ARequestStream: TStream): TNetHeaders;
 begin
-  Result := [
-    TNameValuePair.Create('accept', SApplicationJson),
-    TNameValuePair.Create('Content-Length', IntToStr(ARequestStream.Size)),
-    TNameValuePair.Create('Content-Type', SApplicationJsonRPC)
-  ];
+  Result := [];
+  DoBeforeInitializeHeaders(Result);
+
+  if not Result.ContainsName('accept') then
+    Result := Result + [TNameValuePair.Create('accept', SApplicationJson)];
+  if not Result.ContainsName('Content-Length') then
+    Result := Result + [TNameValuePair.Create('Content-Length', IntToStr(ARequestStream.Size))];
+  if not Result.ContainsName('Content-Type') then
+    Result := Result + [TNameValuePair.Create('Content-Type', SApplicationJsonRPC)];
+
+  DoAfterInitializeHeaders(Result);
 end;
 
 function TJSONRPCWrapper.InternalQI(const IID: TGUID; out Obj): HResult;
