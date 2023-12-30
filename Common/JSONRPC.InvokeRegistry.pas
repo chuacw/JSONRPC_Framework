@@ -1118,8 +1118,7 @@ begin
 end;
 
 initialization
-  if not Assigned(JSONRPCInvRegistryV) then
-    InitIR;
+  InvRegistry;
 finalization
   JSONRPCInvRegistryV.Free;
 end.

@@ -6,9 +6,14 @@ interface
 
 uses
   System.SysUtils, System.Classes, System.JSON, System.JSON.Serializers,
-  System.Net.URLClient, System.TypInfo, System.Rtti, Soap.IntfInfo;
+  System.Net.URLClient, System.TypInfo, System.Rtti, Soap.IntfInfo,
+  System.Net.HttpClient, System.JSON.Readers, System.JSON.Writers;
 
 type
+
+  THttpMethodTypeEnum = (hConnect, hDelete, hGet, hHead, hMerge, hOptions,
+    hPatch, hPost, hPut, hTrace);
+
   TPassParamByPosOrName = (tppByPos, tppByName);
 
   TOnBeforeDispatchJSONRPC = reference to procedure (var AJSONResponse: string);
@@ -60,11 +65,21 @@ type
     FMethodName: string;
   public
     constructor Create(const AMethodName: string);
-{$WARN HIDING_MEMBER OFF}
+{.$WARN HIDING_MEMBER OFF}
     property Name: string read FMethodName;
-{$WARN HIDING_MEMBER ON}
+{.$WARN HIDING_MEMBER ON}
   end;
 
+  JSONHttpMethodAttribute = class(TCustomAttribute)
+  protected
+    FHttpMethod: string;
+  public
+    constructor Create(const AHttpMethod: string);
+    property HttpMethod: string read FHttpMethod;
+  end;
+
+  /// <summary> Allows enums to be marshalled as numbers instead of strings
+  /// </summary>
   JSONMarshalAsNumber = class(TCustomAttribute);
 
   /// <summary> An attribute to apply on a method to tell the JSON RPC wrapper
@@ -292,6 +307,9 @@ type
     destructor Destroy; override;
     procedure Post(const AURL: string; const ASource, AResponseContent: TStream;
       const AHeaders: TNetHeaders); virtual; abstract;
+    function HttpMethod(const AMethod: string; const AURL: string;
+      const ASource, AResponseContent: TStream;
+      const AHeaders: TNetHeaders): IHTTPResponse; virtual; abstract;
     property ConnectionTimeout: Integer read GetConnectionTimeout write SetConnectionTimeout;
     property ResponseTimeout: Integer read GetResponseTimeout write SetResponseTimeout;
     property SendTimeout: Integer read GetSendTimeout write SetSendTimeout;
@@ -311,6 +329,36 @@ type
   public
     constructor Create(const AProc: TProc<TStream>);
     destructor Destroy; override;
+  end;
+
+  // 17045a12
+  TJsonHexConverter = class(TJsonConverter)
+  public
+    function CanConvert(ATypeInfo: PTypeInfo): Boolean; override;
+    function CanRead: Boolean; override;
+    function CanWrite: Boolean; override;
+  end;
+
+  TJsonPrefixHexConverter = class(TJsonHexConverter)
+  protected
+    FPrefix: string;
+  public
+    constructor Create(const APrefix: string);
+    function ReadJson(const AReader: TJsonReader; ATypeInfo: PTypeInfo;
+      const AExistingValue: TValue; const ASerializer: TJsonSerializer): TValue; override;
+    {$MESSAGE WARN 'Untested'}
+    procedure WriteJson(const AWriter: TJsonWriter; const AValue: TValue;
+      const ASerializer: TJsonSerializer); override;
+  end;
+
+  TJsonDelphiHexConverter = class(TJsonPrefixHexConverter)
+  public
+    procedure AfterConstruction; override;
+  end;
+
+  TJsonCppHexConverter = class(TJsonPrefixHexConverter)
+  public
+    procedure AfterConstruction; override;
   end;
 
 var
@@ -415,6 +463,71 @@ end;
 constructor UrlSuffixAttribute.Create(const AUrlSuffix: string);
 begin
   FUrlSuffix := AUrlSuffix;
+end;
+
+{ JSONHttpMethodAttribute }
+
+constructor JSONHttpMethodAttribute.Create(const AHttpMethod: string);
+begin
+  inherited Create;
+  FHttpMethod := AHttpMethod;
+end;
+
+{ TJsonHexConverter }
+
+function TJsonHexConverter.CanConvert(ATypeInfo: PTypeInfo): Boolean;
+begin
+  Result := ATypeInfo.Kind = tkString;
+end;
+
+function TJsonHexConverter.CanRead: Boolean;
+begin
+  Result := True;
+end;
+
+function TJsonHexConverter.CanWrite: Boolean;
+begin
+  Result := True;
+end;
+
+{ TJsonPrefixHexConverter }
+
+constructor TJsonPrefixHexConverter.Create(const APrefix: string);
+begin
+  inherited Create;
+  FPrefix := APrefix;
+end;
+
+function TJsonPrefixHexConverter.ReadJson(const AReader: TJsonReader;
+  ATypeInfo: PTypeInfo; const AExistingValue: TValue;
+  const ASerializer: TJsonSerializer): TValue;
+var
+  I: Integer;
+  S: string;
+begin
+  S := FPrefix + AReader.Value.AsString;
+  if TryStrToInt(S, I) then
+    Result := TValue.From(I);
+end;
+
+procedure TJsonPrefixHexConverter.WriteJson(const AWriter: TJsonWriter;
+  const AValue: TValue; const ASerializer: TJsonSerializer);
+begin
+  ASerializer.Serialize(AWriter, AValue);
+end;
+
+{ TJsonDelphiHexConverter }
+
+procedure TJsonDelphiHexConverter.AfterConstruction;
+begin
+  FPrefix := '$';
+end;
+
+{ TJsonCppHexConverter }
+
+procedure TJsonCppHexConverter.AfterConstruction;
+begin
+  FPrefix := '0x';
 end;
 
 initialization

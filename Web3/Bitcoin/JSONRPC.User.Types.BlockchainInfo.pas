@@ -34,7 +34,7 @@ type
     [JsonName('chainwork')]
     Fchainwork: string;
     [JsonName('size_on_disk')]
-    Fsize_on_disk: Integer;
+    Fsize_on_disk: UInt64;
     [JsonName('pruned')]
     Fpruned: Boolean;
     [JsonName('pruneheight')]
@@ -42,7 +42,7 @@ type
     [JsonName('automatic_pruning')]
     Fautomatic_pruning: Boolean;
     [JsonName('prune_target_size')]
-    Fprune_target_size: Integer;
+    Fprune_target_size: UInt64;
     [JsonName('warnings')]
     Fwarnings: string;
   public
@@ -60,11 +60,11 @@ type
     property verificationprogress: Double read Fverificationprogress write Fverificationprogress;
     property initialblockdownload: Boolean read Finitialblockdownload write Finitialblockdownload;
     property chainwork: string read Fchainwork write Fchainwork;
-    property size_on_disk: Integer read Fsize_on_disk write Fsize_on_disk;
+    property size_on_disk: UInt64 read Fsize_on_disk write Fsize_on_disk;
     property pruned: Boolean read Fpruned write Fpruned;
     property pruneheight: Integer read Fpruneheight write Fpruneheight;
     property automatic_pruning: Boolean read Fautomatic_pruning write Fautomatic_pruning;
-    property prune_target_size: Integer read Fprune_target_size write Fprune_target_size;
+    property prune_target_size: UInt64 read Fprune_target_size write Fprune_target_size;
     property warnings: string read Fwarnings write Fwarnings;
   end;
 

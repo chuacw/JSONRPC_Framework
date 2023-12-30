@@ -244,11 +244,18 @@ type
       const ARequestStream, AResponseStream: TStream;
       const AHeaders: TNetHeaders); virtual;
 
+    procedure HttpMethod(const AHttpMethod, AServerURL: string;
+      const ARequestStream, AResponseStream: TStream;
+      const AHeaders: TNetHeaders);
+
     { IJSONRPCWrapper }
     function GetJSONRPCWrapper: TJSONRPCWrapper;
 
+    function GetHttpMethod(const AMethodType: TRttiType;
+      const AMethMD: TIntfMethEntry): string;
     function GetUrlSuffix(const AMethodType: TRttiType;
       const AMethMD: TIntfMethEntry): string;
+
     procedure UpdateServerURL(
       const AContext: TInvContext;
       const AMethMD: TIntfMethEntry; var VServerURL: string); virtual;
@@ -700,6 +707,18 @@ begin
     FOnBeforeParse(AContext, AMethNum, AMethMD, AMethodID, AJSONResponse);
 end;
 
+function TJSONRPCWrapper.GetHttpMethod(const AMethodType: TRttiType;
+  const AMethMD: TIntfMethEntry): string;
+var
+  LType: TRttiType;
+  LHttpMethod: JSONHttpMethodAttribute;
+begin
+  LType := AMethodType;
+  LHttpMethod := LType.GetAttribute<JSONHttpMethodAttribute>;
+  if Assigned(LHttpMethod) then
+    Result := LHttpMethod.HttpMethod;
+end;
+
 function TJSONRPCWrapper.GetUrlSuffix(
   const AMethodType: TRttiType;
   const AMethMD: TIntfMethEntry): string;
@@ -783,7 +802,7 @@ end;
 
 procedure DumpType(const AIntfType: TRttiType);
 begin
-  OutputDebugString(PChar(AIntfType.Name));
+  OutputDebugString(AIntfType.Name);
 end;
 
 // Client side JSON RPC parameter conversion
@@ -797,7 +816,7 @@ var
   LJSONMethodObj: TJSONObject;
   LResultP: Pointer;
   LJSONResponseObj: TJSONValue;
-  LServerURL: string;
+  LHttpMethod, LServerURL: string;
 begin
 
 // create something like this, with PassParamsByName
@@ -1108,7 +1127,10 @@ begin
                 UpdateServerURL(AContext, AMethMD, LServerURL);
                 DoLogServerURL(LServerURL);
               end;
-            SendGetPost(LServerURL, LRequestStream, LResponseStream, LHeaders);
+            LHttpMethod := GetHttpMethod(LMethodType, AMethMD);
+            if (LHttpMethod = '') then
+              SendGetPost(LServerURL, LRequestStream, LResponseStream, LHeaders) else
+              HttpMethod(LHttpMethod, LServerURL, LRequestStream, LResponseStream, LHeaders);
           end;
 
         DoAfterExecute(AMethMD.Name, LResponseStream);
@@ -1336,7 +1358,7 @@ end;
 procedure TJSONRPCWrapper.DoLogOutgoingRequest(const ARequest: string);
 begin
 {$IF DECLARED(OutputDebugString)}
-  OutputDebugString(PChar(ARequest));
+  OutputDebugString(ARequest);
 {$ENDIF}
   if Assigned(FOnLogOutgoingJSONRequest) then
     FOnLogOutgoingJSONRequest(ARequest);
@@ -1577,7 +1599,7 @@ begin
     {$IF DECLARED(OutputDebugString)}
       var LMsg := Format('Trying to register duplicate interface: GUID: %s, Name: %s',
         [ATypeInfo^.TypeData^.GUID.ToString, ATypeInfo^.Name]);
-      OutputDebugString(PChar(LMsg));
+      OutputDebugString(LMsg);
     {$ENDIF}
   end
   {$ENDIF}
@@ -1598,6 +1620,14 @@ end;
 function TJSONRPCWrapper.GetJSONRPCWrapper: TJSONRPCWrapper;
 begin
   Result := Self;
+end;
+
+procedure TJSONRPCWrapper.HttpMethod(const AHttpMethod, AServerURL: string;
+  const ARequestStream, AResponseStream: TStream;
+  const AHeaders: TNetHeaders);
+begin
+  FClient.HttpMethod(AHttpMethod, AServerURL, ARequestStream, AResponseStream,
+    AHeaders);
 end;
 
 procedure TJSONRPCWrapper.SendGetPost(const AServerURL: string;
@@ -1885,7 +1915,7 @@ procedure DumpParamType(AParam: TRttiParameter);
 {$IF NOT DEFINED(DEBUG)} inline; {$ENDIF}
 begin
 {$IF DEFINED(DEBUG)}
-  OutputDebugString(PChar(AParam.ParamType.Name));
+  OutputDebugString(AParam.ParamType.Name);
 {$ENDIF}
 end;
 
@@ -1984,7 +2014,7 @@ begin
       OutputDebugString('No method assigned!');
       Exit;
     end;
-  OutputDebugString(PChar(AMethod.ToString));
+  OutputDebugString(AMethod.ToString);
 {$ENDIF}
 end;
 
@@ -1992,7 +2022,7 @@ procedure DumpJSONRequest(const AJSONRequestObj: TJSONObject);
 {$IF NOT DEFINED(DEBUG)} inline; {$ENDIF}
 begin
 {$IF DEFINED(DEBUG)}
-  OutputDebugString(PChar(AJSONRequestObj.ToJSON));
+  OutputDebugString(AJSONRequestObj.ToJSON);
 {$ENDIF}
 end;
 
@@ -2010,7 +2040,7 @@ procedure DebugMethods(AMethods: TArray<TRttiMethod>; const AJSONObject: TJSONOb
 begin
   for var LMethod in AMethods do
     begin
-      OutputDebugString(PChar(Format('%p', [LMethod.CodeAddress])));
+      OutputDebugString(Format('%p', [LMethod.CodeAddress]));
     end;
 end;
 {$ENDIF}

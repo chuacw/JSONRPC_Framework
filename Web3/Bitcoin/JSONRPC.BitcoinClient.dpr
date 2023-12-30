@@ -45,16 +45,18 @@ var
   LServer, LUserName, LPassword: string;
   LBlockCount: UInt64;
 begin
-  LUserName := process['username'];
-  LPassword := process['password'];
-  LServer   := process['server'];
+  LUserName := process.env['username']; // Alternatively, process['username']
+  LPassword := process.env['password']; //   '' process.env['password']
+  LServer   := process.env['server'];   //   '' process.env['server']
 
   LBitcoinRPCServer := GetBitcoinJSONRPC(LServer, LUserName, LPassword,
     BitcoinOutgoingRequest, BitcoinIncomingResponse
   );
   var LBestBlockHash := LBitcoinRPCServer.BestBlockHash;
+  var LBlockHash := LBitcoinRPCServer.BlockHash[1000];
+  // The following RPC call will take a long time to return
   var LBlock := LBitcoinRPCServer.getblockJSONObject(LBestBlockHash, 1);
-  var LBlockJSONObj := LBitcoinRPCServer.getblock(LBestBlockHash, TVerbosity.HexEncodedData);
+//  var LBlockJSONObj := LBitcoinRPCServer.getblock(LBestBlockHash, TVerbosity.HexEncodedData);
 
   LMemoryInfo := LBitcoinRPCServer.MemoryInfo;
   LWalletInfo := LBitcoinRPCServer.WalletInfo;
@@ -63,5 +65,16 @@ begin
 end;
 
 begin
-  Main;
+  ReportMemoryLeaksOnShutdown := True;
+  try
+    try
+      Main;
+    except
+      on E: Exception do
+        WriteLn(E.Message);
+    end;
+  finally
+    Write('Press enter to close');
+    ReadLn;
+  end;
 end.

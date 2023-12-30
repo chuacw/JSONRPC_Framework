@@ -12,6 +12,9 @@ type
 {$SCOPEDENUMS ON}
   TVerbosity = (HexEncodedData, JSONObject, JSONObjectWithTransactionData);
 
+  /// <summary>
+  ///   Bitcoin RPC: https://developer.bitcoin.org/reference/rpc/
+  /// </summary>
   IBitcoinJSONRPC = interface(IJSONRPCMethods)
     ['{EA7B1DAB-1301-401C-82F5-7A903EA8D898}']
 
@@ -33,7 +36,12 @@ type
     function getbestblockhash: BestBlockHashResult;
     function getblockcount: UInt64;
     function getblockchaininfo: BlockchainInfoResult;
+    function getblockhash(Height: UInt64): string;
 
+    // Rawtransaction RPCs
+//    function getrawtransaction(const txid: string);
+
+    property BlockHash[Height: UInt64]: string read getblockhash;
     property BestBlockHash: BestBlockHashResult read getbestblockhash;
     property BlockchainInfo: BlockchainInfoResult read getblockchaininfo;
     property BlockCount: UInt64 read getblockcount;

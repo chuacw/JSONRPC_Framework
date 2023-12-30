@@ -97,6 +97,8 @@ procedure AddJSONVersion(const AJSONObj: TJSONObject); inline;
 
 function SameJson(const AJSON1, AJSON2: string): Boolean;
 
+procedure OutputDebugString(const AMsg: string); inline;
+
 type
   TCollectionsHelper = class
   public
@@ -108,7 +110,20 @@ type
 implementation
 
 uses
-  JSONRPC.Common.Consts, System.JSON.Serializers, System.JSON.Readers, System.JSON.Writers;
+  JSONRPC.Common.Consts, System.JSON.Serializers, System.JSON.Readers,
+{$IF DEFINED(DEBUG)}
+  {$IF DEFINED(MSWINDOWS)}
+    Winapi.Windows,
+  {$ENDIF}
+{$ENDIF}
+  System.JSON.Writers;
+
+procedure OutputDebugString(const AMsg: string);
+begin
+  {$IF DEFINED(MSWINDOWS)}
+  Winapi.Windows.OutputDebugString(PChar(AMsg));
+  {$ENDIF}
+end;
 
 procedure AddJSONVersion(const AJSONObj: TJSONObject);
 begin

@@ -7,7 +7,7 @@ unit JSONRPC.User.Types.BlockDefaultInfo;
 interface
 
 uses
-  System.JSON.Serializers, System.JSON;
+  System.JSON.Serializers, System.JSON, JSONRPC.Common.Types;
 
 type
   [JsonSerialize(TJsonMemberSerialization.Fields)]
@@ -22,7 +22,7 @@ type
     [JsonName('version')]
     Fversion: Integer;
     [JsonName('versionHex')]
-    FversionHex: Integer;
+    FversionHex: string;
     [JsonName('merkleroot')]
     Fmerkleroot: string;
     [JsonName('time')]
@@ -31,7 +31,7 @@ type
     Fmediantime: Integer;
     [JsonName('nonce')]
     Fnonce: Int64;
-    [JsonName('bits')]
+    [JsonName('bits'), JsonConverterAttribute(TJsonDelphiHexConverter)]
     Fbits: Integer;
     [JsonName('difficulty')]
     Fdifficulty: Double;
@@ -58,7 +58,7 @@ type
     property confirmations: Integer read Fconfirmations write Fconfirmations;
     property height: Integer read Fheight write Fheight;
     property version: Integer read Fversion write Fversion;
-    property versionHex: Integer read FversionHex write FversionHex;
+    property versionHex: string read FversionHex write FversionHex;
     property merkleroot: string read Fmerkleroot write Fmerkleroot;
     property time: Integer read Ftime write Ftime;
     property mediantime: Integer read Fmediantime write Fmediantime;
