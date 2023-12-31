@@ -30,9 +30,6 @@
         <Projects Include="Wizard\JSONRPC.AppWizard.dproj">
             <Dependencies/>
         </Projects>
-        <Projects Include="..\IDE\Bugs\InsertIssue\InsertIssue.dproj">
-            <Dependencies/>
-        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -122,23 +119,14 @@
     <Target Name="JSONRPC_AppWizard:Make">
         <MSBuild Projects="Wizard\JSONRPC.AppWizard.dproj" Targets="Make"/>
     </Target>
-    <Target Name="InsertIssue">
-        <MSBuild Projects="..\IDE\Bugs\InsertIssue\InsertIssue.dproj"/>
-    </Target>
-    <Target Name="InsertIssue:Clean">
-        <MSBuild Projects="..\IDE\Bugs\InsertIssue\InsertIssue.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="InsertIssue:Make">
-        <MSBuild Projects="..\IDE\Bugs\InsertIssue\InsertIssue.dproj" Targets="Make"/>
-    </Target>
     <Target Name="Build">
-        <CallTarget Targets="TestJSONRPC;JSONRPC_ServerIndy;JSONRPC_ClientProj;JSONRPC_ServerWebBroker;JSONRPC_AptosClient;JSONRPC_SolanaClient;TestJSONDictionaryConverter2;JSONRPC_BitcoinClient;JSONRPC_AppWizard;InsertIssue"/>
+        <CallTarget Targets="TestJSONRPC;JSONRPC_ServerIndy;JSONRPC_ClientProj;JSONRPC_ServerWebBroker;JSONRPC_AptosClient;JSONRPC_SolanaClient;TestJSONDictionaryConverter2;JSONRPC_BitcoinClient;JSONRPC_AppWizard"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="TestJSONRPC:Clean;JSONRPC_ServerIndy:Clean;JSONRPC_ClientProj:Clean;JSONRPC_ServerWebBroker:Clean;JSONRPC_AptosClient:Clean;JSONRPC_SolanaClient:Clean;TestJSONDictionaryConverter2:Clean;JSONRPC_BitcoinClient:Clean;JSONRPC_AppWizard:Clean;InsertIssue:Clean"/>
+        <CallTarget Targets="TestJSONRPC:Clean;JSONRPC_ServerIndy:Clean;JSONRPC_ClientProj:Clean;JSONRPC_ServerWebBroker:Clean;JSONRPC_AptosClient:Clean;JSONRPC_SolanaClient:Clean;TestJSONDictionaryConverter2:Clean;JSONRPC_BitcoinClient:Clean;JSONRPC_AppWizard:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="TestJSONRPC:Make;JSONRPC_ServerIndy:Make;JSONRPC_ClientProj:Make;JSONRPC_ServerWebBroker:Make;JSONRPC_AptosClient:Make;JSONRPC_SolanaClient:Make;TestJSONDictionaryConverter2:Make;JSONRPC_BitcoinClient:Make;JSONRPC_AppWizard:Make;InsertIssue:Make"/>
+        <CallTarget Targets="TestJSONRPC:Make;JSONRPC_ServerIndy:Make;JSONRPC_ClientProj:Make;JSONRPC_ServerWebBroker:Make;JSONRPC_AptosClient:Make;JSONRPC_SolanaClient:Make;TestJSONDictionaryConverter2:Make;JSONRPC_BitcoinClient:Make;JSONRPC_AppWizard:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>
