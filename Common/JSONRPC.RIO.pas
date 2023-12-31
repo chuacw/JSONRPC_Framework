@@ -23,7 +23,6 @@ type
 
   IJSONRPCMethods = JSONRPC.Common.Types.IJSONRPCMethods;
 
-//  TIntfMethEntry = Soap.IntfInfo.TIntfMethEntry;
   TOnBeforeParseEvent = reference to procedure(const AContext: TInvContext;
     AMethNum: Integer; const AMethMD: TIntfMethEntry; const AMethodID: Int64;
     AJSONResponse: TStream);
@@ -95,7 +94,7 @@ type
     TComponent,
     {$ENDIF}
     IInvokable, IJSONRPCInvocationSettings, ISafeCallException, IJSONRPCWrapper,
-    IJsonRpcClientLog)
+    IJSONRPCClientLog)
   protected
   {$IF NOT DEFINED(BASECLASS)}
   type
@@ -344,7 +343,7 @@ type
     TJSONRPCWrapper,
     {$ENDIF}
     IJSONRPCDispatch, IJSONRPCDispatchEvents, IJSONRPCGetSetDispatchEvents,
-    IJsonRpcServerLog)
+    IJSONRPCServerLog)
   protected
     FOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest;
     FOnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse;

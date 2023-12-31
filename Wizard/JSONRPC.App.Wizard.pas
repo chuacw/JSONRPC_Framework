@@ -274,8 +274,11 @@ begin
   if not IsValidIdent(InterfaceUnitName) then
     begin
       var LNewName := InterfaceUnitName;
-      leInterfaceUnitName.Reset;
-      InvalidIdentifier(LNewName);
+      try
+        InvalidIdentifier(LNewName);
+      finally
+        leInterfaceUnitName.Reset;
+      end;
     end;
   RegenerateSourceUnit;
   RegenerateInterfaceGetterUnit;
@@ -286,8 +289,11 @@ begin
   if not IsValidIdent(leMethodName.Text) then
     begin
       var LNewName := leMethodName.Text;
-      leMethodName.Reset;
-      InvalidIdentifier(LNewName);
+      try
+        InvalidIdentifier(LNewName);
+      finally
+        leMethodName.Reset;
+      end;
     end;
   RegenerateInterfaceGetterUnit;
 end;

@@ -135,7 +135,7 @@ type
   /// <summary> A client class implements this interface in order to signify that
   ///  it allows consumers to monitor incoming responses and outgoing requests.
   /// </summary>
-  IJsonRpcClientLog = interface
+  IJSONRPCClientLog = interface
     ['{846F7319-7FFF-4634-BDB4-6D518C65E5A6}']
 
     function GetOnLogOutgoingJSONRequest: TOnLogOutgoingJSONRequest;
@@ -158,7 +158,7 @@ type
   /// <summary> A server class implements this interface in order to signify that
   ///  it allows consumers to monitor incoming requests and outgoing responses.
   /// </summary>
-  IJsonRpcServerLog = interface
+  IJSONRPCServerLog = interface
     ['{3CD1A72D-3A00-4A07-8295-E0EDDBB32F20}']
     function GetOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest;
     procedure SetOnLogIncomingJSONRequest(const AProc: TOnLogIncomingJSONRequest);

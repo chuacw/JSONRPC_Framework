@@ -493,15 +493,15 @@ end;
 
 procedure TTestJSONRPCClient.TestOnLogIncomingJSONResponse;
 var
-  LJsonRpcClientLog: IJsonRpcClientLog;
+  LJSONRPCClientLog: IJSONRPCClientLog;
   LJSON, LJSON1: string;
   LLogged: Boolean;
   LPassed: Boolean;
 begin
   LLogged := False; LPassed := False;
-  if Supports(FSomeRPC, IJsonRpcClientLog, LJsonRpcClientLog) then
+  if Supports(FSomeRPC, IJSONRPCClientLog, LJSONRPCClientLog) then
     begin
-      LJsonRpcClientLog.OnLogIncomingJSONResponse := procedure(const AJSON: string)
+      LJSONRPCClientLog.OnLogIncomingJSONResponse := procedure(const AJSON: string)
       begin
         LJSON1 := AJSON;
         LLogged := True;
@@ -510,22 +510,22 @@ begin
       LJSON := LJSON1;
       LPassed := LJSON = '{"jsonrpc":"2.0","result":7,"id":1}';
 
-      LJsonRpcClientLog.OnLogIncomingJSONResponse := nil;
+      LJSONRPCClientLog.OnLogIncomingJSONResponse := nil;
     end;
   Assert.IsTrue(LPassed and LLogged, 'JSON is not equal!');
 end;
 
 procedure TTestJSONRPCClient.TestOnLogOutgoingJSONRequest;
 var
-  LJsonRpcClientLog: IJsonRpcClientLog;
+  LJSONRPCClientLog: IJSONRPCClientLog;
   LJSON, LJSON1: string;
   LLogged: Boolean;
   LPassed: Boolean;
 begin
   LLogged := False; LPassed := False;
-  if Supports(FSomeRPC, IJsonRpcClientLog, LJsonRpcClientLog) then
+  if Supports(FSomeRPC, IJSONRPCClientLog, LJSONRPCClientLog) then
     begin
-      LJsonRpcClientLog.OnLogOutgoingJSONRequest  := procedure(const AJSON: string)
+      LJSONRPCClientLog.OnLogOutgoingJSONRequest  := procedure(const AJSON: string)
       begin
         LJSON1 := AJSON;
         LLogged := True;
@@ -534,7 +534,7 @@ begin
       LJSON := LJSON1;
       LPassed := LJSON = '{"jsonrpc":"2.0","method":"AddSomeXY","params":{"X":1,"Y":2},"id":2}';
 
-      LJsonRpcClientLog.OnLogOutgoingJSONRequest := nil;
+      LJSONRPCClientLog.OnLogOutgoingJSONRequest := nil;
     end;
   Assert.IsTrue(LPassed and LLogged, 'JSON is not equal!');
 end;

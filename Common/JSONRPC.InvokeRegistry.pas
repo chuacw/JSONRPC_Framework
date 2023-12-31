@@ -42,22 +42,9 @@ type
     FCode: Integer;
     FMethodName: string;
 
-{$IFNDEF AUTOREFCOUNT}
-    FRefCount: Integer;
-{$ENDIF !AUTOREFCOUNT}
     function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
-{$IFNDEF AUTOREFCOUNT}
-    function _AddRef: Integer; stdcall;
-    function _Release: Integer; stdcall;
-{$ENDIF !AUTOREFCOUNT}
   public
     constructor Create; virtual;
-{$IFNDEF AUTOREFCOUNT}
-    procedure AfterConstruction; override;
-    procedure BeforeDestruction; override;
-    class function NewInstance: TObject; override;
-    property RefCount: Integer read FRefCount;
-{$ENDIF !AUTOREFCOUNT}
 
     function SafeCallException(ExceptObject: TObject;
       ExceptAddr: Pointer): HResult; override;
@@ -623,30 +610,6 @@ begin
   inherited Create;
 end;
 
-{$IFNDEF AUTOREFCOUNT}
-procedure TInvokableClass.AfterConstruction;
-begin
-  { Release the constructor's implicit refcount }
-  TInterlocked.Decrement(FRefCount);
-end;
-
-procedure TInvokableClass.BeforeDestruction;
-begin
-  if RefCount <> 0 then
-    System.Error(reInvalidPtr);
-end;
-{$ENDIF !AUTOREFCOUNT}
-
-{ Set an implicit refcount so that refcounting  }
-{ during construction won't destroy the object. }
-{$IFNDEF AUTOREFCOUNT}
-class function TInvokableClass.NewInstance: TObject;
-begin
-  Result := inherited NewInstance;
-  TInvokableClass(Result).FRefCount := 1;
-end;
-{$ENDIF !AUTOREFCOUNT}
-
 function TInvokableClass.QueryInterface(const IID: TGUID; out Obj): HResult;
 begin
   if GetInterface(IID, Obj) then
@@ -654,20 +617,6 @@ begin
   else
     Result := E_NOINTERFACE;
 end;
-
-{$IFNDEF AUTOREFCOUNT}
-function TInvokableClass._AddRef: Integer;
-begin
-  Result := TInterlocked.Increment(FRefCount);
-end;
-
-function TInvokableClass._Release: Integer;
-begin
-  Result := TInterlocked.Decrement(FRefCount);
-  if Result = 0 then
-    Destroy;
-end;
-{$ENDIF !AUTOREFCOUNT}
 
 function TInvokableClass.SafeCallException(ExceptObject: TObject;
   ExceptAddr: Pointer): HResult;
@@ -731,28 +680,28 @@ constructor TRemotable.Create;
 begin
   inherited;
   if RemotableDataContext <> nil then
-  begin
-    TDataContext(RemotableDataContext).AddObjectToDestroy(Self);
-    Self.DataContext := TDataContext(RemotableDataContext);
-  end;
+    begin
+      TDataContext(RemotableDataContext).AddObjectToDestroy(Self);
+      Self.DataContext := TDataContext(RemotableDataContext);
+    end;
 end;
 
 destructor TRemotable.Destroy;
 begin
   if RemotableDataContext <> nil then
-  begin
-    TDataContext(RemotableDataContext).RemoveObjectToDestroy(Self);
-    Self.DataContext := nil;
-  end;
+    begin
+      TDataContext(RemotableDataContext).RemoveObjectToDestroy(Self);
+      Self.DataContext := nil;
+    end;
   inherited Destroy;
 end;
 
 procedure TRemotable.SetDataContext(Value: TDataContext);
 begin
   if (RemotableDataContext <> nil) and (RemotableDataContext = Self.DataContext) then
-  begin
-    TDataContext(RemotableDataContext).RemoveObjectToDestroy(Self);
-  end;
+    begin
+      TDataContext(RemotableDataContext).RemoveObjectToDestroy(Self);
+    end;
   FDataContext := Value;
 end;
 
@@ -858,60 +807,60 @@ var
 begin
   { Clean up objects we've allocated }
   for I := 0 to Length(FObjsToDestroy) - 1 do
-  begin
-     if (FObjsToDestroy[I] <> nil) and (FObjsToDestroy[I].InheritsFrom(TRemotable)) then
-     begin
-       TRemotable(FObjsToDestroy[I]).Free;
-     end;
-  end;
+    begin
+       if (FObjsToDestroy[I] <> nil) and (FObjsToDestroy[I].InheritsFrom(TRemotable)) then
+         begin
+           TRemotable(FObjsToDestroy[I]).Free;
+         end;
+    end;
   SetLength(FObjsToDestroy, 0);
 
   { Clean Variants we allocated }
   for I := 0 to Length(FVarToClear) - 1 do
-  begin
-    if Assigned(FVarToClear[I]) then
-      Variant( PVarData(FVarToClear[I])^) := NULL;
-  end;
+    begin
+      if Assigned(FVarToClear[I]) then
+        Variant( PVarData(FVarToClear[I])^) := NULL;
+    end;
   SetLength(FVarToClear, 0);
 
   { Clean up dynamic arrays we allocated }
   for I := 0 to Length(FDynArrayToClear) - 1 do
-  begin
-    if Assigned(FDynArrayToClear[I].P) then
     begin
-      P := PPointer(FDynArrayToClear[I].P)^;
-      DynArrayClear(P, FDynArrayToClear[I].Info)
+      if Assigned(FDynArrayToClear[I].P) then
+        begin
+          P := PPointer(FDynArrayToClear[I].P)^;
+          DynArrayClear(P, FDynArrayToClear[I].Info)
+        end;
     end;
-  end;
   SetLength(FDynArrayToClear, 0);
 
 {$IFNDEF NEXTGEN}
   { Clean up strings we allocated }
   for I := 0 to Length(FStrToClear) - 1 do
-  begin
-    if Assigned(FStrToClear[I]) then
-      PAnsiString(FStrToClear[I])^ := '';
-  end;
+    begin
+      if Assigned(FStrToClear[I]) then
+        PAnsiString(FStrToClear[I])^ := '';
+    end;
   SetLength(FStrToClear, 0);
 {$ENDIF !NEXTGEN}
 
 {$IFDEF UNICODE}
   { Cleanup unicode strings we allocated }
   for I := 0 to Length(FUStrToClear) - 1 do
-  begin
-    if Assigned(FUStrToClear[I]) then
-      PUnicodeString(FUStrToClear[I])^ := '';
-  end;
+    begin
+      if Assigned(FUStrToClear[I]) then
+        PUnicodeString(FUStrToClear[I])^ := '';
+    end;
   SetLength(FUStrToClear, 0);
 {$ENDIF}
 
 {$IFNDEF NEXTGEN}
   { Clean up WideStrings we allocated }
   for I := 0 to Length(FWStrToClear) - 1 do
-  begin
-    if Assigned(FWStrToClear[I]) then
-      PWideString(FWStrToClear[I])^ := '';
-  end;
+    begin
+      if Assigned(FWStrToClear[I]) then
+        PWideString(FWStrToClear[I])^ := '';
+    end;
   SetLength(FWStrToClear, 0);
 {$ENDIF !NEXTGEN}
 
@@ -937,17 +886,17 @@ var
 begin
   EmptySlot := -1;
   for Index := 0 to Length(FObjsToDestroy) -1 do
-  begin
-    if FObjsToDestroy[Index] = Obj then
-      Exit;
-    if FObjsToDestroy[Index] = nil then
-      EmptySlot := Index;
-  end;
+    begin
+      if FObjsToDestroy[Index] = Obj then
+        Exit;
+      if FObjsToDestroy[Index] = nil then
+        EmptySlot := Index;
+    end;
   if EmptySlot <> -1 then
-  begin
-    FObjsToDestroy[EmptySlot] := Obj;
-    Exit;
-  end;
+    begin
+      FObjsToDestroy[EmptySlot] := Obj;
+      Exit;
+    end;
   Index := Length(FObjsToDestroy);
   SetLength(FObjsToDestroy, Index + 1);
   FObjsToDestroy[Index] := Obj;
@@ -959,14 +908,14 @@ var
 begin
   I := 0;
   while I < Length(FObjsToDestroy) do
-  begin
-    if FObjsToDestroy[I] = Obj then
     begin
-      FObjsToDestroy[I] := nil;
-      Break;
+      if FObjsToDestroy[I] = Obj then
+        begin
+          FObjsToDestroy[I] := nil;
+          Break;
+        end;
+      Inc(I);
     end;
-    Inc(I);
-  end;
 end;
 
 function TDataContext.AllocData(Size: Integer): Pointer;
@@ -1025,84 +974,84 @@ var
   P: Pointer;
 begin
   for I := 0 to MD.ParamCount - 1 do
-  begin
-    P := AllocData(GetTypeSize(MD.Params[I].Info));
-    SetParamPointer(I, P);
-    if MD.Params[I].Info.Kind = tkVariant then
     begin
-      Variant(PVarData(P)^) := NULL;
-      AddVariantToClear(PVarData(P));
-    end else if MD.Params[I].Info.Kind = tkDynArray then
-    begin
-      AddDynArrayToClear(P, MD.Params[I].Info);
-{$IFNDEF NEXTGEN}
-    end else if MD.Params[I].Info.Kind = tkLString then
-    begin
-      PAnsiString(P)^ := '';
-      AddStrToClear(P);
-{$ENDIF !NEXTGEN}
-{$IFDEF UNICODE}
-    end else if MD.Params[I].Info.Kind = tkUString then
-    begin
-      PUnicodeString(P)^ := '';
-      AddUStrToClear(P);
-{$ENDIF}
-{$IFNDEF NEXTGEN}
-    end else if MD.Params[I].Info.kind = tkWString then
-    begin
-      PWideString(P)^ := '';
-      AddWStrToClear(P);
-{$ENDIF !NEXTGEN}
-    end;
-  end;
-  Info := MD.ResultInfo;
-  if Info <> nil then
-  begin
-    case Info^.Kind of
-{$IFNDEF NEXTGEN}
-      tkLString:
+      P := AllocData(GetTypeSize(MD.Params[I].Info));
+      SetParamPointer(I, P);
+      if MD.Params[I].Info.Kind = tkVariant then
         begin
-          P := AllocData(SizeOf(PAnsiString));
+          Variant(PVarData(P)^) := NULL;
+          AddVariantToClear(PVarData(P));
+        end else if MD.Params[I].Info.Kind = tkDynArray then
+        begin
+          AddDynArrayToClear(P, MD.Params[I].Info);
+    {$IFNDEF NEXTGEN}
+        end else if MD.Params[I].Info.Kind = tkLString then
+        begin
           PAnsiString(P)^ := '';
           AddStrToClear(P);
-        end;
-      tkWString:
+    {$ENDIF !NEXTGEN}
+    {$IFDEF UNICODE}
+        end else if MD.Params[I].Info.Kind = tkUString then
         begin
-          P := AllocData(SizeOf(PWideString));
-          PWideString(P)^ := '';
-          AddWStrToClear(P);
-        end;
-{$ENDIF !NEXTGEN}
-{$IFDEF UNICODE}
-      tkUString:
-        begin
-          P := AllocData(SizeOf(PUnicodeString));
           PUnicodeString(P)^ := '';
           AddUStrToClear(P);
-        end;
-{$ENDIF}
-      tkInteger, tkEnumeration: begin
-        // Integers and enums are allocated 4 bytes
-        P := AllocData(SizeOf(TInvContext.TEnum));
-      end;
-      tkInt64:
-        P := AllocData(SizeOf(Int64));
-      tkVariant:
+    {$ENDIF}
+    {$IFNDEF NEXTGEN}
+        end else if MD.Params[I].Info.kind = tkWString then
         begin
-          P := AllocData(SizeOf(TVarData));
-          Variant( PVarData(P)^ ) := NULL;
-          AddVariantToClear(PVarData(P));
+          PWideString(P)^ := '';
+          AddWStrToClear(P);
+    {$ENDIF !NEXTGEN}
         end;
-      tkDynArray:
-        begin
-          P := AllocData(GetTypeSize(Info));
-          AddDynArrayToClear(P, MD.ResultInfo);
-        end;
-      else
-        P := AllocData(GetTypeSize(Info));
     end;
-    SetResultPointer(P);
-  end;
+  Info := MD.ResultInfo;
+  if Info <> nil then
+    begin
+      case Info^.Kind of
+  {$IFNDEF NEXTGEN}
+        tkLString:
+          begin
+            P := AllocData(SizeOf(PAnsiString));
+            PAnsiString(P)^ := '';
+            AddStrToClear(P);
+          end;
+        tkWString:
+          begin
+            P := AllocData(SizeOf(PWideString));
+            PWideString(P)^ := '';
+            AddWStrToClear(P);
+          end;
+  {$ENDIF !NEXTGEN}
+  {$IFDEF UNICODE}
+        tkUString:
+          begin
+            P := AllocData(SizeOf(PUnicodeString));
+            PUnicodeString(P)^ := '';
+            AddUStrToClear(P);
+          end;
+  {$ENDIF}
+        tkInteger, tkEnumeration: begin
+          // Integers and enums are allocated 4 bytes
+          P := AllocData(SizeOf(TInvContext.TEnum));
+        end;
+        tkInt64:
+          P := AllocData(SizeOf(Int64));
+        tkVariant:
+          begin
+            P := AllocData(SizeOf(TVarData));
+            Variant( PVarData(P)^ ) := NULL;
+            AddVariantToClear(PVarData(P));
+          end;
+        tkDynArray:
+          begin
+            P := AllocData(GetTypeSize(Info));
+            AddDynArrayToClear(P, MD.ResultInfo);
+          end;
+        else
+          P := AllocData(GetTypeSize(Info));
+      end;
+      SetResultPointer(P);
+    end;
 end;
 
 procedure InitIR;

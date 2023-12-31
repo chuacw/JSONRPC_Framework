@@ -1,18 +1,20 @@
 object frmWizard: TfrmWizard
   Left = 0
   Top = 0
-  Width = 1440
-  Height = 1303
+  Width = 1419
+  Height = 991
   Margins.Left = 7
   Margins.Top = 7
   Margins.Right = 7
   Margins.Bottom = 7
+  Constraints.MinHeight = 990
+  Constraints.MinWidth = 1419
   TabOrder = 0
   PixelsPerInch = 216
   object pnlOptions: TPanel
     Left = 0
     Top = 0
-    Width = 1440
+    Width = 1419
     Height = 613
     Margins.Left = 0
     Margins.Top = 0
@@ -21,11 +23,12 @@ object frmWizard: TfrmWizard
     Align = alTop
     BevelOuter = bvNone
     TabOrder = 0
+    ExplicitWidth = 1440
     object leInterfaceUnitName: TLabeledEdit
       Left = 28
       Top = 53
       Width = 523
-      Height = 51
+      Height = 45
       Margins.Left = 7
       Margins.Top = 7
       Margins.Right = 7
@@ -45,7 +48,7 @@ object frmWizard: TfrmWizard
       Left = 28
       Top = 266
       Width = 523
-      Height = 48
+      Height = 45
       Margins.Left = 7
       Margins.Top = 7
       Margins.Right = 7
@@ -65,7 +68,7 @@ object frmWizard: TfrmWizard
       Left = 853
       Top = 53
       Width = 523
-      Height = 50
+      Height = 45
       Margins.Left = 7
       Margins.Top = 7
       Margins.Right = 7
@@ -105,7 +108,7 @@ object frmWizard: TfrmWizard
       Left = 28
       Top = 366
       Width = 757
-      Height = 51
+      Height = 45
       Margins.Left = 7
       Margins.Top = 7
       Margins.Right = 7
@@ -125,7 +128,7 @@ object frmWizard: TfrmWizard
       Left = 853
       Top = 266
       Width = 523
-      Height = 47
+      Height = 45
       Margins.Left = 7
       Margins.Top = 7
       Margins.Right = 7
@@ -202,7 +205,7 @@ object frmWizard: TfrmWizard
       Left = 28
       Top = 154
       Width = 523
-      Height = 51
+      Height = 45
       Margins.Left = 7
       Margins.Top = 7
       Margins.Right = 7
@@ -235,8 +238,8 @@ object frmWizard: TfrmWizard
   object GroupBox1: TGroupBox
     Left = 0
     Top = 620
-    Width = 1440
-    Height = 683
+    Width = 1419
+    Height = 371
     Margins.Left = 7
     Margins.Top = 7
     Margins.Right = 7
@@ -245,11 +248,13 @@ object frmWizard: TfrmWizard
     Anchors = [akLeft, akTop, akRight, akBottom]
     Caption = ' Source Files '
     TabOrder = 1
+    ExplicitWidth = 1440
+    ExplicitHeight = 683
     object PageControl1: TPageControl
       Left = 2
       Top = 39
-      Width = 1436
-      Height = 642
+      Width = 1415
+      Height = 330
       Margins.Left = 7
       Margins.Top = 7
       Margins.Right = 7
@@ -257,9 +262,8 @@ object frmWizard: TfrmWizard
       ActivePage = TabSheet2
       Align = alClient
       TabOrder = 0
-      ExplicitLeft = -3
-      ExplicitTop = 111
-      ExplicitHeight = 698
+      ExplicitWidth = 1436
+      ExplicitHeight = 642
       object TabSheet1: TTabSheet
         Margins.Left = 7
         Margins.Top = 7
@@ -269,8 +273,8 @@ object frmWizard: TfrmWizard
         object memSource: TMemo
           Left = 0
           Top = 0
-          Width = 1416
-          Height = 571
+          Width = 1395
+          Height = 259
           Margins.Left = 7
           Margins.Top = 7
           Margins.Right = 7
@@ -284,7 +288,6 @@ object frmWizard: TfrmWizard
           ScrollBars = ssBoth
           TabOrder = 0
           WordWrap = False
-          ExplicitHeight = 627
         end
       end
       object TabSheet2: TTabSheet
@@ -297,8 +300,8 @@ object frmWizard: TfrmWizard
         object memGetMethodUnit: TMemo
           Left = 0
           Top = 0
-          Width = 1416
-          Height = 571
+          Width = 1395
+          Height = 259
           Margins.Left = 7
           Margins.Top = 7
           Margins.Right = 7
@@ -312,7 +315,8 @@ object frmWizard: TfrmWizard
           ScrollBars = ssBoth
           TabOrder = 0
           WordWrap = False
-          ExplicitHeight = 627
+          ExplicitWidth = 1416
+          ExplicitHeight = 571
         end
       end
     end
