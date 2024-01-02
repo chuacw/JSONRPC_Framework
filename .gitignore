@@ -49,6 +49,7 @@
 *.cfg
 *.hpp
 *Resource.rc
+*.cmds
 
 # Delphi local files (user-specific info)
 *.local
@@ -70,3 +71,6 @@ modules/
 
 # Environment
 .env
+
+Win32/
+Win64/
