@@ -613,7 +613,7 @@ begin
     LExc: EJSONRPCException absolute AExceptObject;
     LExcMethod: EJSONRPCMethodException absolute AExceptObject;
   begin
-    Result := S_OK; // ------- ???
+    Result := S_OK;
     FreeException;
     if ExceptObject is EJSONRPCMethodException then
       begin
@@ -628,12 +628,6 @@ begin
   FOwnsObjects := True;
   FJSONObjects := TList<TJSONValue>.Create;
 end;
-
-//procedure TJSONRPCWrapper.DeserializeJSON(const AJsonValue: TJSONValue;
-//  ATypeInfo: PTypeInfo; var VValue: TValue);
-//begin
-//
-//end;
 
 procedure TJSONRPCWrapper.DeserializeJSON(const AJsonValue: TJSONValue;
   ATypeInfo: PTypeInfo; var VRestoredRecord);
