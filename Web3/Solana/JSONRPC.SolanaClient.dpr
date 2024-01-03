@@ -26,9 +26,9 @@ uses
   JSONRPC.Web3.SolanaTypes.getVoteAccountResultsType in 'JSONRPC.Web3.SolanaTypes.getVoteAccountResultsType.pas';
 
 procedure Main;
-var
+//var
 //  LCtx: TRttiContext;
-  LTypeInfo: PTypeInfo;
+//  LTypeInfo: PTypeInfo;
 //  LType: TRttiType;
 //  LAttribute: EnumAsAttribute;
 begin

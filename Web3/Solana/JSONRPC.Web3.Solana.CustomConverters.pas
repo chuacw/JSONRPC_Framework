@@ -37,15 +37,15 @@ end;
 class constructor TEncodingEnumConverter.Create;
 var
   I: JSONRPC.Web3.Solana.Attributes.TEncoding;
-  LNames: array[JSONRPC.Web3.Solana.Attributes.TEncoding] of string;
+//  LNames: array[JSONRPC.Web3.Solana.Attributes.TEncoding] of string;
   LTypeInfo: PTypeInfo;
   LType: TRttiType;
-  LOrdValue: Integer;
+//  LOrdValue: Integer;
   LCtx: TRttiContext;
   LAttributes: TArray<TCustomAttribute>;
   LCustomAttr: TCustomAttribute;
   LEnumAsAttr: EnumAsAttribute;
-  LReadName: string;
+//  LReadName: string;
 begin
   for I := Low(JSONRPC.Web3.Solana.Attributes.TEncoding) to
     High(JSONRPC.Web3.Solana.Attributes.TEncoding) do
@@ -57,7 +57,7 @@ begin
   LType := LCtx.GetType(LTypeInfo);
   LAttributes := LType.GetAttributes;
 
-  LOrdValue := -1;
+//  LOrdValue := -1;
   for LCustomAttr in LAttributes do
     begin
       if LCustomAttr is EnumAsAttribute then
@@ -74,14 +74,15 @@ function TEncodingEnumConverter.ReadJson(const AReader: TJsonReader;
   ATypeInf: PTypeInfo; const AExistingValue: TValue;
   const ASerializer: TJsonSerializer): TValue;
 var
-  LCtx: TRttiContext;
-  LReadName, LEnumName: string;
-  LTypeInfo: PTypeInfo;
-  LType: TRttiType;
-  LAttributes: TArray<TCustomAttribute>;
-  LCustomAttr: TCustomAttribute;
-  LEnumAsAttr: EnumAsAttribute;
+  LReadName: string;
   LOrdValue: JSONRPC.Web3.Solana.Attributes.TEncoding;
+//  LCtx: TRttiContext;
+//  LEnumName: string;
+//  LTypeInfo: PTypeInfo;
+//  LType: TRttiType;
+//  LAttributes: TArray<TCustomAttribute>;
+//  LCustomAttr: TCustomAttribute;
+//  LEnumAsAttr: EnumAsAttribute;
 begin
   AReader.Read; // PropertyName = 'encoding'
   AReader.Read; // PropertyName = 'encoding'
@@ -100,12 +101,12 @@ end;
 procedure TEncodingEnumConverter.WriteJson(const AWriter: TJsonWriter;
   const AValue: TValue; const ASerializer: TJsonSerializer);
 var
-  LCtx: TRttiContext;
-  LTypeInfo: PTypeInfo;
-  LType: TRttiType;
-  LCustomAttr: TCustomAttribute;
-  LEnumAsAttr: EnumAsAttribute;
-  LAttributes: TArray<TCustomAttribute>;
+//  LCtx: TRttiContext;
+//  LTypeInfo: PTypeInfo;
+//  LType: TRttiType;
+//  LCustomAttr: TCustomAttribute;
+//  LEnumAsAttr: EnumAsAttribute;
+//  LAttributes: TArray<TCustomAttribute>;
   LOrdValue: JSONRPC.Web3.Solana.Attributes.TEncoding;
   LEnumName: string;
 begin
