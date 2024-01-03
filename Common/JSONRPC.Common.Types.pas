@@ -270,6 +270,9 @@ type
 {$WARN HIDING_MEMBER ON}
   end;
 
+  EJSONRPCParamParsingException = class(EJSONRPCException)
+  end;
+
   EJSONRPCMethodMissingException = class(EJSONRPCException)
   end;
 

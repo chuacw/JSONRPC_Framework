@@ -42,15 +42,15 @@ begin
   try
 
     LJSONRPC.SendBool(True);
-    var AList := TList<Integer>.Create;
-    AList.AddRange([1, 2, 3, 4, 5]);
-    var LResultList := LJSONRPC.SendSomeList(AList);
+//    var AList := TList<Integer>.Create;
+//    AList.AddRange([1, 2, 3, 4, 5]);
+//    var LResultList := LJSONRPC.SendSomeList(AList);
 
     var LResultExtended := LJSONRPC.SendExtended(Extended.MaxValue);
     Assert(LResultExtended = Extended.MaxValue, 'Roundtripping failed');
 
     // Pass by position, or pass by name, default = pass params by name
-    PassParamsByPosition(LJSONRPC);
+    SetPassParamsByPosition(LJSONRPC);
 
     AssignJSONRPCSafeCallExceptionHandler(LJSONRPC,
       function (ExceptObject: TObject; ExceptAddr: Pointer): HResult

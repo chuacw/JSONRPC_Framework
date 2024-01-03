@@ -352,6 +352,7 @@ type
     FOnDispatchedJSONRPC: TOnDispatchedJSONRPC;
 
     FPassParamByPos: Boolean;
+    FEnumByName: Boolean;
 
     procedure DoBeforeDispatchJSONRPC(var AJSONResponse: string);
     procedure DoDispatchedJSONRPC(const AJSONRequest: string);
@@ -375,6 +376,7 @@ type
     function InternalQI(const IID: TGUID; out Obj): HResult; override; stdcall;
 
   public
+    constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
     procedure DispatchJSONRPC(const ARequest, AResponse: TStream);
@@ -1795,6 +1797,13 @@ begin
     if AParams[I].Name = AParamName then
       Exit(I);
   Result := -1;
+end;
+
+constructor TJSONRPCServerWrapper.Create(AOwner: TComponent);
+begin
+  inherited;
+  FPassParamByPos := False;
+  FEnumByName     := False;
 end;
 
 destructor TJSONRPCServerWrapper.Destroy;
