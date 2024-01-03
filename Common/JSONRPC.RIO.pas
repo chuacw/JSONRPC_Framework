@@ -1806,7 +1806,7 @@ constructor TJSONRPCServerWrapper.Create(AOwner: TComponent);
 begin
   inherited;
   FPassParamByPos := False;
-  FEnumByName     := False;
+  FEnumByName     := True;
 end;
 
 destructor TJSONRPCServerWrapper.Destroy;
