@@ -394,6 +394,9 @@ type
       read FOnLogOutgoingJSONResponse write FOnLogOutgoingJSONResponse;
 
     property PassParamByPos: Boolean read FPassParamByPos write FPassParamByPos;
+
+    property MarshalEnumByName: Boolean read FEnumByName write FEnumByName;
+    property MarshalParamByPos: Boolean read FPassParamByPos write FPassParamByPos;
   end;
 
 procedure RegisterJSONRPCWrapper(const ATypeInfo: PTypeInfo);
