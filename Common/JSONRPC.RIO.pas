@@ -838,6 +838,7 @@ begin
     var LJSONMethodName := GetMethodName(AMethMD);
     LJSONMethodObj.AddPair(SMETHOD, LJSONMethodName);
 
+    {$REGION 'Parameter parsing, handling'}
     if AMethMD.ParamCount > 0 then
       begin
 
@@ -1056,7 +1057,7 @@ begin
             end;
             tkClass: begin
               //
-
+              Assert(False, Format('Unexpected type not handled: %s', [LParamTypeInfo.Name]));
             end;
             else
               Assert(False, 'Unexpected type not handled');
@@ -1067,7 +1068,7 @@ begin
           LJSONMethodObj.AddPair(SPARAMS, LParamsObj) else
           LJSONMethodObj.AddPair(SPARAMS, LParamsArray);
       end;
-
+    {$ENDREGION 'Parameter parsing, handling'}
 
     // Only add ID if it's not a Notification call
     var LMethodType := LIntfType;
@@ -1082,7 +1083,7 @@ begin
 
     // client request converted to JSON string
     var LRequestJSON := LJSONMethodObj.ToJSON;
-    {$ENDREGION}
+    {$ENDREGION 'Convert native Delphi call to a JSON string'}
 
     // then send it
     LRequestStream := FClient.RequestStream;
