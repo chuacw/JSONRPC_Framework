@@ -10,15 +10,6 @@ type
 
   TJSONRPCServerIdHTTPRunner = class(TJSONRPCServerRunner, IJSONRPCDispatch,
     IJSONRPCGetSetDispatchEvents, IJSONRPCDispatchEvents)
-  private
-//    FOnNotifyServerIsInactive: TJSONRPCServerRunner.TProcNotifyServerIsInactive;
-//    FOnNotifyPortInUse: TJSONRPCServerRunner.TProcNotifyPortInUse;
-//    FOnNotifyServerIsAlreadyRunning: TJSONRPCServerRunner.TProcNotifyServerIsAlreadyRunning;
-//    FOnNotifyServerIsActive: TJSONRPCServerRunner.TProcNotifyServerIsActive;
-//    FOnNotifyPortSet: TJSONRPCServerRunner.TProcNotifyPortSet;
-//    function GetGetSetDispatchEvents: IJSONRPCGetSetDispatchEvents;
-//    function GetJSONRPCDispatch: IJSONRPCDispatch;
-//    function GetJSONRPCDispatchEvents: IJSONRPCDispatchEvents;
   protected
     FServer: TIdHTTPServer;
 
@@ -42,10 +33,6 @@ type
     procedure SetPort(const APort: Integer); override;
 
     procedure DoNotifyPortSet; override;
-//    procedure DoNotifyPortInUse(const APort: Integer); override;
-//    procedure DoNotifyServerIsActive; override;
-//    procedure DoNotifyServerIsInactive; override;
-//    procedure DoNotifyServerIsAlreadyRunning; override;
 
     property Dispatcher: IJSONRPCDispatch read GetJSONRPCDispatch implements IJSONRPCDispatch;
     property JSONRPCGetSetDispatchEvents: IJSONRPCGetSetDispatchEvents

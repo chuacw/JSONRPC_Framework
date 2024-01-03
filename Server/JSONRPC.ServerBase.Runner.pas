@@ -105,7 +105,6 @@ type
     property Address: string read GetAddress write SetAddress;
     property Host: string read GetHost write SetHost;
     property Port: Integer read GetPort write SetPort;
-//    property Server: TIdHTTPServer read FServer;
 
   end;
 

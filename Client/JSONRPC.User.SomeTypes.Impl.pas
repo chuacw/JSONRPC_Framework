@@ -54,11 +54,10 @@ begin
 {$IF DECLARED(IsDebuggerPresent)}
   if IsDebuggerPresent then
     begin
-      LJSONRPCWrapper.SendTimeout := 10*60*1000;
-      LJSONRPCWrapper.ResponseTimeout := LJSONRPCWrapper.SendTimeout;
-      LJSONRPCWrapper.ConnectionTimeout := LJSONRPCWrapper.SendTimeout;
-//      LJSONRPCWrapper.ResponseTimeout := 150;
-//      LJSONRPCWrapper.SendTimeout := 150;
+      var LTimeout := 10*60*1000;
+      LJSONRPCWrapper.SendTimeout := LTimeout;
+      LJSONRPCWrapper.ResponseTimeout := LTimeout;
+      LJSONRPCWrapper.ConnectionTimeout := LTimeout;
     end;
 {$ENDIF}
 
