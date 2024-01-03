@@ -99,6 +99,8 @@ function SameJson(const AJSON1, AJSON2: string): Boolean;
 
 procedure OutputDebugString(const AMsg: string); inline;
 
+function IfThen(AValue: Boolean; const ATrue: TFunc<Integer>; const AFalse: TFunc<Integer>): Integer;
+
 type
   TCollectionsHelper = class
   public
@@ -467,6 +469,13 @@ begin
   except
     Result := False;
   end;
+end;
+
+function IfThen(AValue: Boolean; const ATrue: TFunc<Integer>; const AFalse: TFunc<Integer>): Integer;
+begin
+  if AValue then
+    Result := ATrue() else
+    Result := AFalse();
 end;
 
 end.

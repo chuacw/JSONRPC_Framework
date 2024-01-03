@@ -194,12 +194,24 @@ type
 
   end;
 
+  IPassParamsByPosition = interface
+    ['{CDD074A3-510A-4A6B-902D-F0E76C14087F}']
+    function GetParamsPassByPosition: Boolean;
+    procedure SetParamsPassByPosition(const AValue: Boolean);
+
+    property PassParamsByPosition: Boolean read GetParamsPassByPosition write SetParamsPassByPosition;
+  end;
+
+  IPassParamsByName = interface
+    ['{5CF0594A-5ADB-40F1-AF84-AC829C0DB284}']
+    function GetParamsPassByName: Boolean;
+    procedure SetParamsPassByName(const AValue: Boolean);
+
+    property PassParamsByName: Boolean read GetParamsPassByName write SetParamsPassByName;
+  end;
+
   IJSONRPCInvocationSettings = interface
     ['{F5412FA7-D6A5-4BF7-8A40-E556ABF6432E}']
-    function GetParamsPassByPosition: Boolean;
-    function GetParamsPassByName: Boolean;
-    procedure SetParamsPassByPosition(const AValue: Boolean);
-    procedure SetParamsPassByName(const AValue: Boolean);
 
     function GetConnectionTimeout: Integer;
     function GetSendTimeout: Integer;
@@ -207,9 +219,6 @@ type
     procedure SetConnectionTimeout(const Value: Integer);
     procedure SetSendTimeout(const Value: Integer);
     procedure SetResponseTimeout(const Value: Integer);
-
-    property PassParamsByPosition: Boolean read GetParamsPassByPosition write SetParamsPassByPosition;
-    property PassParamsByName: Boolean read GetParamsPassByName write SetParamsPassByName;
 
     property ConnectionTimeout: Integer read GetConnectionTimeout write SetConnectionTimeout;
     property SendTimeout: Integer read GetSendTimeout write SetSendTimeout;

@@ -351,6 +351,8 @@ type
     FOnBeforeDispatchJSONRPC: TOnBeforeDispatchJSONRPC;
     FOnDispatchedJSONRPC: TOnDispatchedJSONRPC;
 
+    FPassParamByPos: Boolean;
+
     procedure DoBeforeDispatchJSONRPC(var AJSONResponse: string);
     procedure DoDispatchedJSONRPC(const AJSONRequest: string);
     procedure DoLogIncomingRequest(const ARequest: string);
@@ -388,6 +390,8 @@ type
       read FOnLogIncomingJSONRequest write FOnLogIncomingJSONRequest;
     property OnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse
       read FOnLogOutgoingJSONResponse write FOnLogOutgoingJSONResponse;
+
+    property PassParamByPos: Boolean read FPassParamByPos write FPassParamByPos;
   end;
 
 procedure RegisterJSONRPCWrapper(const ATypeInfo: PTypeInfo);
@@ -403,8 +407,10 @@ procedure RegisterJSONRPCWrapper(const ATypeInfo: PTypeInfo);
 procedure AssignJSONRPCSafeCallExceptionHandler(const AIntf: IInterface;
   const ASafeCallExceptionHandler: TOnSafeCallException); inline;
 
-function PassParamsByName(const AIntf: IInterface): Boolean;
-function PassParamsByPosition(const AIntf: IInterface): Boolean;
+function SetPassParamsByName(const AIntf: IInterface;
+  APassParamsByName: Boolean = True): Boolean;
+function SetPassParamsByPosition(const AIntf: IInterface;
+  APassParamsByPos: Boolean = True): Boolean;
 
 implementation
 
@@ -425,13 +431,14 @@ begin
     LSafeCallException.OnSafeCallException := ASafeCallExceptionHandler;
 end;
 
-function PassParamsByName(const AIntf: IInterface): Boolean;
+function SetPassParamsByName(const AIntf: IInterface;
+  APassParamsByName: Boolean = True): Boolean;
 var
-  LJSONRPCInvocationSettings: IJSONRPCInvocationSettings;
+  LPassParamsByName: IPassParamsByName;
 begin
-  if Supports(AIntf, IJSONRPCInvocationSettings, LJSONRPCInvocationSettings) then
+  if Supports(AIntf, IPassParamsByName, LPassParamsByName) then
     begin
-      LJSONRPCInvocationSettings.PassParamsByName := True;
+      LPassParamsByName.PassParamsByName := APassParamsByName;
       Result := True;
     end else
     begin
@@ -439,13 +446,14 @@ begin
     end;
 end;
 
-function PassParamsByPosition(const AIntf: IInterface): Boolean;
+function SetPassParamsByPosition(const AIntf: IInterface;
+  APassParamsByPos: Boolean = True): Boolean;
 var
-  LJSONRPCInvocationSettings: IJSONRPCInvocationSettings;
+  LPassParamsByPos: IPassParamsByPosition;
 begin
-  if Supports(AIntf, IJSONRPCInvocationSettings, LJSONRPCInvocationSettings) then
+  if Supports(AIntf, IPassParamsByPosition, LPassParamsByPos) then
     begin
-      LJSONRPCInvocationSettings.PassParamsByPosition := True;
+      LPassParamsByPos.PassParamsByPosition := APassParamsByPos;
       Result := True;
     end else
     begin
@@ -2212,7 +2220,7 @@ begin
                 LParseParamTypeInfo := LParams[I].ParamType.Handle;
 
                 // look up parameter's position using name
-                var LParamPosition := LookupParamPosition(FIntfMD.MDA[LMDAIndex].Params, LParams[I].Name);
+                var LParamPosition :=  LookupParamPosition(FIntfMD.MDA[LMDAIndex].Params, LParams[I].Name);
                 if LParamPosition = -1 then
                   LParamPosition := I;
 
