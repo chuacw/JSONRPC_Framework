@@ -476,21 +476,21 @@ end;
 function IfThen(AValue: Boolean; const ATrue: TFunc<Integer>; const AFalse: TFunc<Integer>): Integer;
 begin
   if AValue then
-    Result := ATrue() else
-    Result := AFalse();
+    Result := ATrue else
+    Result := AFalse;
 end;
 
 function IfThen(AValue: Boolean; const ATrue: Integer; const AFalse: TFunc<Integer>): Integer;
 begin
   if AValue then
     Result := ATrue else
-    Result := AFalse();
+    Result := AFalse;
 end;
 
 function IfThen(AValue: Boolean; const ATrue: TFunc<Integer>; const AFalse: Integer): Integer; overload;
 begin
   if AValue then
-    Result := ATrue() else
+    Result := ATrue else
     Result := AFalse;
 end;
 

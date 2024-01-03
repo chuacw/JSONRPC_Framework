@@ -196,18 +196,29 @@ type
 
   IPassParamsByPosition = interface
     ['{CDD074A3-510A-4A6B-902D-F0E76C14087F}']
-    function GetParamsPassByPosition: Boolean;
-    procedure SetParamsPassByPosition(const AValue: Boolean);
+    function GetPassParamsByPosition: Boolean;
+    procedure SetPassParamsByPosition(const AValue: Boolean);
 
-    property PassParamsByPosition: Boolean read GetParamsPassByPosition write SetParamsPassByPosition;
+    property PassParamsByPosition: Boolean read GetPassParamsByPosition write SetPassParamsByPosition;
+    property MarshalParamsByPosition: Boolean read GetPassParamsByPosition write SetPassParamsByPosition;
   end;
 
   IPassParamsByName = interface
     ['{5CF0594A-5ADB-40F1-AF84-AC829C0DB284}']
-    function GetParamsPassByName: Boolean;
-    procedure SetParamsPassByName(const AValue: Boolean);
+    function GetPassParamsByName: Boolean;
+    procedure SetPassParamsByName(const AValue: Boolean);
 
-    property PassParamsByName: Boolean read GetParamsPassByName write SetParamsPassByName;
+    property PassParamsByName: Boolean read GetPassParamsByName write SetPassParamsByName;
+    property MarshalParamsByName: Boolean read GetPassParamsByName write SetPassParamsByName;
+  end;
+
+  IPassEnumByName = interface
+    ['{DE15C664-6A08-45BA-9052-040CB2871661}']
+    function GetPassEnumByName: Boolean;
+    procedure SetPassEnumByName(const AValue: Boolean);
+
+    property PassEnumByName: Boolean read GetPassEnumByName write SetPassEnumByName;
+    property MarshalEnumByName: Boolean read GetPassEnumByName write SetPassEnumByName;
   end;
 
   IJSONRPCInvocationSettings = interface

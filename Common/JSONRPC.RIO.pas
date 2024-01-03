@@ -39,16 +39,21 @@ type
   end;
 
 {$IF DEFINED(BASECLASS)}
-  TBaseJSONRPCWrapper = class abstract(TComponent)
+  TBaseJSONRPCWrapper = class abstract(TComponent,
+    IPassParamsByPosition, IPassParamsByName, IPassEnumByName
+  )
   protected
   var
     FIntfMD: TIntfMetaData;
+    FPassByPosOrName: TPassParamByPosOrName;
+    FEnumByName: Boolean;
     procedure InitClient; virtual; abstract;
     procedure SetInvokeMethod; virtual; abstract;
     procedure DoDispatch(const AContext: TInvContext; AMethNum: Integer;
       const AMethMD: TIntfMethEntry); virtual;
     function InternalQI(const IID: TGUID; out Obj): HResult; virtual; stdcall; abstract;
   type
+    {$REGION 'TRioVirtualInterface'}
     TRioVirtualInterface = class(TVirtualInterface, ISafeCallException)
     protected
       FRio: TJSONRPCWrapper;
@@ -75,7 +80,27 @@ type
       /// </summary>
       property OnSafeCallException: TOnSafeCallException read GetOnSafeCallException
         write SetOnSafeCallException;
-     end;
+    end;
+    {$ENDREGION 'TRioVirtualInterface'}
+  public
+    constructor Create(AOwner: TComponent); override;
+
+    { IPassParamsByName }
+    function GetPassParamsByName: Boolean;
+    procedure SetPassParamsByName(const AValue: Boolean);
+
+    { IPassParamsByPosition }
+    function GetPassParamsByPosition: Boolean;
+    procedure SetPassParamsByPosition(const AValue: Boolean);
+
+    { IPassEnumByName }
+    function GetPassEnumByName: Boolean;
+    procedure SetPassEnumByName(const AValue: Boolean);
+
+    property PassEnumByName: Boolean read GetPassEnumByName write SetPassEnumByName;
+    property PassParamsByName: Boolean read GetPassParamsByName write SetPassParamsByName;
+    property PassParamsByPos: Boolean read GetPassParamsByPosition write SetPassParamsByPosition;
+    property PassParamsByPosition: Boolean read GetPassParamsByPosition write SetPassParamsByPosition;
   end;
 {$ENDIF}
 
@@ -92,14 +117,12 @@ type
     TBaseJSONRPCWrapper,
     {$ELSE}
     TComponent,
+    IPassParamsByPosition, IPassParamsByName, IPassEnumByName,
     {$ENDIF}
-    IInvokable, IJSONRPCInvocationSettings, ISafeCallException, IJSONRPCWrapper,
+    IInvokable, ISafeCallException, IJSONRPCWrapper,
+    IJSONRPCInvocationSettings,
     IJSONRPCClientLog)
   protected
-  {$IF NOT DEFINED(BASECLASS)}
-  type
-    TPassParamByPosOrName = (tppByPos, tppByName);
-  {$ENDIF}
   var
     FExceptObj: TObject;
     FServerURL: string;
@@ -117,7 +140,9 @@ type
     FMethodNames: TArray<string>;
 
     FOnSync: TOnSyncEvent;
+    {$IF NOT DEFINED(BASECLASS)}
     FPassByPosOrName: TPassParamByPosOrName;
+    {$ENDIF}
     FOnSafeCallException: TOnSafeCallException;
     FIID: TGUID;
     FRefCount: Integer;
@@ -206,11 +231,21 @@ type
     /// </summary>
     function GetMethodName(const AMethMD: TIntfMethEntry): string;
 
-    { IJSONRPCInvocationSettings }
-    function GetParamsPassByPosition: Boolean;
+    {$IF NOT DEFINED(BASECLASS)}
+    { IPassParamsByName }
     function GetParamsPassByName: Boolean;
-    procedure SetParamsPassByPosition(const AValue: Boolean);
     procedure SetParamsPassByName(const AValue: Boolean);
+
+    { IPassParamsByPosition }
+    function GetParamsPassByPosition: Boolean;
+    procedure SetParamsPassByPosition(const AValue: Boolean);
+
+    { IPassEnumByName }
+    function GetPassEnumByName: Boolean;
+    procedure SetPassEnumByName(const AValue: Boolean);
+    {$ENDIF}
+
+    { IJSONRPCInvocationSettings }
 
     function GetConnectionTimeout: Integer;
     function GetSendTimeout: Integer;
@@ -310,6 +345,7 @@ type
 
     property OnSync: TOnSyncEvent read FOnSync write FOnSync;
 
+    {$IF NOT DEFINED(BASECLASS)}
     /// <summary> Specifies that parameters will be passed/sent by position in the params array
     /// </summary>
     property PassParamsByPos: Boolean read GetParamsPassByPosition write SetParamsPassByPosition;
@@ -319,6 +355,7 @@ type
     /// <summary> Specifies that parameters will be passed/sent by name in the params object
     /// </summary>
     property PassParamsByName: Boolean read GetParamsPassByName write SetParamsPassByName;
+    {$ENDIF}
 
     /// <summary> Specifies the connnection timeout, when connecting to the server
     /// </summary>
@@ -350,9 +387,6 @@ type
 
     FOnBeforeDispatchJSONRPC: TOnBeforeDispatchJSONRPC;
     FOnDispatchedJSONRPC: TOnDispatchedJSONRPC;
-
-    FPassParamByPos: Boolean;
-    FEnumByName: Boolean;
 
     procedure DoBeforeDispatchJSONRPC(var AJSONResponse: string);
     procedure DoDispatchedJSONRPC(const AJSONRequest: string);
@@ -393,10 +427,6 @@ type
     property OnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse
       read FOnLogOutgoingJSONResponse write FOnLogOutgoingJSONResponse;
 
-    property PassParamByPos: Boolean read FPassParamByPos write FPassParamByPos;
-
-    property MarshalEnumByName: Boolean read FEnumByName write FEnumByName;
-    property MarshalParamByPos: Boolean read FPassParamByPos write FPassParamByPos;
   end;
 
 procedure RegisterJSONRPCWrapper(const ATypeInfo: PTypeInfo);
@@ -472,6 +502,11 @@ begin
 end;
 
 {$IF DEFINED(BASECLASS)}
+constructor TBaseJSONRPCWrapper.Create(AOwner: TComponent);
+begin
+  inherited;
+end;
+
 { TBaseJSONRPCWrapper.TRioVirtualInterface }
 procedure TBaseJSONRPCWrapper.DoDispatch(const AContext: TInvContext;
   AMethNum: Integer; const AMethMD: TIntfMethEntry);
@@ -522,6 +557,40 @@ end;
 function TBaseJSONRPCWrapper.TRioVirtualInterface._Release: Integer;
 begin
   Result := FRio._Release;
+end;
+
+function TBaseJSONRPCWrapper.GetPassParamsByName: Boolean;
+begin
+  Result := FPassByPosOrName = tppByName;
+end;
+
+procedure TBaseJSONRPCWrapper.SetPassParamsByName(const AValue: Boolean);
+begin
+  if AValue then
+    FPassByPosOrName := tppByName else
+    FPassByPosOrName := tppByPos;
+end;
+
+function TBaseJSONRPCWrapper.GetPassParamsByPosition: Boolean;
+begin
+  Result := FPassByPosOrName = tppByPos;
+end;
+
+procedure TBaseJSONRPCWrapper.SetPassParamsByPosition(const AValue: Boolean);
+begin
+  if AValue then
+    FPassByPosOrName := tppByPos else
+    FPassByPosOrName := tppByName;
+end;
+
+function TBaseJSONRPCWrapper.GetPassEnumByName: Boolean;
+begin
+  Result := FEnumByName;
+end;
+
+procedure TBaseJSONRPCWrapper.SetPassEnumByName(const AValue: Boolean);
+begin
+  FEnumByName := AValue;
 end;
 {$ENDIF}
 
@@ -1480,16 +1549,6 @@ begin
   Result := FOnSafeCallException;
 end;
 
-function TJSONRPCWrapper.GetParamsPassByName: Boolean;
-begin
-  Result := FPassByPosOrName = tppByName;
-end;
-
-function TJSONRPCWrapper.GetParamsPassByPosition: Boolean;
-begin
-  Result := FPassByPosOrName = tppByPos;
-end;
-
 function TJSONRPCWrapper.GetResponseTimeout: Integer;
 begin
   Result := FClient.ResponseTimeout;
@@ -1665,11 +1724,22 @@ begin
   FOnSafeCallException := AProc;
 end;
 
+{$IF NOT DEFINED(BASECLASS)}
+function TJSONRPCWrapper.GetParamsPassByName: Boolean;
+begin
+  Result := FPassByPosOrName = tppByName;
+end;
+
 procedure TJSONRPCWrapper.SetParamsPassByName(const AValue: Boolean);
 begin
   if AValue then
     FPassByPosOrName := tppByName else
     FPassByPosOrName := tppByPos;
+end;
+
+function TJSONRPCWrapper.GetParamsPassByPosition: Boolean;
+begin
+  Result := FPassByPosOrName = tppByPos;
 end;
 
 procedure TJSONRPCWrapper.SetParamsPassByPosition(const AValue: Boolean);
@@ -1678,6 +1748,17 @@ begin
     FPassByPosOrName := tppByPos else
     FPassByPosOrName := tppByName;
 end;
+
+function TJSONRPCWrapper.GetPassEnumByName: Boolean;
+begin
+  Result := FEnumByName;
+end;
+
+procedure TJSONRPCWrapper.SetPassEnumByName(const AValue: Boolean);
+begin
+  FEnumByName := AValue;
+end;
+{$ENDIF}
 
 procedure TJSONRPCWrapper.SetResponseTimeout(const Value: Integer);
 begin
@@ -1799,8 +1880,6 @@ end;
 constructor TJSONRPCServerWrapper.Create(AOwner: TComponent);
 begin
   inherited;
-  FPassParamByPos := False;
-  FEnumByName     := True;
 end;
 
 destructor TJSONRPCServerWrapper.Destroy;

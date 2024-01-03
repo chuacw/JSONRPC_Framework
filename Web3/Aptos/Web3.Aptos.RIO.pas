@@ -3,7 +3,7 @@ unit Web3.Aptos.RIO;
 interface
 
 uses
-  JSONRPC.RIO, System.Classes, System.Net.URLClient;
+  JSONRPC.RIO, System.Classes, System.Net.URLClient, JSONRPC.Common.Types;
 
 type
   TWeb3AptosJSONRPCWrapper = class(TJSONRPCWrapper)
@@ -12,8 +12,7 @@ type
 
     function InitializeHeaders(const ARequestStream: TStream): TNetHeaders; override;
 
-    procedure UpdateServerURL(
-      const AContext: TInvContext;
+    procedure UpdateServerURL(const AContext: TInvContext;
       const AMethMD: TIntfMethEntry; var VServerURL: string); override;
  public
     constructor Create(AOwner: TComponent); override;
@@ -22,7 +21,7 @@ type
 implementation
 
 uses
-  JSONRPC.Common.Consts, JSONRPC.Common.Types, System.Rtti, System.SysUtils,
+  JSONRPC.Common.Consts, System.Rtti, System.SysUtils,
   System.TypInfo;
 
 { TWeb3AptosJSONRPCWrapper }
