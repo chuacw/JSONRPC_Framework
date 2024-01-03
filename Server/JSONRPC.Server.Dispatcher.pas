@@ -25,10 +25,11 @@ type
 
     { IJSONRPCGetSetDispatchEvents }
     function GetOnDispatchedJSONRPC: TOnDispatchedJSONRPC;
+    procedure SetOnDispatchedJSONRPC(const AProc: TOnDispatchedJSONRPC);
+
+    { IJSONRPCServerLog }
     function GetOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest;
     function GetOnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse;
-
-    procedure SetOnDispatchedJSONRPC(const AProc: TOnDispatchedJSONRPC);
     procedure SetOnLogIncomingJSONRequest(const AProc: TOnLogIncomingJSONRequest);
     procedure SetOnLogOutgoingJSONResponse(const AProc: TOnLogOutgoingJSONResponse);
 
@@ -108,6 +109,7 @@ begin
   FOnDispatchedJSONRPC := nil;
   FOnLogIncomingJSONRequest := nil;
   FOnLogOutgoingJSONResponse := nil;
+  FJSONRPCDispatcher := nil;
   FServerWrapper.Free;
   inherited;
 end;
