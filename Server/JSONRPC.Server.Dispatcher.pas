@@ -115,6 +115,8 @@ begin
 end;
 
 procedure TJSONRPCDispatchNode.DispatchJSONRPC(const ARequest: TStream; AResponse: TStream);
+var
+  LDispatcher: IJSONRPCDispatch;
 begin
   if Assigned(Dispatcher) then
     begin
@@ -127,8 +129,10 @@ begin
       if Supports(Dispatcher, IJSONRPCServerLog, LJSONRPCServerLog) then
         begin
           LJSONRPCServerLog.OnLogIncomingJSONRequest := FOnLogIncomingJSONRequest;
+          LJSONRPCServerLog.OnLogOutgoingJSONResponse := FOnLogOutgoingJSONResponse;
         end;
-      Dispatcher.DispatchJSONRPC(ARequest, AResponse);
+//      Dispatcher.DispatchJSONRPC(ARequest, AResponse);
+      LDispatcher := Dispatcher;
     end else
     begin
       if not Assigned(FServerWrapper) then
@@ -139,9 +143,10 @@ begin
       FServerWrapper.OnDispatchedJSONRPC := GOnDispatchedJSONRPC;
       FServerWrapper.OnLogIncomingJSONRequest := GOnLogIncomingJSONRequest;
       FServerWrapper.OnLogOutgoingJSONResponse := GOnLogOutgoingJSONResponse;
-
-      FServerWrapper.DispatchJSONRPC(ARequest, AResponse);
+      LDispatcher := FServerWrapper;
+//      FServerWrapper.DispatchJSONRPC(ARequest, AResponse);
     end;
+  LDispatcher.DispatchJSONRPC(ARequest, AResponse);
 end;
 
 function TJSONRPCDispatchNode.GetOnDispatchedJSONRPC: TOnDispatchedJSONRPC;

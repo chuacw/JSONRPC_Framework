@@ -123,6 +123,12 @@ end;
 var
   Handlers: TDictionary<PTypeInfo, TRecordHandlers>;
 
+procedure InitHandlers;
+begin
+  if not Assigned(Handlers) then
+    Handlers := TDictionary<PTypeInfo, TRecordHandlers>.Create;
+end;
+
 function LookupRecordHandlers(ATypeInfo: PTypeInfo; out OHandlers: TRecordHandlers): Boolean;
 var
   LNativeToJSON: TNativeToJSON;
@@ -183,6 +189,7 @@ procedure RegisterRecordHandler(
   const AJSONToTValue: TJSONToTValue
 );
 begin
+  InitHandlers;
   Handlers.Add(ATypeInfo, TRecordHandlers.Create(
     ANativeToJSON, AJSONToNative, ATValueToJSON, AJSONToTValue)
   );
@@ -191,7 +198,7 @@ end;
 { THandler }
 
 initialization
-  Handlers := TDictionary<PTypeInfo, TRecordHandlers>.Create;
+  InitHandlers;
 finalization
   Handlers.Free;
 end.

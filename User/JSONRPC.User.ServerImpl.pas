@@ -5,8 +5,17 @@ unit JSONRPC.User.ServerImpl;
 interface
 
 uses
-  System.Types, JSONRPC.User.SomeTypes, JSONRPC.InvokeRegistry,
-  Velthuis.BigDecimals, Velthuis.BigIntegers, System.Generics.Collections;
+  System.Types,
+// Create a common interface for both client and server
+  JSONRPC.User.SomeTypes,
+  JSONRPC.InvokeRegistry,
+{$IF DEFINED(ISomeJSONRPC_SendBigDecimals)}
+  Velthuis.BigDecimals,
+{$ENDIF}
+{$IF DEFINED(ISomeJSONRPC_SendBigInteger)}
+  Velthuis.BigIntegers,
+{$ENDIF}
+  System.Generics.Collections;
 
 {$IF NOT DECLARED(Velthuis.BigDecimals) AND NOT DECLARED(Velthuis.BigIntegers)}
   {$MESSAGE HINT 'Include Velthuis.BigDecimals to automatically enable SendExtended'}
@@ -14,6 +23,11 @@ uses
 
 type
 
+  /// <summary> To implement and serve the ISomeJSONRPC common interface, declare
+  /// the base class as TInvokableClass, and implement all the methods declared by
+  /// ISomeJSONRPC, and call RegisterInvokableClass with
+  /// the type of the class, eg, RegisterInvokableClass(TSomeJSONRPC)
+  /// </summary>
   TSomeJSONRPC = class(TInvokableClass, ISomeJSONRPC)
   public
     constructor Create; override;
@@ -38,6 +52,8 @@ type
     function AddString(const X: string; const Y: string): string;
     function GetDate: TDateTime;
     function GetEnum(const A: TEnum): TEnum;
+    function SuccEnum(const A: TEnum): TEnum;
+    function PredEnum(const A: TEnum): TEnum;
     function GetSomeBool(const ABoolean: Boolean): Boolean; safecall;
     function SendSomeObj(AObj: TMyObject): TMyObject;
 
@@ -51,6 +67,7 @@ type
 
     {$IF DECLARED(Velthuis.BigIntegers)}
     function SendBigInteger(const Value: BigInteger): BigInteger; overload;
+      {$DEFINE ISomeJSONRPC_SendBigInteger}
     {$ENDIF}
 
     function SendBool(const Value: Boolean): Boolean;
@@ -68,7 +85,9 @@ type
     function SendShort(const Value: ShortInt): ShortInt;
     function SendSingle(const Value: Single): Single;
     function SendSmallInt(const Value: SmallInt): SmallInt;
-    function SendSomeList(const AList: TList<Integer>): TList<Integer>;
+
+    function SendSomeList(const AList: TList<Integer>): TList<Integer>; safecall;
+
     function SendSomeDictionary(const AList: TDictionary<Integer, string>): TDictionary<Integer, string>;
     function SendString(const Value: string): string;
     function SendUInt64(const Value: UInt64): UInt64;
@@ -152,9 +171,17 @@ end;
 
 function TSomeJSONRPC.GetEnum(const A: TEnum): TEnum;
 begin
-  if Succ(A) > High(TEnum) then
-    Result := Low(TEnum) else
-    Result := Succ(A);
+  Result := A;
+end;
+
+function TSomeJSONRPC.SuccEnum(const A: TEnum): TEnum;
+begin
+  Result := Succ(A);
+end;
+
+function TSomeJSONRPC.PredEnum(const A: TEnum): TEnum;
+begin
+  Result := Pred(A);
 end;
 
 function TSomeJSONRPC.GetSomeBool(const ABoolean: Boolean): Boolean;
@@ -184,10 +211,12 @@ begin
   Result := GetEnumName(TypeInfo(TEnum), Ord(A));
 end;
 
+{$IF DECLARED(Velthuis.BigDecimals)}
 function TSomeJSONRPC.SendExtended(const Value: BigDecimal): BigDecimal;
 begin
   Result := Value;
 end;
+{$ENDIF}
 
 function TSomeJSONRPC.SendFixedIntegers(
   const A: TFixedIntegers): TFixedIntegers;
@@ -417,8 +446,7 @@ end;
 
 initialization
 { Invokable classes must be registered }
-  InvRegistry.RegisterInvokableClass(TSomeJSONRPC);
-  RegisterJSONRPCWrapper(TypeInfo(ISomeJSONRPC));
+  RegisterInvokableClass(TSomeJSONRPC);
 
 end.
 

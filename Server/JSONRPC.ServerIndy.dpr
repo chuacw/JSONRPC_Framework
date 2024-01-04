@@ -6,7 +6,7 @@ uses
   System.Types,
   System.Classes,
   System.JSON,
-  ServerConst1 in 'ServerConst1.pas',
+  JSONRPC.Server.Consts in 'JSONRPC.Server.Consts.pas',
   JSONRPC.Server.Dispatcher in 'JSONRPC.Server.Dispatcher.pas',
   JSONRPC.User.SomeTypes in '..\Common\JSONRPC.User.SomeTypes.pas',
   JSONRPC.RIO in '..\Common\JSONRPC.RIO.pas',
@@ -16,9 +16,9 @@ uses
   JSONRPC.User.ServerImpl in 'JSONRPC.User.ServerImpl.pas',
   JSONRPC.JsonUtils in '..\Common\JSONRPC.JsonUtils.pas',
   JSONRPC.ServerBase.Runner in 'JSONRPC.ServerBase.Runner.pas',
-  System.Net.ServerSocket in 'System.Net.ServerSocket.pas',
-  JSONRPC.ServerIdHTTP.Runner in 'JSONRPC.ServerIdHTTP.Runner.pas',
-  JSONRPC.Common.RecordHandlers in '..\Common\JSONRPC.Common.RecordHandlers.pas';
+  JSONRPC.CustomServerIdHTTP.Runner in 'JSONRPC.CustomServerIdHTTP.Runner.pas',
+  JSONRPC.Common.RecordHandlers in '..\Common\JSONRPC.Common.RecordHandlers.pas',
+  JSONRPC.Server.JSONRPCHTTPServer in 'JSONRPC.Server.JSONRPCHTTPServer.pas';
 
 {$R *.res}
 
@@ -33,7 +33,7 @@ begin
   WritePrompt;
 end;
 
-procedure WriteStatus(const AServerRunner: TJSONRPCServerRunner);
+procedure WriteStatus(const AServerRunner: TCustomJSONRPCServerRunner);
 begin
 //  Writeln(sIndyVersion + AServerRunner.Version);
   Writeln(sActive + AServerRunner.Active.ToString(TUseBoolStrs.True));
@@ -43,7 +43,7 @@ end;
 
 procedure RunServer(APort: Integer);
 var
-  LServer: TJSONRPCServerRunner;
+  LServer: TCustomJSONRPCServerRunner;
   LResponse: string;
 begin
   WriteCommands;
@@ -61,17 +61,17 @@ begin
     Writeln(Format(sPortInUse, [APort]));
     WritePrompt;
   end;
-  LServer.OnNotifyServerIsActive := procedure(const AServerRunner: TJSONRPCServerRunner)
+  LServer.OnNotifyServerIsActive := procedure(const AServerRunner: TCustomJSONRPCServerRunner)
   begin
     WriteLn(Format(sServerStarted, [AServerRunner.Port]));
     WritePrompt;
   end;
-  LServer.OnNotifyServerIsInactive := procedure(const AServerRunner: TJSONRPCServerRunner)
+  LServer.OnNotifyServerIsInactive := procedure(const AServerRunner: TCustomJSONRPCServerRunner)
   begin
     WriteLn(sServerStopped);
     WritePrompt;
   end;
-  LServer.OnNotifyServerIsAlreadyRunning := procedure(const AServerRunner: TJSONRPCServerRunner)
+  LServer.OnNotifyServerIsAlreadyRunning := procedure(const AServerRunner: TCustomJSONRPCServerRunner)
   begin
     Writeln(sServerAlreadyRunning);
     WritePrompt;
@@ -159,40 +159,40 @@ begin
   end;
 end;
 
-procedure ProgramLoop;
+procedure RunJSONRPCServer;
 var
   LPort: Integer;
 begin
   LPort := 8083;
-    try
-      {$IF DECLARED(WebRequestHandler)}
-      if WebRequestHandler <> nil then
+  try
+    {$IF DECLARED(WebRequestHandler)}
+    if WebRequestHandler <> nil then
+      begin
+        WebRequestHandler.WebModuleClass := WebModuleClass;
+        SetOnDispatchedJSONRPC(procedure (const AJSONRequest: string)
         begin
-          WebRequestHandler.WebModuleClass := WebModuleClass;
-          SetOnDispatchedJSONRPC(procedure (const AJSONRequest: string)
-          begin
-            WriteLn('Dispatched JSON RPC: ', AJSONRequest);
-          end);
-          SetOnReceivedJSONRPC(procedure (const AJSONRequest: string)
-          begin
-            WriteLn('Received JSON RPC: ', AJSONRequest);
-          end);
-          SetOnSentJSONRPC(procedure (const AJSONResponse: string)
-          begin
-            WriteLn('Sent JSON RPC: ', AJSONResponse);
-          end);
-        end;
-      {$ELSE}
+          WriteLn('Dispatched JSON RPC: ', AJSONRequest);
+        end);
+        SetOnReceivedJSONRPC(procedure (const AJSONRequest: string)
+        begin
+          WriteLn('Received JSON RPC: ', AJSONRequest);
+        end);
+        SetOnSentJSONRPC(procedure (const AJSONResponse: string)
+        begin
+          WriteLn('Sent JSON RPC: ', AJSONResponse);
+        end);
+      end;
+    {$ELSE}
 
-      {$ENDIF}
-      RunServer(LPort);
-    except
-      on E: Exception do
-        Writeln(E.ClassName, ': ', E.Message);
-    end;
+    {$ENDIF}
+    RunServer(LPort);
+  except
+    on E: Exception do
+      Writeln(E.ClassName, ': ', E.Message);
+  end;
 end;
 
 begin
   ReportMemoryLeaksOnShutdown := True;
-  ProgramLoop;
+  RunJSONRPCServer;
 end.

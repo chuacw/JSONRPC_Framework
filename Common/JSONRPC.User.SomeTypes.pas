@@ -6,7 +6,8 @@ interface
 
 uses
   JSONRPC.Common.Types, System.Classes, System.JSON.Serializers,
-  JSONRPC.RIO, Velthuis.BigDecimals, Velthuis.BigIntegers,
+  JSONRPC.RIO,
+//  Velthuis.BigDecimals, Velthuis.BigIntegers,
   System.Generics.Collections;
 
 {$IF NOT DECLARED(Velthuis.BigDecimals) AND NOT DECLARED(Velthuis.BigIntegers)}
@@ -56,6 +57,7 @@ type
 
   TEnum = (enumA, enumB, enumC);
   TFixedIntegers = array[0..3] of Integer;
+
   ISomeJSONRPC = interface(IJSONRPCMethods)
     ['{BDA67613-BA2E-415A-9C4E-DE5BD519C05E}']
 
@@ -74,17 +76,21 @@ type
     function AddString(const X, Y: string): string;
     function GetSomeBool(const ABoolean: Boolean): Boolean; safecall;
 
-    function SendSomeList(const AList: TList<Integer>): TList<Integer>;
+    function SendSomeList(const AList: TList<Integer>): TList<Integer>; safecall;
     function SendSomeDictionary(const AList: TDictionary<Integer, string>): TDictionary<Integer, string>;
 
     function GetEnum(const A: TEnum): TEnum;
+    function SuccEnum(const A: TEnum): TEnum;
+    function PredEnum(const A: TEnum): TEnum;
     function SendEnum(const A: TEnum): string;
 
     {$IF DECLARED(Velthuis.BigIntegers)}
     function SendBigInteger(const Value: BigInteger): BigInteger;
+      {$DEFINE ISomeJSONRPC_SendBigInteger}
     {$ENDIF}
     {$IF DECLARED(Velthuis.BigDecimals)}
     function SendExtended(const Value: BigDecimal): BigDecimal; overload;
+      {$DEFINE ISomeJSONRPC_SendExtended}
     {$ENDIF}
 
     function SendBool(const Value: Boolean): Boolean;

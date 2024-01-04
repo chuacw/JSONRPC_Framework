@@ -8,15 +8,15 @@ uses
 
 type
 
-  TJSONRPCServerRunner = class(TInterfacedObject, IJSONRPCDispatch,
+  TCustomJSONRPCServerRunner = class abstract(TInterfacedObject, IJSONRPCDispatch,
     IJSONRPCGetSetDispatchEvents, IJSONRPCDispatchEvents)
   public
   type
     TProcNotifyPortSet = reference to procedure(const APort: Integer);
     TProcNotifyPortInUse = reference to procedure(const APort: Integer);
-    TProcNotifyServerIsAlreadyRunning = reference to procedure(const AServer: TJSONRPCServerRunner);
-    TProcNotifyServerIsActive = reference to procedure(const AServer: TJSONRPCServerRunner);
-    TProcNotifyServerIsInactive = reference to procedure(const AServer: TJSONRPCServerRunner);
+    TProcNotifyServerIsAlreadyRunning = reference to procedure(const AServer: TCustomJSONRPCServerRunner);
+    TProcNotifyServerIsActive = reference to procedure(const AServer: TCustomJSONRPCServerRunner);
+    TProcNotifyServerIsInactive = reference to procedure(const AServer: TCustomJSONRPCServerRunner);
   protected
     function GetGetSetDispatchEvents: IJSONRPCGetSetDispatchEvents;
     function GetJSONRPCDispatch: IJSONRPCDispatch;
@@ -32,7 +32,6 @@ type
   protected
     FRequest: TStream;
     FResponse: TStream;
-    FIntf: IInterface; // Capture interface
     FServerWrapper: TJSONRPCServerWrapper;
 
     FOnNotifyPortSet: TProcNotifyPortSet;
@@ -48,6 +47,9 @@ type
 
     function GetActive: Boolean; virtual; abstract;
     procedure SetActive(const Value: Boolean); virtual; abstract;
+
+    procedure CreateServerWrapper; virtual; abstract;
+    procedure FreeServerWrapper; virtual; abstract;
 
     procedure CreateServer; virtual; abstract;
     procedure FreeServer; virtual; abstract;
@@ -113,9 +115,9 @@ implementation
 uses
   IPPeerAPI, System.SysUtils, JSONRPC.Common.Consts;
 
-{ TJSONRPCServerRunner }
+{ TCustomJSONRPCServerRunner }
 
-//function TJSONRPCServerRunner.BindPort(APort: Integer): Boolean;
+//function TCustomJSONRPCServerRunner.BindPort(APort: Integer): Boolean;
 //var
 //  LTestServer: IIPTestServer;
 //begin
@@ -128,7 +130,7 @@ uses
 //  end;
 //end;
 
-//function TJSONRPCServerRunner.CheckPort(const APort: Integer): Integer;
+//function TCustomJSONRPCServerRunner.CheckPort(const APort: Integer): Integer;
 //begin
 //  if BindPort(APort) then
 //    Result := APort
@@ -136,24 +138,21 @@ uses
 //    Result := 0;
 //end;
 //
-//function TJSONRPCServerRunner.CheckPort(const APort: string): Integer;
+//function TCustomJSONRPCServerRunner.CheckPort(const APort: string): Integer;
 //begin
 //  Result := CheckPort(APort.ToInteger);
 //end;
 
-constructor TJSONRPCServerRunner.Create;
+constructor TCustomJSONRPCServerRunner.Create;
 begin
   inherited Create;
   FRequest := TMemoryStream.Create;
   FResponse := TMemoryStream.Create;
   CreateServer;
-  FServerWrapper := TJSONRPCServerWrapper.Create(nil);
 end;
 
-destructor TJSONRPCServerRunner.Destroy;
+destructor TCustomJSONRPCServerRunner.Destroy;
 begin
-  FServerWrapper.Free;
-  FIntf := nil;
   FreeServer;
 
   FResponse.Free;
@@ -161,77 +160,77 @@ begin
   inherited;
 end;
 
-procedure TJSONRPCServerRunner.DoNotifyPortInUse(const APort: Integer);
+procedure TCustomJSONRPCServerRunner.DoNotifyPortInUse(const APort: Integer);
 begin
   if Assigned(FOnNotifyPortInUse) then
     FOnNotifyPortInUse(APort);
 end;
 
-//procedure TJSONRPCServerRunner.DoNotifyPortSet;
+//procedure TCustomJSONRPCServerRunner.DoNotifyPortSet;
 //begin
 //  if Assigned(FOnNotifyPortSet) then
 //    FOnNotifyPortSet(FServerWrapper.);
 //end;
 
-procedure TJSONRPCServerRunner.DoNotifyServerIsActive;
+procedure TCustomJSONRPCServerRunner.DoNotifyServerIsActive;
 begin
   if Assigned(FOnNotifyServerIsActive) then
     FOnNotifyServerIsActive(Self);
 end;
 
-procedure TJSONRPCServerRunner.DoNotifyServerIsAlreadyRunning;
+procedure TCustomJSONRPCServerRunner.DoNotifyServerIsAlreadyRunning;
 begin
   if Assigned(FOnNotifyServerIsAlreadyRunning) then
     FOnNotifyServerIsAlreadyRunning(Self);
 end;
 
-procedure TJSONRPCServerRunner.DoNotifyServerIsInactive;
+procedure TCustomJSONRPCServerRunner.DoNotifyServerIsInactive;
 begin
   if Assigned(FOnNotifyServerIsInactive) then
     FOnNotifyServerIsInactive(Self);
 end;
 
-//function TJSONRPCServerRunner.GetActive: Boolean;
+//function TCustomJSONRPCServerRunner.GetActive: Boolean;
 //begin
 //  Result := FServer.Active;
 //end;
 
-function TJSONRPCServerRunner.GetGetSetDispatchEvents: IJSONRPCGetSetDispatchEvents;
+function TCustomJSONRPCServerRunner.GetGetSetDispatchEvents: IJSONRPCGetSetDispatchEvents;
 begin
   Result := FServerWrapper as IJSONRPCGetSetDispatchEvents;
 end;
 
-function TJSONRPCServerRunner.GetJSONRPCDispatch: IJSONRPCDispatch;
+function TCustomJSONRPCServerRunner.GetJSONRPCDispatch: IJSONRPCDispatch;
 begin
   Result := FServerWrapper as IJSONRPCDispatch;
 end;
 
-function TJSONRPCServerRunner.GetJSONRPCDispatchEvents: IJSONRPCDispatchEvents;
+function TCustomJSONRPCServerRunner.GetJSONRPCDispatchEvents: IJSONRPCDispatchEvents;
 begin
   Result := FServerWrapper as IJSONRPCDispatchEvents;
 end;
 
-function TJSONRPCServerRunner.GetOnDispatchedJSONRPC: TOnDispatchedJSONRPC;
+function TCustomJSONRPCServerRunner.GetOnDispatchedJSONRPC: TOnDispatchedJSONRPC;
 begin
   Result := FServerWrapper.OnDispatchedJSONRPC;
 end;
 
-function TJSONRPCServerRunner.GetOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest;
+function TCustomJSONRPCServerRunner.GetOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest;
 begin
   Result := FServerWrapper.OnLogIncomingJSONRequest;
 end;
 
-function TJSONRPCServerRunner.GetOnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse;
+function TCustomJSONRPCServerRunner.GetOnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse;
 begin
   Result := FServerWrapper.OnLogOutgoingJSONResponse;
 end;
 
-//function TJSONRPCServerRunner.GetPort: Integer;
+//function TCustomJSONRPCServerRunner.GetPort: Integer;
 //begin
 //  Result := FServer.DefaultPort;
 //end;
 
-procedure TJSONRPCServerRunner.HandlePostGet(AContext: TIdContext;
+procedure TCustomJSONRPCServerRunner.HandlePostGet(AContext: TIdContext;
   ARequestInfo: TIdHTTPRequestInfo; AResponseInfo: TIdHTTPResponseInfo);
 begin
   ARequestInfo.PostStream.Position := 0;
@@ -243,7 +242,7 @@ begin
   AResponseInfo.ContentType := SApplicationJson;
 end;
 
-procedure TJSONRPCServerRunner.IncomingDataExecute(AContext: TIdContext);
+procedure TCustomJSONRPCServerRunner.IncomingDataExecute(AContext: TIdContext);
 begin
   FRequest.Size := 0;
   FResponse.Size := 0;
@@ -256,7 +255,7 @@ begin
   AContext.Connection.IOHandler.Write(FResponse);
 end;
 
-procedure TJSONRPCServerRunner.ReadStream(AContext: TIdContext; AStream: TStream);
+procedure TCustomJSONRPCServerRunner.ReadStream(AContext: TIdContext; AStream: TStream);
 begin
   try
     AContext.Connection.IOHandler.ReadStream(AStream);
@@ -265,30 +264,30 @@ begin
   end;
 end;
 
-procedure TJSONRPCServerRunner.SetOnDispatchedJSONRPC(
+procedure TCustomJSONRPCServerRunner.SetOnDispatchedJSONRPC(
   const Value: TOnDispatchedJSONRPC);
 begin
   FServerWrapper.OnDispatchedJSONRPC := Value;
 end;
 
-procedure TJSONRPCServerRunner.SetOnLogIncomingJSONRequest(
+procedure TCustomJSONRPCServerRunner.SetOnLogIncomingJSONRequest(
   const Value: TOnLogIncomingJSONRequest);
 begin
   FServerWrapper.OnLogIncomingJSONRequest := Value;
 end;
 
-procedure TJSONRPCServerRunner.SetOnLogOutgoingJSONResponse(
+procedure TCustomJSONRPCServerRunner.SetOnLogOutgoingJSONResponse(
   const Value: TOnLogOutgoingJSONResponse);
 begin
   FServerWrapper.OnLogOutgoingJSONResponse := Value;
 end;
 
-//procedure TJSONRPCServerRunner.SetActive(const Value: Boolean);
+//procedure TCustomJSONRPCServerRunner.SetActive(const Value: Boolean);
 //begin
 //  FServer.Active := Value;
 //end;
 
-//procedure TJSONRPCServerRunner.SetPort(const APort: Integer);
+//procedure TCustomJSONRPCServerRunner.SetPort(const APort: Integer);
 //begin
 //  if not FServer.Active then
 //    begin
@@ -303,7 +302,7 @@ end;
 //    end
 //end;
 
-//procedure TJSONRPCServerRunner.StartServer(const APort: Integer = 0);
+//procedure TCustomJSONRPCServerRunner.StartServer(const APort: Integer = 0);
 //var
 //  LPort: Integer;
 //begin
@@ -327,7 +326,7 @@ end;
 //    end;
 //end;
 
-//procedure TJSONRPCServerRunner.StopServer;
+//procedure TCustomJSONRPCServerRunner.StopServer;
 //begin
 //  FServer.Active := False;
 //  DoNotifyServerIsInactive;

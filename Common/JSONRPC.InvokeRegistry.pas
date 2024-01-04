@@ -16,27 +16,29 @@ type
   InvString = UnicodeString;
   TDataContext = class;
 
-  { TRemotable is the base class for remoting complex types - it introduces a virtual
-    constructor (to allow the JSON RPC runtime to properly create the object and derived
-    types) and it provides life-time management - via DataContext - so the JSON RPC
-    runtime can properly disposed of complex types received by a Service }
-{$M+}
-  TRemotable = class
-  private
-    FDataContext: TDataContext;
-    procedure SetDataContext(Value: TDataContext);
-  public
-    constructor Create; virtual;
-    destructor  Destroy; override;
+//  { TRemotable is the base class for remoting complex types - it introduces a virtual
+//    constructor (to allow the JSON RPC runtime to properly create the object and derived
+//    types) and it provides life-time management - via DataContext - so the JSON RPC
+//    runtime can properly disposed of complex types received by a Service }
+//{$M+}
+//  TRemotable = class
+//  private
+//    FDataContext: TDataContext;
+//    procedure SetDataContext(Value: TDataContext);
+//  public
+//    constructor Create; virtual;
+//    destructor  Destroy; override;
+//
+//    property   DataContext: TDataContext read FDataContext write SetDataContext;
+//  end;
+//{$M-}
+//
+//  PTRemotable = ^TRemotable;
+//  TRemotableClass = class of TRemotable;
 
-    property   DataContext: TDataContext read FDataContext write SetDataContext;
-  end;
-{$M-}
-
-  PTRemotable = ^TRemotable;
-  TRemotableClass = class of TRemotable;
-
-  TInvokableClass = class(TInterfacedObject, IInterface, IJSONRPCMethodException)
+  TInvokableClass = class(TInterfacedObject, IInterface,
+    IJSONRPCMethodException, IJSONRPCMethods
+  )
   protected
     FMessage: string;
     FCode: Integer;
@@ -57,7 +59,6 @@ type
     function GetMessage: string;
     procedure SetMessage(const AMsg: string);
     property Message: string read GetMessage write SetMessage;
-
 
     { IJSONRPCException }
     function GetMethodName: string;
@@ -80,19 +81,6 @@ type
     Proc: TCreateInstanceProc;
   end align 16;
 
-  eHeaderMethodType = (hmtAll, hmtRequest, hmtResponse);
-
-  THeaderMethodTypeArray = TArray<eHeaderMethodType>;
-
-  TRequiredArray = TArray<Boolean>;
-
-  IntfExceptionItem = record
-    ClassType: TClass;
-    MethodNames: string;
-  end align 16;
-
-  TExceptionItemArray = TArray<IntfExceptionItem>;
-
   InterfaceMapItem = record
     Name: string;                             { Native name of interface    }
     ExtName: InvString;                       { PortTypeName                }
@@ -106,8 +94,6 @@ type
     ReturnParamNames: string;                 { Return Parameter names      }
 {$ENDIF}
   end align 16;
-
-  TInterfaceMapItemArray = TArray<InterfaceMapItem>;
 
   TInvokableClassRegistry = class
   protected
@@ -124,7 +110,9 @@ type
     procedure RegisterInterface(Info: PTypeInfo);
 
     function GetInvokableClass: TClass;
+    function GetInvokableClasses: TArray<TClass>;
     function GetInterface: InterfaceMapItem;
+    function GetInterfaces: TArray<InterfaceMapItem>;
 
     procedure RegisterInvokableClass(AClass: TClass; const CreateProc: TCreateInstanceProc); overload;
     procedure RegisterInvokableClass(AClass: TClass); overload;
@@ -167,7 +155,7 @@ type
   end;
 
   TRemotableClassRegistry       = TRemotableTypeRegistry;
-  
+
 { Forward ref. structure to satisfy DynamicArray<Type>        }
 { encountered before declaration of Type itself in .HPP file  }
 
@@ -217,7 +205,7 @@ type
   const
     TEnumSize = SizeOf(Integer);
   type
-    PEnum = PInteger;
+    PEnum = ^TEnum;
     TEnum = Integer;
     procedure AllocServerData(const MD: TIntfMethEntry);
     procedure SetMethodInfo(const MD: TIntfMethEntry);
@@ -233,34 +221,35 @@ type
     property ResultPointer: Pointer read GetResultPointer write SetResultPointer;
   end;
 
-function  GetRemotableDataContext: Pointer;
-procedure SetRemotableDataContext(Value: Pointer);
+//function  GetRemotableDataContext: Pointer;
+//procedure SetRemotableDataContext(Value: Pointer);
 
 function  InvRegistry:   TInvokableClassRegistry;
 
 implementation
 
 uses
-  {$IFDEF MSWINDOWS}Winapi.Windows,{$ENDIF}
-  {$IFDEF POSIX}Posix.Unistd,{$ENDIF}
+  {$IF DEFINED(MSWINDOWS)}Winapi.Windows,
+  {$ELSEIF DEFINED(POSIX)}Posix.Unistd,{$ENDIF}
   System.RTTI, System.Types, System.Variants,
-  Soap.HTTPUtil, Soap.SOAPConst, Soap.XSBuiltIns, JSONRPC.RIO;
+  Soap.SOAPConst,
+  JSONRPC.RIO;
 
 var
   JSONRPCInvRegistryV: TInvokableClassRegistry;
 
-threadvar
-  RemotableDataContext: Pointer;
-
-function GetRemotableDataContext: Pointer;
-begin
-  Result := RemotableDataContext;
-end;
-
-procedure SetRemotableDataContext(Value: Pointer);
-begin
-  RemotableDataContext := Value;
-end;
+//threadvar
+//  RemotableDataContext: Pointer;
+//
+//function GetRemotableDataContext: Pointer;
+//begin
+//  Result := RemotableDataContext;
+//end;
+//
+//procedure SetRemotableDataContext(Value: Pointer);
+//begin
+//  RemotableDataContext := Value;
+//end;
 
 function TInvokableClassRegistry.GetInterfaceCount: Integer;
 begin
@@ -332,11 +321,31 @@ begin
     Result := nil;
 end;
 
+function TInvokableClassRegistry.GetInvokableClasses: TArray<TClass>;
+begin
+  if Length(FRegClasses) > 0 then
+    begin
+      SetLength(Result, Length(FRegClasses));
+      for var I := Low(FRegClasses) to High(FRegClasses) do
+        Result[I] := FRegClasses[I].ClassType;
+    end else
+    begin
+      Result := nil;
+    end;
+end;
+
 function TInvokableClassRegistry.GetInterface: InterfaceMapItem;
 begin
   if Length(FRegIntfs) > 0 then
     Result := FRegIntfs[0] else
     Result := Default(InterfaceMapItem);
+end;
+
+function TInvokableClassRegistry.GetInterfaces: TArray<InterfaceMapItem>;
+begin
+  if Length(FRegIntfs) > 0 then
+    Result := FRegIntfs else
+    Result := nil;
 end;
 
 procedure TInvokableClassRegistry.RegisterInvokableClass(AClass: TClass;
@@ -674,36 +683,36 @@ begin
   FMethodName := AMethodName;
 end;
 
-{ TRemotable }
-
-constructor TRemotable.Create;
-begin
-  inherited;
-  if RemotableDataContext <> nil then
-    begin
-      TDataContext(RemotableDataContext).AddObjectToDestroy(Self);
-      Self.DataContext := TDataContext(RemotableDataContext);
-    end;
-end;
-
-destructor TRemotable.Destroy;
-begin
-  if RemotableDataContext <> nil then
-    begin
-      TDataContext(RemotableDataContext).RemoveObjectToDestroy(Self);
-      Self.DataContext := nil;
-    end;
-  inherited Destroy;
-end;
-
-procedure TRemotable.SetDataContext(Value: TDataContext);
-begin
-  if (RemotableDataContext <> nil) and (RemotableDataContext = Self.DataContext) then
-    begin
-      TDataContext(RemotableDataContext).RemoveObjectToDestroy(Self);
-    end;
-  FDataContext := Value;
-end;
+//{ TRemotable }
+//
+//constructor TRemotable.Create;
+//begin
+//  inherited;
+//  if RemotableDataContext <> nil then
+//    begin
+//      TDataContext(RemotableDataContext).AddObjectToDestroy(Self);
+//      Self.DataContext := TDataContext(RemotableDataContext);
+//    end;
+//end;
+//
+//destructor TRemotable.Destroy;
+//begin
+//  if RemotableDataContext <> nil then
+//    begin
+//      TDataContext(RemotableDataContext).RemoveObjectToDestroy(Self);
+//      Self.DataContext := nil;
+//    end;
+//  inherited Destroy;
+//end;
+//
+//procedure TRemotable.SetDataContext(Value: TDataContext);
+//begin
+//  if (RemotableDataContext <> nil) and (RemotableDataContext = Self.DataContext) then
+//    begin
+//      TDataContext(RemotableDataContext).RemoveObjectToDestroy(Self);
+//    end;
+//  FDataContext := Value;
+//end;
 
 constructor TRemotableTypeRegistry.Create;
 begin
@@ -808,9 +817,11 @@ begin
   { Clean up objects we've allocated }
   for I := 0 to Length(FObjsToDestroy) - 1 do
     begin
-       if (FObjsToDestroy[I] <> nil) and (FObjsToDestroy[I].InheritsFrom(TRemotable)) then
+       if (FObjsToDestroy[I] <> nil) then
          begin
-           TRemotable(FObjsToDestroy[I]).Free;
+//           if FObjsToDestroy[I].InheritsFrom(TRemotable) then
+//             TRemotable(FObjsToDestroy[I]).Free else
+             FObjsToDestroy[I].Free;
          end;
     end;
   SetLength(FObjsToDestroy, 0);
@@ -885,6 +896,7 @@ var
   Index, EmptySlot: Integer;
 begin
   EmptySlot := -1;
+  // DO NOT REPLACE WITH TArray.IndexOf<TObject>
   for Index := 0 to Length(FObjsToDestroy) -1 do
     begin
       if FObjsToDestroy[Index] = Obj then
@@ -892,6 +904,7 @@ begin
       if FObjsToDestroy[Index] = nil then
         EmptySlot := Index;
     end;
+
   if EmptySlot <> -1 then
     begin
       FObjsToDestroy[EmptySlot] := Obj;
@@ -956,18 +969,20 @@ begin
 end;
 
 procedure TInvContext.AllocServerData(const MD: TIntfMethEntry);
+
   function GetTypeSize(Info: PTypeInfo): Integer;
   var
     Context: TRttiContext;
     Typ: TRttiType;
   begin
     if (Info = TypeInfo(Variant)) or (Info = TypeInfo(OleVariant)) then
-      Exit(SizeOf(TVarData));                                                
+      Exit(SizeOf(TVarData));
     Result := SizeOf(Pointer);
     Typ := Context.GetType(Info);
     if Assigned(Typ) then
       Result := Typ.TypeSize;
   end;
+
 var
   I: Integer;
   Info: PTypeInfo;
@@ -977,33 +992,60 @@ begin
     begin
       P := AllocData(GetTypeSize(MD.Params[I].Info));
       SetParamPointer(I, P);
-      if MD.Params[I].Info.Kind = tkVariant then
-        begin
+      case MD.Params[I].Info.Kind of
+        tkVariant: begin
           Variant(PVarData(P)^) := NULL;
           AddVariantToClear(PVarData(P));
-        end else if MD.Params[I].Info.Kind = tkDynArray then
-        begin
+        end;
+        tkDynArray: begin
           AddDynArrayToClear(P, MD.Params[I].Info);
-    {$IFNDEF NEXTGEN}
-        end else if MD.Params[I].Info.Kind = tkLString then
-        begin
+        end;
+        {$IFNDEF NEXTGEN}
+        tkLString: begin
           PAnsiString(P)^ := '';
           AddStrToClear(P);
-    {$ENDIF !NEXTGEN}
-    {$IFDEF UNICODE}
-        end else if MD.Params[I].Info.Kind = tkUString then
-        begin
-          PUnicodeString(P)^ := '';
-          AddUStrToClear(P);
-    {$ENDIF}
-    {$IFNDEF NEXTGEN}
-        end else if MD.Params[I].Info.kind = tkWString then
-        begin
+        end;
+        tkWString: begin
           PWideString(P)^ := '';
           AddWStrToClear(P);
-    {$ENDIF !NEXTGEN}
         end;
+        {$ENDIF !NEXTGEN}
+        {$IFDEF UNICODE}
+        tkUString: begin
+          PUnicodeString(P)^ := '';
+          AddUStrToClear(P);
+        end;
+        {$ENDIF}
+      end;
+
+//      if MD.Params[I].Info.Kind = tkVariant then
+//        begin
+//          Variant(PVarData(P)^) := NULL;
+//          AddVariantToClear(PVarData(P));
+//        end else if MD.Params[I].Info.Kind = tkDynArray then
+//        begin
+//          AddDynArrayToClear(P, MD.Params[I].Info);
+//    {$IFNDEF NEXTGEN}
+//        end else if MD.Params[I].Info.Kind = tkLString then
+//        begin
+//          PAnsiString(P)^ := '';
+//          AddStrToClear(P);
+//    {$ENDIF !NEXTGEN}
+//    {$IFDEF UNICODE}
+//        end else if MD.Params[I].Info.Kind = tkUString then
+//        begin
+//          PUnicodeString(P)^ := '';
+//          AddUStrToClear(P);
+//    {$ENDIF}
+//    {$IFNDEF NEXTGEN}
+//        end else if MD.Params[I].Info.kind = tkWString then
+//        begin
+//          PWideString(P)^ := '';
+//          AddWStrToClear(P);
+//    {$ENDIF !NEXTGEN}
+//        end;
     end;
+
   Info := MD.ResultInfo;
   if Info <> nil then
     begin

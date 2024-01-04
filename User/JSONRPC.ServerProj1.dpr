@@ -9,22 +9,20 @@ uses
   IdHTTPWebBrokerBridge,
   System.Classes,
   System.JSON,
-  JSONRPC.Server.Dispatcher in 'JSONRPC.Server.Dispatcher.pas',
+  JSONRPC.Server.Dispatcher in '..\Server\JSONRPC.Server.Dispatcher.pas',
   JSONRPC.User.SomeTypes in '..\Common\JSONRPC.User.SomeTypes.pas',
   JSONRPC.RIO in '..\Common\JSONRPC.RIO.pas',
   JSONRPC.InvokeRegistry in '..\Common\JSONRPC.InvokeRegistry.pas',
   JSONRPC.Common.Types in '..\Common\JSONRPC.Common.Types.pas',
   JSONRPC.Common.Consts in '..\Common\JSONRPC.Common.Consts.pas',
-  JSONRPC.User.ServerImpl in 'JSONRPC.User.ServerImpl.pas',
   JSONRPC.JsonUtils in '..\Common\JSONRPC.JsonUtils.pas',
-  JSONRPC.WebBrokerJSONRPC in 'JSONRPC.WebBrokerJSONRPC.pas',
-  JSONRPC.Server.Runner in 'JSONRPC.Server.Runner.pas',
-  JSONRPC.Server.Listener in 'JSONRPC.Server.Listener.pas',
+  JSONRPC.WebBrokerJSONRPC in '..\Server\JSONRPC.WebBrokerJSONRPC.pas',
+  JSONRPC.Server.Runner in '..\Server\JSONRPC.Server.Runner.pas',
   Web.WebReq,
-  JSONRPCWebModule in 'JSONRPCWebModule.pas' {JSONRPCWebModule1: TWebModule},
-  WebModuleUnit1 in 'WebModuleUnit1.pas' {WebModule1: TWebModule},
-  JSONRPC.Server.Consts in 'JSONRPC.Server.Consts.pas',
-  JSONRPC.Common.RecordHandlers in '..\Common\JSONRPC.Common.RecordHandlers.pas';
+  JSONRPCWebModule in '..\Server\JSONRPCWebModule.pas' {JSONRPCWebModule1: TWebModule},
+  JSONRPC.Server.Consts in '..\Server\JSONRPC.Server.Consts.pas',
+  JSONRPC.Common.RecordHandlers in '..\Common\JSONRPC.Common.RecordHandlers.pas',
+  JSONRPC.User.ServerImpl in 'JSONRPC.User.ServerImpl.pas';
 
 {$R *.res}
 
@@ -158,11 +156,11 @@ begin
         begin
           WriteLn('Dispatched JSON RPC: ', AJSONRequest);
         end);
-        SetOnReceivedJSONRPC(procedure (const AJSONRequest: string)
+        SetOnLogIncomingJSONRequest(procedure (const AJSONRequest: string)
         begin
           WriteLn('Received JSON RPC: ', AJSONRequest);
         end);
-        SetOnSentJSONRPC(procedure (const AJSONResponse: string)
+        SetOnLogOutgoingJSONResponse(procedure (const AJSONResponse: string)
         begin
           WriteLn('Sent JSON RPC: ', AJSONResponse);
         end);

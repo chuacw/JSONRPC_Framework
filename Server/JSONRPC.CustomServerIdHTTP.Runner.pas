@@ -1,4 +1,4 @@
-unit JSONRPC.ServerIdHTTP.Runner;
+unit JSONRPC.CustomServerIdHTTP.Runner;
 
 interface
 
@@ -8,8 +8,9 @@ uses
 
 type
 
-  TJSONRPCServerIdHTTPRunner = class(TJSONRPCServerRunner, IJSONRPCDispatch,
-    IJSONRPCGetSetDispatchEvents, IJSONRPCDispatchEvents)
+  TCustomJSONRPCServerIdHTTPRunner = class abstract(TCustomJSONRPCServerRunner,
+    IJSONRPCDispatch, IJSONRPCGetSetDispatchEvents, IJSONRPCDispatchEvents
+  )
   protected
     FServer: TIdHTTPServer;
 
@@ -18,6 +19,7 @@ type
 
     procedure CreateServer; override;
     procedure FreeServer; override;
+    procedure SetHttpServer(const AServer: TIdHTTPServer);
 
     procedure ReadStream(AContext: TIdContext; AStream: TStream);
     procedure IncomingDataExecute(AContext: TIdContext);
@@ -50,7 +52,7 @@ type
 
     property Active: Boolean read GetActive write SetActive;
     property Port: Integer read GetPort write SetPort;
-    property Server: TIdHTTPServer read FServer;
+    property Server: TIdHTTPServer read FServer write SetHttpServer;
   end;
 
 implementation
@@ -58,9 +60,9 @@ implementation
 uses
   IdStack, IPPeerAPI, IPPeerServer, System.SysUtils, JSONRPC.Common.Consts;
 
-{ TJSONRPCServerIdHTTPRunner }
+{ TCustomJSONRPCServerIdHTTPRunner }
 
-function TJSONRPCServerIdHTTPRunner.BindPort(APort: Integer): Boolean;
+function TCustomJSONRPCServerIdHTTPRunner.BindPort(APort: Integer): Boolean;
 var
   LTestServer: IIPTestServer;
 begin
@@ -73,7 +75,7 @@ begin
   end;
 end;
 
-function TJSONRPCServerIdHTTPRunner.CheckPort(const APort: Integer): Integer;
+function TCustomJSONRPCServerIdHTTPRunner.CheckPort(const APort: Integer): Integer;
 begin
   if BindPort(APort) then
     Result := APort
@@ -81,50 +83,63 @@ begin
     Result := 0;
 end;
 
-function TJSONRPCServerIdHTTPRunner.CheckPort(const APort: string): Integer;
+function TCustomJSONRPCServerIdHTTPRunner.CheckPort(const APort: string): Integer;
 begin
   Result := CheckPort(APort.ToInteger);
 end;
 
-procedure TJSONRPCServerIdHTTPRunner.CreateServer;
+procedure TCustomJSONRPCServerIdHTTPRunner.CreateServer;
 begin
-  FServer := TIdHTTPServer.Create(nil);
+  CreateServerWrapper;
+
+  if not Assigned(FServer) then
+    Server := TIdHTTPServer.Create(nil);
+end;
+
+procedure TCustomJSONRPCServerIdHTTPRunner.FreeServer;
+begin
+  if Assigned(FServer) then
+    FServer.StopListening;
+  FreeAndNil(FServer);
+
+  FreeServerWrapper;
+end;
+
+procedure TCustomJSONRPCServerIdHTTPRunner.SetHttpServer(const AServer: TIdHTTPServer);
+begin
+  if FServer <> AServer then
+    FServer.Free;
+  FServer := AServer;
   FServer.OnCommandGet := HandlePostGet;
 end;
 
-procedure TJSONRPCServerIdHTTPRunner.FreeServer;
-begin
-  FServer.StopListening;
-  FServer.Free;
-end;
-
-procedure TJSONRPCServerIdHTTPRunner.DoNotifyPortSet;
+procedure TCustomJSONRPCServerIdHTTPRunner.DoNotifyPortSet;
 begin
   if Assigned(FOnNotifyPortSet) then
     FOnNotifyPortSet(FServer.DefaultPort);
 end;
 
-function TJSONRPCServerIdHTTPRunner.GetActive: Boolean;
+function TCustomJSONRPCServerIdHTTPRunner.GetActive: Boolean;
 begin
   Result := FServer.Active;
 end;
 
-function TJSONRPCServerIdHTTPRunner.GetAddress: string;
+function TCustomJSONRPCServerIdHTTPRunner.GetAddress: string;
 begin
   Result := '';
 end;
 
-function TJSONRPCServerIdHTTPRunner.GetHost: string;
+function TCustomJSONRPCServerIdHTTPRunner.GetHost: string;
 begin
   Result := '';
 end;
 
-function TJSONRPCServerIdHTTPRunner.GetPort: Integer;
+function TCustomJSONRPCServerIdHTTPRunner.GetPort: Integer;
 begin
   Result := FServer.DefaultPort;
 end;
 
-procedure TJSONRPCServerIdHTTPRunner.HandlePostGet(AContext: TIdContext;
+procedure TCustomJSONRPCServerIdHTTPRunner.HandlePostGet(AContext: TIdContext;
   ARequestInfo: TIdHTTPRequestInfo; AResponseInfo: TIdHTTPResponseInfo);
 begin
   ARequestInfo.PostStream.Position := 0;
@@ -136,7 +151,7 @@ begin
   AResponseInfo.ContentType := SApplicationJson;
 end;
 
-procedure TJSONRPCServerIdHTTPRunner.IncomingDataExecute(AContext: TIdContext);
+procedure TCustomJSONRPCServerIdHTTPRunner.IncomingDataExecute(AContext: TIdContext);
 begin
   FRequest.Size := 0;
   FResponse.Size := 0;
@@ -149,7 +164,7 @@ begin
   AContext.Connection.IOHandler.Write(FResponse);
 end;
 
-procedure TJSONRPCServerIdHTTPRunner.ReadStream(AContext: TIdContext; AStream: TStream);
+procedure TCustomJSONRPCServerIdHTTPRunner.ReadStream(AContext: TIdContext; AStream: TStream);
 begin
   try
     AContext.Connection.IOHandler.ReadStream(AStream);
@@ -158,12 +173,12 @@ begin
   end;
 end;
 
-procedure TJSONRPCServerIdHTTPRunner.SetActive(const Value: Boolean);
+procedure TCustomJSONRPCServerIdHTTPRunner.SetActive(const Value: Boolean);
 begin
   FServer.Active := Value;
 end;
 
-procedure TJSONRPCServerIdHTTPRunner.SetAddress(const Value: string);
+procedure TCustomJSONRPCServerIdHTTPRunner.SetAddress(const Value: string);
 begin
   var LIP := GStack.ResolveHost(Value);
   if FServer.Bindings.Count = 0 then
@@ -173,7 +188,7 @@ begin
   FServer.Bindings[0].IP := LIP;
 end;
 
-procedure TJSONRPCServerIdHTTPRunner.SetHost(const Value: string);
+procedure TCustomJSONRPCServerIdHTTPRunner.SetHost(const Value: string);
 begin
   var LIP := GStack.ResolveHost(Value);
   if FServer.Bindings.Count = 0 then
@@ -183,7 +198,7 @@ begin
   FServer.Bindings[0].IP := LIP;
 end;
 
-procedure TJSONRPCServerIdHTTPRunner.SetPort(const APort: Integer);
+procedure TCustomJSONRPCServerIdHTTPRunner.SetPort(const APort: Integer);
 begin
   if not FServer.Active then
     begin
@@ -198,7 +213,7 @@ begin
     end
 end;
 
-procedure TJSONRPCServerIdHTTPRunner.StartServer(const APort: Integer = 0);
+procedure TCustomJSONRPCServerIdHTTPRunner.StartServer(const APort: Integer = 0);
 var
   LPort: Integer;
 begin
@@ -222,7 +237,7 @@ begin
     end;
 end;
 
-procedure TJSONRPCServerIdHTTPRunner.StopServer;
+procedure TCustomJSONRPCServerIdHTTPRunner.StopServer;
 begin
   FServer.Active := False;
   DoNotifyServerIsInactive;

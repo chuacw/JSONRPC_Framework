@@ -42,7 +42,8 @@ implementation
 uses
   System.Math,
   Soap.SOAPAttach,
-  Soap.SOAPConst;
+  Soap.SOAPConst
+  ;
 
 threadvar
   JSONRPCWebModule:  TWebModule;

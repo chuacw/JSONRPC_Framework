@@ -13,8 +13,6 @@ uses
   JSONRPC.Common.Types in '..\..\Common\JSONRPC.Common.Types.pas',
   JSONRPC.Common.RecordHandlers in '..\..\Common\JSONRPC.Common.RecordHandlers.pas',
   JSONRPC.Common.Consts in '..\..\Common\JSONRPC.Common.Consts.pas',
-  System.Net.ClientSocket in '..\..\..\NetSocket\Client\System.Net.ClientSocket.pas',
-  System.Net.Socket.Common in '..\..\..\NetSocket\Common\System.Net.Socket.Common.pas',
   JSONRPC.User.BitcoinRPC in 'JSONRPC.User.BitcoinRPC.pas',
   JSONRPC.User.BitcoinTypes in 'JSONRPC.User.BitcoinTypes.pas',
   JSONRPC.User.Types.MemoryInfo in 'JSONRPC.User.Types.MemoryInfo.pas',

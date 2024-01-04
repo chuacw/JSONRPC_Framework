@@ -281,6 +281,9 @@ type
 {$WARN HIDING_MEMBER ON}
   end;
 
+  EJSONRPCClassException = class(EJSONRPCException)
+  end;
+
   EJSONRPCParamParsingException = class(EJSONRPCException)
   end;
 
@@ -396,7 +399,10 @@ var
 implementation
 
 uses
-  JSONRPC.Common.RecordHandlers, Velthuis.BigDecimals, Velthuis.BigIntegers,
+  JSONRPC.Common.RecordHandlers,
+  // Comment out the two following units to remove support for
+  // BigDecimals and BigIntegers
+  Velthuis.BigDecimals, Velthuis.BigIntegers,
   JSONRPC.JsonUtils, JSONRPC.Common.Consts;
 
 { TJSONRPCBoolean }
@@ -555,6 +561,7 @@ end;
 
 initialization
 
+  {$IF DECLARED(BigDecimal)}
   RegisterRecordHandler(TypeInfo(BigDecimal),
     procedure(
       const APassParamByPosOrName: TPassParamByPosOrName;
@@ -599,8 +606,8 @@ initialization
     end
   );
 
-  // Delphi cannot handle the precision of Extended
-  // if the client is 32-bit and the server is 64-bit
+  // Delphi cannot handle the precision of Extended.
+  // if the client is 32-bit and the server is 64-bit,
   // then convert to BigDecimal
 
   RegisterRecordHandler(TypeInfo(Extended),
@@ -653,7 +660,9 @@ initialization
       Result := TValue.From(StrToFloat(AJSON));
     end
   );
+  {$ENDIF}
 
+  {$IF DECLARED(BigInteger)}
   RegisterRecordHandler(TypeInfo(BigInteger),
     // NativeToJSON
     procedure(
@@ -722,5 +731,6 @@ initialization
       Result := TValue.From(LBigInteger);
     end
   );
+  {$ENDIF}
 
 end.

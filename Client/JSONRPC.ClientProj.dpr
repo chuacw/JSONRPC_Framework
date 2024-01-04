@@ -6,7 +6,8 @@ program JSONRPC.ClientProj;
 
 uses
   JSONRPC.RIO in '..\Common\JSONRPC.RIO.pas',
-  System.Classes, System.Generics.Collections,
+  System.Classes,
+  System.Generics.Collections,
   System.Rtti,
   System.JSON,
   System.SysUtils,
@@ -22,8 +23,6 @@ uses
   JSONRPC.JsonUtils in '..\Common\JSONRPC.JsonUtils.pas',
   JSONRPC.TransportWrapper.HTTP in '..\Common\JSONRPC.TransportWrapper.HTTP.pas',
   JSONRPC.User.SomeTypes.Impl in 'JSONRPC.User.SomeTypes.Impl.pas',
-  System.Net.ClientSocket in '..\..\NetSocket\Client\System.Net.ClientSocket.pas',
-  System.Net.Socket.Common in '..\..\NetSocket\Common\System.Net.Socket.Common.pas',
   JSONRPC.Common.RecordHandlers in '..\Common\JSONRPC.Common.RecordHandlers.pas';
 
 procedure Main;
@@ -40,14 +39,20 @@ begin
     end
   );
   try
-
+    Write('Press enter to see the value, press enter again to continue...');
+    var LEnum := LJSONRPC.GetEnum(enumB);
+    ReadLn;
+    WriteLn(GetEnumName(TypeInfo(TEnum), Ord(LEnum)));
+    ReadLn;
     LJSONRPC.SendBool(True);
 //    var AList := TList<Integer>.Create;
 //    AList.AddRange([1, 2, 3, 4, 5]);
 //    var LResultList := LJSONRPC.SendSomeList(AList);
 
+{$IF DECLARED(ISomeJSONRPC_SendExtended)}
     var LResultExtended := LJSONRPC.SendExtended(Extended.MaxValue);
     Assert(LResultExtended = Extended.MaxValue, 'Roundtripping failed');
+{$ENDIF}
 
     // Pass by position, or pass by name, default = pass params by name
     SetPassParamsByPosition(LJSONRPC);
@@ -97,10 +102,14 @@ begin
         end;
     end;
 
+{$IF DECLARED(ISomeJSONRPC_SendBigInteger)}
     var LResultBigInt := LJSONRPC.SendBigInteger(UInt64.MaxValue);
+{$ENDIF}
 
+{$IF DECLARED(ISomeJSONRPC_SendExtended)}
 // This needs to run in 32-bit and the server needs to run in 64-bit
     var LExtendedResult := LJSONRPC.SendExtended(Extended.MaxValue);
+{$ENDIF}
 
     // A safecall do not need any exception handler
     // it uses the one assigned by AssignSafeCallExceptionHandler
@@ -108,7 +117,7 @@ begin
     // This causes an exception that's trapped above
     LJSONRPC.SomeSafeCallException;
 
-    var LEnum := LJSONRPC.GetEnum(enumB);
+    LEnum := LJSONRPC.GetEnum(enumB);
     var LResult := LJSONRPC.SendData([[False, False], [False, True]]);
     LResult := LJSONRPC.SendData([[5], [6]]);
     LResult := LJSONRPC.SendData([['A'], ['B']]);

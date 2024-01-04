@@ -27,15 +27,16 @@ uses
   JSONRPC.InvokeRegistry in '..\Common\JSONRPC.InvokeRegistry.pas',
   JSONRPC.Common.Types in '..\Common\JSONRPC.Common.Types.pas',
   JSONRPC.Common.Consts in '..\Common\JSONRPC.Common.Consts.pas',
-  JSONRPC.User.ServerImpl in '..\Server\JSONRPC.User.ServerImpl.pas',
+  JSONRPC.User.ServerImpl in '..\User\JSONRPC.User.ServerImpl.pas',
   TestJSONRPC.Client in 'TestJSONRPC.Client.pas',
   JSONRPC.ServerBase.Runner in '..\Server\JSONRPC.ServerBase.Runner.pas',
   JSONRPC.User.SomeTypes.Impl in '..\Client\JSONRPC.User.SomeTypes.Impl.pas',
-  JSONRPC.ServerIdHTTP.Runner in '..\Server\JSONRPC.ServerIdHTTP.Runner.pas',
   JSONRPC.TransportWrapper.HTTP in '..\Common\JSONRPC.TransportWrapper.HTTP.pas',
   DUnitX.Loggers.XML.NUnit,
   JSONRPC.Common.FixBuggyNativeTypes in '..\Common\JSONRPC.Common.FixBuggyNativeTypes.pas',
-  JSONRPC.Common.RecordHandlers in '..\Common\JSONRPC.Common.RecordHandlers.pas';
+  JSONRPC.Common.RecordHandlers in '..\Common\JSONRPC.Common.RecordHandlers.pas',
+  JSONRPC.CustomServerIdHTTP.Runner in '..\Server\JSONRPC.CustomServerIdHTTP.Runner.pas',
+  TestJSONRPC.JSONRPCHTTPServer in 'TestJSONRPC.JSONRPCHTTPServer.pas';
 
 // Comments to prevent {$IFNDEF } from being overwritten
 

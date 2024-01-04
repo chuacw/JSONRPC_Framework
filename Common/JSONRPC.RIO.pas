@@ -46,7 +46,7 @@ type
   var
     FIntfMD: TIntfMetaData;
     FPassByPosOrName: TPassParamByPosOrName;
-    FEnumByName: Boolean;
+    FPassEnumByName: Boolean;
     procedure InitClient; virtual; abstract;
     procedure SetInvokeMethod; virtual; abstract;
     procedure DoDispatch(const AContext: TInvContext; AMethNum: Integer;
@@ -97,9 +97,20 @@ type
     function GetPassEnumByName: Boolean;
     procedure SetPassEnumByName(const AValue: Boolean);
 
+    /// <summary> Passes enum by name, if true. Client side must match the server side.
+    /// </summary>
     property PassEnumByName: Boolean read GetPassEnumByName write SetPassEnumByName;
+
+    /// <summary> Passes parameters by name, if true. Client side must match the server side.
+    /// </summary>
     property PassParamsByName: Boolean read GetPassParamsByName write SetPassParamsByName;
+
+    /// <summary> Passes parameters by position, if true. Client side must match the server side.
+    /// </summary>
     property PassParamsByPos: Boolean read GetPassParamsByPosition write SetPassParamsByPosition;
+
+    /// <summary> Passes parameters by position, if true. Client side must match the server side.
+    /// </summary>
     property PassParamsByPosition: Boolean read GetPassParamsByPosition write SetPassParamsByPosition;
   end;
 {$ENDIF}
@@ -129,6 +140,8 @@ type
     FClient: TJSONRPCTransportWrapper;
     {$IF NOT DEFINED(BASECLASS)}
     FIntfMD: TIntfMetaData;
+    FPassByPosOrName: TPassParamByPosOrName;
+    FEnumByName: Boolean;
     {$ENDIF}
     FInterface: IInterface;
     FOnBeforeExecute: TBeforeExecuteEvent;
@@ -140,9 +153,6 @@ type
     FMethodNames: TArray<string>;
 
     FOnSync: TOnSyncEvent;
-    {$IF NOT DEFINED(BASECLASS)}
-    FPassByPosOrName: TPassParamByPosOrName;
-    {$ENDIF}
     FOnSafeCallException: TOnSafeCallException;
     FIID: TGUID;
     FRefCount: Integer;
@@ -184,7 +194,19 @@ type
     procedure DoSync(AJSONRequest, AJSONResponse: TStream); virtual;
 
     procedure DoDispatch(const AContext: TInvContext; AMethNum: Integer; const AMethMD: TIntfMethEntry); {$IF DEFINED(BASECLASS)}override;{$ENDIF}
+
+    /// <summary>
+    /// Logs the outgoing request.
+    /// <remarks> It is essential that any exceptions be trapped within.
+    /// </remarks>
+    /// </summary>
     procedure DoLogOutgoingRequest(const ARequest: string);
+
+    /// <summary>
+    /// Logs the incoming response.
+    /// <remarks> It is essential that any exceptions be trapped within.
+    /// </remarks>
+    /// </summary>
     procedure DoLogIncomingResponse(const AResponse: string);
 
     function DoParseEnum(const ARttiContext: TRttiContext;
@@ -211,6 +233,8 @@ type
     /// <summary>
     /// Called when the final server URL has changed before a request is going to be submitted.
     /// This is for JSON RPC servers like Aptos, where every method has a different URL.
+    /// <remarks> It is essential that any exceptions be trapped within.
+    /// </remarks>
     /// </summary>
     procedure DoLogServerURL(const AURL: string);
 
@@ -233,12 +257,12 @@ type
 
     {$IF NOT DEFINED(BASECLASS)}
     { IPassParamsByName }
-    function GetParamsPassByName: Boolean;
-    procedure SetParamsPassByName(const AValue: Boolean);
+    function GetPassParamsByName: Boolean;
+    procedure SetPassParamsByName(const AValue: Boolean);
 
     { IPassParamsByPosition }
-    function GetParamsPassByPosition: Boolean;
-    procedure SetParamsPassByPosition(const AValue: Boolean);
+    function GetPassParamsByPosition: Boolean;
+    procedure SetPassParamsByPosition(const AValue: Boolean);
 
     { IPassEnumByName }
     function GetPassEnumByName: Boolean;
@@ -348,13 +372,13 @@ type
     {$IF NOT DEFINED(BASECLASS)}
     /// <summary> Specifies that parameters will be passed/sent by position in the params array
     /// </summary>
-    property PassParamsByPos: Boolean read GetParamsPassByPosition write SetParamsPassByPosition;
+    property PassParamsByPos: Boolean read GetPassParamsByPosition write SetPassParamsByPosition;
     /// <summary> Specifies that parameters will be passed/sent by position in the params array
     /// </summary>
-    property PassParamsByPosition: Boolean read GetParamsPassByPosition write SetParamsPassByPosition;
+    property PassParamsByPosition: Boolean read GetPassParamsByPosition write SetPassParamsByPosition;
     /// <summary> Specifies that parameters will be passed/sent by name in the params object
     /// </summary>
-    property PassParamsByName: Boolean read GetParamsPassByName write SetParamsPassByName;
+    property PassParamsByName: Boolean read GetPassParamsByName write SetPassParamsByName;
     {$ENDIF}
 
     /// <summary> Specifies the connnection timeout, when connecting to the server
@@ -388,9 +412,27 @@ type
     FOnBeforeDispatchJSONRPC: TOnBeforeDispatchJSONRPC;
     FOnDispatchedJSONRPC: TOnDispatchedJSONRPC;
 
+    FPersistent: Boolean;
+    FJSONRPCInstance: IJSONRPCMethods;
+
+    procedure SetPersistent(const Value: Boolean);
+    function CreateInvokableClass(AClass: TInvokableClassClass): TObject;
+
     procedure DoBeforeDispatchJSONRPC(var AJSONResponse: string);
     procedure DoDispatchedJSONRPC(const AJSONRequest: string);
+
+    /// <summary>
+    /// Logs the incoming request.
+    /// <remarks> It is essential that any exceptions be trapped within.
+    /// </remarks>
+    /// </summary>
     procedure DoLogIncomingRequest(const ARequest: string);
+
+    /// <summary>
+    /// Logs the outgoing response.
+    /// <remarks> It is essential that any exceptions be trapped within.
+    /// </remarks>
+    /// </summary>
     procedure DoLogOutgoingResponse(const AResponse: string);
 
     { IJSONRPCGetSetDispatchEvents }
@@ -427,9 +469,12 @@ type
     property OnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse
       read FOnLogOutgoingJSONResponse write FOnLogOutgoingJSONResponse;
 
+    property Persistent: Boolean read FPersistent write SetPersistent;
+
   end;
 
 procedure RegisterJSONRPCWrapper(const ATypeInfo: PTypeInfo);
+procedure RegisterInvokableClass(const AClass: TClass);
 
 /// <summary>
 /// Handles exceptions generated by safecall methods
@@ -501,27 +546,36 @@ begin
   TJSONRPCWrapper.RegisterWrapper(ATypeInfo);
 end;
 
+procedure RegisterInvokableClass(const AClass: TClass);
+begin
+  InvRegistry.RegisterInvokableClass(AClass);
+end;
+
 {$IF DEFINED(BASECLASS)}
 constructor TBaseJSONRPCWrapper.Create(AOwner: TComponent);
 begin
   inherited;
+
+  PassEnumByName := True;
+  PassParamsByName := True;
 end;
 
-{ TBaseJSONRPCWrapper.TRioVirtualInterface }
 procedure TBaseJSONRPCWrapper.DoDispatch(const AContext: TInvContext;
   AMethNum: Integer; const AMethMD: TIntfMethEntry);
 begin
 end;
 
+{ TBaseJSONRPCWrapper.TRioVirtualInterface }
 constructor TBaseJSONRPCWrapper.TRioVirtualInterface.Create(ARio: TJSONRPCWrapper;
   AInterface: Pointer);
 begin
-  FRio := ARio;
   inherited Create(AInterface);
+  FRio := ARio;
 end;
 
 destructor TBaseJSONRPCWrapper.TRioVirtualInterface.Destroy;
 begin
+  FRio := nil;
   inherited;
 end;
 
@@ -585,12 +639,12 @@ end;
 
 function TBaseJSONRPCWrapper.GetPassEnumByName: Boolean;
 begin
-  Result := FEnumByName;
+  Result := FPassEnumByName;
 end;
 
 procedure TBaseJSONRPCWrapper.SetPassEnumByName(const AValue: Boolean);
 begin
-  FEnumByName := AValue;
+  FPassEnumByName := AValue;
 end;
 {$ENDIF}
 
@@ -811,22 +865,27 @@ function TJSONRPCWrapper.GetOnLogOutgoingJSONRequest: TOnLogOutgoingJSONRequest;
 begin
   Result := FOnLogOutgoingJSONRequest;
 end;
+
 procedure TJSONRPCWrapper.SetOnLogOutgoingJSONRequest(const AProc: TOnLogOutgoingJSONRequest);
 begin
   FOnLogOutgoingJSONRequest := AProc;
 end;
+
 function TJSONRPCWrapper.GetOnLogIncomingJSONResponse: TOnLogIncomingJSONResponse;
 begin
   Result := FOnLogIncomingJSONResponse;
 end;
+
 procedure TJSONRPCWrapper.SetOnLogIncomingJSONResponse(const AProc: TOnLogIncomingJSONResponse);
 begin
   FOnLogIncomingJSONResponse := AProc;
 end;
+
 function TJSONRPCWrapper.GetOnLogServerURL: TOnLogServerURL;
 begin
   Result := FOnLogServerURL;
 end;
+
 procedure TJSONRPCWrapper.SetOnLogServerURL(const AProc: TOnLogServerURL);
 begin
   FOnLogServerURL := AProc;
@@ -917,232 +976,247 @@ begin
     {$REGION 'Parameter parsing, handling'}
     if AMethMD.ParamCount > 0 then
       begin
-
         var LParamsObj: TJSONObject := nil;
         var LParamsArray: TJSONArray := nil;
         if FPassByPosOrName = tppByPos then
           LParamsArray := TJSONArray.Create else
           LParamsObj := TJSONObject.Create;
+        try
+          {$REGION 'Loop through parameters'}
+          for var I := 1 to AMethMD.ParamCount do
+            begin
+              var LParamValuePtr := AContext.GetParamPointer(I-1);
+              var LParamName := AMethMD.Params[I-1].Name;
 
-        for var I := 1 to AMethMD.ParamCount do
-          begin
-            var LParamValuePtr := AContext.GetParamPointer(I-1);
-            var LParamName := AMethMD.Params[I-1].Name;
-
-            // parse outgoing / handle outgoing data from client to server
-            {$REGION 'Parse outgoing data from client to server'}
-            var LParamTypeInfo := AMethMD.Params[I-1].Info;
-            case LParamTypeInfo.Kind of
-              tkArray,
-              tkDynArray: begin
-                var LJSONObj := ArrayToJSONArray(LParamValuePtr^, LParamTypeInfo);
-                case FPassByPosOrName of
-                  tppByName: LParamsObj.AddPair(LParamName, LJSONObj);
-                  tppByPos:  LParamsArray.Add(LJSONObj);
-                end;
-              end;
-              tkRecord: begin
-                var LHandlers: TRecordHandlers;
-                if LookupRecordHandlers(LParamTypeInfo, LHandlers) then
-                  begin
-                    LHandlers.NativeToJSON(FPassByPosOrName, LParamTypeInfo,
-                      LParamName, LParamValuePtr, LParamsObj, LParamsArray);
-                  end else
-                  begin
-                    var LJSON := SerializeRecord(LParamValuePtr^, LParamTypeInfo);
-                    var LJSONObj := TJSONObject.ParseJSONValue(LJSON);
-                    case FPassByPosOrName of
-                      tppByName: LParamsObj.AddPair(LParamName, LJSONObj);
-                      tppByPos:  LParamsArray.AddElement(LJSONObj);
-                    end;
-                  end;
-              end;
-              tkEnumeration: begin
-                // First chance to parse enum
-                if not DoParseEnum(FRttiContext, AMethMD, I, LParamTypeInfo, LParamValuePtr, LParamsObj, LParamsArray) then
-                  begin
-                  // Only possible types are boolean, WordBool, LongBool, etc
-                  // marshalled as string or as True/False???
-                    if IsBoolType(LParamTypeInfo) then
-                      begin
-                        var LValue: Boolean;
-                        case LParamTypeInfo^.TypeData^.OrdType of
-    //                    case GetTypeData(LParamTypeInfo)^.OrdType of
-                          otSByte, otUByte: begin
-                            LValue := PBoolean(LParamValuePtr)^;
-                          end;
-                          otSWord, otUWord: begin
-                            LValue := PWordBool(LParamValuePtr)^;
-                          end;
-                          otSLong, otULong: begin
-                            LValue := PLongBool(LParamValuePtr)^;
-                          end;
-                        else
-                          // This currently won't happen, because there's only
-                          // 6 ordinal types as defined.
-                          Assert(False, 'Unhandled new ordinal type!');
-                        end;
-                        case FPassByPosOrName of
-                          tppByName: LParamsObj.AddPair(LParamName, TJSONBool.Create(LValue));
-                          tppByPos:  LParamsArray.Add(LValue);
-                        end;
-                      end else
-                      begin // Looks like it's really an enum!
-                        var LValue := GetEnumName(LParamTypeInfo, PByte(LParamValuePtr)^);
-                        case FPassByPosOrName of
-                          tppByName: LParamsObj.AddPair(LParamName, LValue);
-                          tppByPos:  LParamsArray.Add(LValue);
-                        end;
-                      end;
-                  end else
-                  begin
-                    var LValue := PByte(LParamValuePtr)^;
-                    case FPassByPosOrName of
-                      tppByName: LParamsObj.AddPair(LParamName, LValue);
-                      tppByPos:  LParamsArray.Add(LValue);
-                    end;
-                  end;
-              end;
-              tkLString, tkString, tkUString, tkWString:
-                case FPassByPosOrName of
-                  tppByName: LParamsObj.AddPair(LParamName, PString(LParamValuePtr)^);
-                  tppByPos:  LParamsArray.Add(PString(LParamValuePtr)^);
-                end;
-              tkInteger: begin
-                var LTypeInfo := LParamTypeInfo;
-                var LTypeName := string(LTypeInfo^.Name);
-                case LTypeInfo.TypeData.OrdType of
-                  otSByte: begin // ShortInt
-                    Assert(SameText(LTypeName, 'ShortInt'), 'Type mismatch!');
-                    case FPassByPosOrName of
-                      tppByName: LParamsObj.AddPair(LParamName, PShortInt(LParamValuePtr)^);
-                      tppByPos:  LParamsArray.Add(PShortInt(LParamValuePtr)^);
-                    end;
-                  end;
-                  otSWord: begin
-                    Assert(SameText(LTypeName, 'SmallInt'), 'Type mismatch!');
-                    case FPassByPosOrName of
-                      tppByName: LParamsObj.AddPair(LParamName, PSmallInt(LParamValuePtr)^);
-                      tppByPos:  LParamsArray.Add(PSmallInt(LParamValuePtr)^);
-                    end;
-                  end;
-                  otSLong: begin // Integer
-                    Assert(SameText(LTypeName, 'Integer'), 'Type mismatch!');
-                    case FPassByPosOrName of
-                      tppByName: LParamsObj.AddPair(LParamName, PInteger(LParamValuePtr)^);
-                      tppByPos:  LParamsArray.Add(PInteger(LParamValuePtr)^);
-                    end;
-                  end;
-                  otUByte: begin // Byte
-                    Assert(SameText(LTypeName, 'Byte'), 'Type mismatch!');
-                    case FPassByPosOrName of
-                      tppByName: LParamsObj.AddPair(LParamName, PByte(LParamValuePtr)^);
-                      tppByPos:  LParamsArray.Add(PByte(LParamValuePtr)^);
-                    end;
-                  end;
-                  otUWord: begin
-                    Assert(SameText(LTypeName, 'Word'), 'Type mismatch!');
-                    case FPassByPosOrName of
-                      tppByName: LParamsObj.AddPair(LParamName, PWord(LParamValuePtr)^);
-                      tppByPos:  LParamsArray.Add(PWord(LParamValuePtr)^);
-                    end;
-                  end;
-                  otULong: begin // Cardinal
-                    Assert(SameText(LTypeName, 'Cardinal'), 'Type mismatch!');
-                    case FPassByPosOrName of
-                      tppByName: LParamsObj.AddPair(LParamName, PCardinal(LParamValuePtr)^);
-                      tppByPos:  LParamsArray.Add(PCardinal(LParamValuePtr)^);
-                    end;
+              // parse outgoing / handle outgoing data from client to server
+              {$REGION 'Parse outgoing data from client to server'}
+              var LParamTypeInfo := AMethMD.Params[I-1].Info;
+              case LParamTypeInfo.Kind of
+                tkArray,
+                tkDynArray: begin
+                  var LJSONObj := ArrayToJSONArray(LParamValuePtr^, LParamTypeInfo);
+                  case FPassByPosOrName of
+                    tppByName: LParamsObj.AddPair(LParamName, LJSONObj);
+                    tppByPos:  LParamsArray.Add(LJSONObj);
                   end;
                 end;
-
-              end;
-              tkFloat: begin
-                var LFloatType := LParamTypeInfo^.TypeData.FloatType;
-                CheckFloatType(LFloatType);
-                case LFloatType of
-//                  ftComp: begin
-//                    var LParamValue := PComp(LParamValuePtr)^;
-//                    case FPassByPosOrName of
-//                      tppByName: LParamsObj.AddPair(LParamName, LParamValue);
-//                      tppByPos:  LParamsArray.Add(LParamValue);
-//                    end;
-//                  end;
-                  ftCurr: begin
-                    var LParamValue := PCurrency(LParamValuePtr)^;
+                tkRecord: begin
+                  var LHandlers: TRecordHandlers;
+                  if LookupRecordHandlers(LParamTypeInfo, LHandlers) then
                     begin
+                      LHandlers.NativeToJSON(FPassByPosOrName, LParamTypeInfo,
+                        LParamName, LParamValuePtr, LParamsObj, LParamsArray);
+                    end else
+                    begin
+                      var LJSON := SerializeRecord(LParamValuePtr^, LParamTypeInfo);
+                      var LJSONObj := TJSONObject.ParseJSONValue(LJSON);
                       case FPassByPosOrName of
-                        tppByName: LParamsObj.AddPair(LParamName, LParamValue);
-                        tppByPos:  LParamsArray.Add(LParamValue);
+                        tppByName: LParamsObj.AddPair(LParamName, LJSONObj);
+                        tppByPos:  LParamsArray.AddElement(LJSONObj);
+                      end;
+                    end;
+                end;
+                tkEnumeration: begin
+                  // First chance to parse enum
+                  if not DoParseEnum(FRttiContext, AMethMD, I, LParamTypeInfo, LParamValuePtr, LParamsObj, LParamsArray) then
+                    begin
+                    // Only possible types are boolean, WordBool, LongBool, etc
+                    // marshalled as string or as True/False???
+                      if IsBoolType(LParamTypeInfo) then
+                        begin
+                          var LValue: Boolean;
+                          case LParamTypeInfo^.TypeData^.OrdType of
+      //                    case GetTypeData(LParamTypeInfo)^.OrdType of
+                            otSByte, otUByte: begin
+                              LValue := PBoolean(LParamValuePtr)^;
+                            end;
+                            otSWord, otUWord: begin
+                              LValue := PWordBool(LParamValuePtr)^;
+                            end;
+                            otSLong, otULong: begin
+                              LValue := PLongBool(LParamValuePtr)^;
+                            end;
+                          else
+                            // This currently won't happen, because there's only
+                            // 6 ordinal types (for boolean) as defined.
+                            Assert(False, 'Unhandled new ordinal type!');
+                          end;
+                          case FPassByPosOrName of
+                            tppByName: LParamsObj.AddPair(LParamName, TJSONBool.Create(LValue));
+                            tppByPos:  LParamsArray.Add(LValue);
+                          end;
+                        end else
+                        begin // Looks like it's really an enum type!
+                          case FPassEnumByName of
+                            True: begin
+                              var LValue := GetEnumName(LParamTypeInfo, PByte(LParamValuePtr)^);
+                              case FPassByPosOrName of
+                                tppByName: LParamsObj.AddPair(LParamName, LValue);
+                                tppByPos:  LParamsArray.Add(LValue);
+                              end;
+                            end;
+                          else
+                            var LValue: Integer := PWord(LParamValuePtr)^;
+                            case FPassByPosOrName of
+                              tppByName: LParamsObj.AddPair(LParamName, LValue);
+                              tppByPos:  LParamsArray.Add(LValue);
+                            end;
+                          end;
+                        end;
+                    end else
+                    begin
+                      var LValue := PByte(LParamValuePtr)^;
+                      case FPassByPosOrName of
+                        tppByName: LParamsObj.AddPair(LParamName, LValue);
+                        tppByPos:  LParamsArray.Add(LValue);
+                      end;
+                    end;
+                end;
+                tkLString, tkString, tkUString, tkWString:
+                  case FPassByPosOrName of
+                    tppByName: LParamsObj.AddPair(LParamName, PString(LParamValuePtr)^);
+                    tppByPos:  LParamsArray.Add(PString(LParamValuePtr)^);
+                  end;
+                tkInteger: begin
+                  var LTypeInfo := LParamTypeInfo;
+                  var LTypeName := string(LTypeInfo^.Name);
+                  case LTypeInfo.TypeData.OrdType of
+                    otSByte: begin // ShortInt
+                      Assert(SameText(LTypeName, 'ShortInt'), 'Type mismatch!');
+                      case FPassByPosOrName of
+                        tppByName: LParamsObj.AddPair(LParamName, PShortInt(LParamValuePtr)^);
+                        tppByPos:  LParamsArray.Add(PShortInt(LParamValuePtr)^);
+                      end;
+                    end;
+                    otSWord: begin
+                      Assert(SameText(LTypeName, 'SmallInt'), 'Type mismatch!');
+                      case FPassByPosOrName of
+                        tppByName: LParamsObj.AddPair(LParamName, PSmallInt(LParamValuePtr)^);
+                        tppByPos:  LParamsArray.Add(PSmallInt(LParamValuePtr)^);
+                      end;
+                    end;
+                    otSLong: begin // Integer
+                      Assert(SameText(LTypeName, 'Integer'), 'Type mismatch!');
+                      case FPassByPosOrName of
+                        tppByName: LParamsObj.AddPair(LParamName, PInteger(LParamValuePtr)^);
+                        tppByPos:  LParamsArray.Add(PInteger(LParamValuePtr)^);
+                      end;
+                    end;
+                    otUByte: begin // Byte
+                      Assert(SameText(LTypeName, 'Byte'), 'Type mismatch!');
+                      case FPassByPosOrName of
+                        tppByName: LParamsObj.AddPair(LParamName, PByte(LParamValuePtr)^);
+                        tppByPos:  LParamsArray.Add(PByte(LParamValuePtr)^);
+                      end;
+                    end;
+                    otUWord: begin
+                      Assert(SameText(LTypeName, 'Word'), 'Type mismatch!');
+                      case FPassByPosOrName of
+                        tppByName: LParamsObj.AddPair(LParamName, PWord(LParamValuePtr)^);
+                        tppByPos:  LParamsArray.Add(PWord(LParamValuePtr)^);
+                      end;
+                    end;
+                    otULong: begin // Cardinal
+                      Assert(SameText(LTypeName, 'Cardinal'), 'Type mismatch!');
+                      case FPassByPosOrName of
+                        tppByName: LParamsObj.AddPair(LParamName, PCardinal(LParamValuePtr)^);
+                        tppByPos:  LParamsArray.Add(PCardinal(LParamValuePtr)^);
                       end;
                     end;
                   end;
-                  ftDouble, ftExtended, ftSingle:
-                  begin
-                    if (LParamTypeInfo = System.TypeInfo(TDate)) or
-                       (LParamTypeInfo = System.TypeInfo(TTime)) or
-                       (LParamTypeInfo = System.TypeInfo(TDateTime)) then
+
+                end;
+                tkFloat: begin
+                  var LFloatType := LParamTypeInfo^.TypeData.FloatType;
+                  CheckFloatType(LFloatType);
+                  case LFloatType of
+  //                  ftComp: begin
+  //                    var LParamValue := PComp(LParamValuePtr)^;
+  //                    case FPassByPosOrName of
+  //                      tppByName: LParamsObj.AddPair(LParamName, LParamValue);
+  //                      tppByPos:  LParamsArray.Add(LParamValue);
+  //                    end;
+  //                  end;
+                    ftCurr: begin
+                      var LParamValue := PCurrency(LParamValuePtr)^;
                       begin
-                        var LParamValue := DateToISO8601(PDateTime(LParamValuePtr)^, False);
                         case FPassByPosOrName of
                           tppByName: LParamsObj.AddPair(LParamName, LParamValue);
                           tppByPos:  LParamsArray.Add(LParamValue);
-                        end;
-                      end else
-                    if LParamTypeInfo = System.TypeInfo(Single) then
-                      begin
-                        var LParamValue := PSingle(LParamValuePtr)^;
-                        case FPassByPosOrName of
-                          tppByName: LParamsObj.AddPair(LParamName, LParamValue);
-                          tppByPos:  LParamsArray.Add(LParamValue);
-                        end;
-                      end else
-                    if LParamTypeInfo = System.TypeInfo(Extended) then
-                      begin
-                        // Delphi cannot handle the precision of Extended
-                        // if the client is 32-bit and the server is 64-bit
-                        // so convert to BigDecimal
-                        var LHandlers: TRecordHandlers;
-                        if LookupRecordHandlers(LParamTypeInfo, LHandlers) then
-                          begin
-                            LHandlers.NativeToJSON(FPassByPosOrName,
-                              LParamTypeInfo, LParamName,
-                              LParamValuePtr, LParamsObj, LParamsArray);
-                          end;
-                      end else // Currency, Double
-                      begin
-                        var LParamValue := PDouble(LParamValuePtr)^;
-                        begin
-                          case FPassByPosOrName of
-                            tppByName:  LParamsObj.AddPair(LParamName, LParamValue);
-                            tppByPos:   LParamsArray.Add(LParamValue);
-                          end;
                         end;
                       end;
+                    end;
+                    ftDouble, ftExtended, ftSingle:
+                    begin
+                      if (LParamTypeInfo = System.TypeInfo(TDate)) or
+                         (LParamTypeInfo = System.TypeInfo(TTime)) or
+                         (LParamTypeInfo = System.TypeInfo(TDateTime)) then
+                        begin
+                          var LParamValue := DateToISO8601(PDateTime(LParamValuePtr)^, False);
+                          case FPassByPosOrName of
+                            tppByName: LParamsObj.AddPair(LParamName, LParamValue);
+                            tppByPos:  LParamsArray.Add(LParamValue);
+                          end;
+                        end else
+                      if LParamTypeInfo = System.TypeInfo(Single) then
+                        begin
+                          var LParamValue := PSingle(LParamValuePtr)^;
+                          case FPassByPosOrName of
+                            tppByName: LParamsObj.AddPair(LParamName, LParamValue);
+                            tppByPos:  LParamsArray.Add(LParamValue);
+                          end;
+                        end else
+                      if LParamTypeInfo = System.TypeInfo(Extended) then
+                        begin
+                          // Delphi cannot handle the precision of Extended
+                          // if the client is 32-bit and the server is 64-bit
+                          // so convert to BigDecimal
+                          var LHandlers: TRecordHandlers;
+                          if LookupRecordHandlers(LParamTypeInfo, LHandlers) then
+                            begin
+                              LHandlers.NativeToJSON(FPassByPosOrName,
+                                LParamTypeInfo, LParamName,
+                                LParamValuePtr, LParamsObj, LParamsArray);
+                            end;
+                        end else // Currency, Double
+                        begin
+                          var LParamValue := PDouble(LParamValuePtr)^;
+                          begin
+                            case FPassByPosOrName of
+                              tppByName:  LParamsObj.AddPair(LParamName, LParamValue);
+                              tppByPos:   LParamsArray.Add(LParamValue);
+                            end;
+                          end;
+                        end;
+                    end;
+                  end;
+                end; // tkFloat
+              tkInt64: begin
+                var LParamValue := PInt64(LParamValuePtr)^;
+                begin
+                  case FPassByPosOrName of
+                    tppByName:  LParamsObj.AddPair(LParamName, LParamValue);
+                    tppByPos:   LParamsArray.Add(LParamValue);
                   end;
                 end;
-              end; // tkFloat
-            tkInt64: begin
-              var LParamValue := PInt64(LParamValuePtr)^;
-              begin
-                case FPassByPosOrName of
-                  tppByName:  LParamsObj.AddPair(LParamName, LParamValue);
-                  tppByPos:   LParamsArray.Add(LParamValue);
-                end;
               end;
+              tkClass: begin
+                Assert(False, Format('Unexpected type not handled: %s', [LParamTypeInfo.Name]));
+              end;
+              else
+                Assert(False, 'Unexpected type not handled');
+              end;
+              {$ENDREGION}
             end;
-            tkClass: begin
-              //
-              Assert(False, Format('Unexpected type not handled: %s', [LParamTypeInfo.Name]));
-            end;
-            else
-              Assert(False, 'Unexpected type not handled');
-            end;
-            {$ENDREGION}
-          end;
-        if FPassByPosOrName = tppByName then
-          LJSONMethodObj.AddPair(SPARAMS, LParamsObj) else
-          LJSONMethodObj.AddPair(SPARAMS, LParamsArray);
+          if FPassByPosOrName = tppByName then
+            LJSONMethodObj.AddPair(SPARAMS, LParamsObj) else
+            LJSONMethodObj.AddPair(SPARAMS, LParamsArray);
+          {$ENDREGION }
+        except
+          FreeAndNil(LParamsObj);
+          FreeAndNil(LParamsArray);
+          raise;
+        end;
       end;
     {$ENDREGION 'Parameter parsing, handling'}
 
@@ -1336,7 +1410,17 @@ begin
                       end;
                     end else
                     begin // really an enum type
-                      TInvContext.PEnum(LResultP)^ := GetEnumValue(AMethMD.ResultInfo, LResultValue); // Most enum values are 1 byte
+                      var LEnumValue: Integer;
+
+                      case FPassEnumByName of
+                        True: begin
+                          LEnumValue := GetEnumValue(AMethMD.ResultInfo, LResultValue);
+                        end;
+                      else
+                        LEnumValue := StrToInt(LResultValue);
+                      end;
+                      // TValue
+                      PWord(LResultP)^ := LEnumValue;
                     end;
                 end;
                 tkFloat: begin
@@ -1496,9 +1580,10 @@ procedure TJSONRPCWrapper.GenericClientMethod(AMethod: TRttiMethod;
   const AArgs: TArray<TValue>; out Result: TValue);
 var
   LMethMD: TIntfMethEntry;
-  I, VirtualIndex: Integer;
+  I, J, VirtualIndex: Integer;
   LMethNum: Integer;
   LContext: TInvContext;
+  LTypeInfo: PTypeInfo;
 begin
   LContext := TInvContext.Create;
   try
@@ -1523,7 +1608,16 @@ begin
             Break;
           end;
     for I := 1 to LMethMD.ParamCount do
-      LContext.SetParamPointer(I-1, AArgs[I].GetReferenceToRawData);
+      begin
+        J := I-1;
+        LContext.SetParamPointer(J, AArgs[I].GetReferenceToRawData);
+        LTypeInfo := LMethMD.Params[J].Info;
+        if FOwnsObjects and Assigned(LTypeInfo) and (LTypeInfo.Kind = tkClass) then
+          begin
+            LContext.AddObjectToDestroy(TObject(AArgs[I].GetReferenceToRawData^));
+            LContext.AddObjectToDestroy(TObject(AArgs[I].GetReferenceToRawData^));
+          end;
+      end;
 
     if Assigned(LMethMD.ResultInfo) then
       begin
@@ -1725,24 +1819,24 @@ begin
 end;
 
 {$IF NOT DEFINED(BASECLASS)}
-function TJSONRPCWrapper.GetParamsPassByName: Boolean;
+function TJSONRPCWrapper.GetPassParamsByName: Boolean;
 begin
   Result := FPassByPosOrName = tppByName;
 end;
 
-procedure TJSONRPCWrapper.SetParamsPassByName(const AValue: Boolean);
+procedure TJSONRPCWrapper.SetPassParamsByName(const AValue: Boolean);
 begin
   if AValue then
     FPassByPosOrName := tppByName else
     FPassByPosOrName := tppByPos;
 end;
 
-function TJSONRPCWrapper.GetParamsPassByPosition: Boolean;
+function TJSONRPCWrapper.GetPassParamsByPosition: Boolean;
 begin
   Result := FPassByPosOrName = tppByPos;
 end;
 
-procedure TJSONRPCWrapper.SetParamsPassByPosition(const AValue: Boolean);
+procedure TJSONRPCWrapper.SetPassParamsByPosition(const AValue: Boolean);
 begin
   if AValue then
     FPassByPosOrName := tppByPos else
@@ -2190,6 +2284,8 @@ begin
 // If there's only 1 method for a given name, return immediately
   if Length(LMethods) = 1 then
     Exit(LMethods[0]);
+  if Length(LMethods) = 0 then
+    Exit(nil);
 // If there are multiple methods with the given name, remove methods that
 // do not match the JSON parameters
   RemoveMethodsNotMatchingParameterCount(LMethods, AParamCount, AJSONObject);
@@ -2200,11 +2296,41 @@ end;
 
 procedure MethodNotFoundError;
 begin
-  raise Exception.Create('Method not found') at ReturnAddress;
+  raise EJSONRPCMethodException.Create('Method not found') at ReturnAddress;
+end;
+
+procedure ClassNotFoundError;
+begin
+  raise EJSONRPCClassException.Create('Class not found') at ReturnAddress;
+end;
+
+procedure TJSONRPCServerWrapper.SetPersistent(const Value: Boolean);
+begin
+  if FPersistent <> Value then
+    begin
+      FPersistent := Value;
+      case Value of
+        False: begin
+          if Assigned(FJSONRPCInstance) then
+            FJSONRPCInstance := nil;
+        end;
+        True: begin
+          var LClass := InvRegistry.GetInvokableClass;
+          Supports(CreateInvokableClass(TInvokableClassClass(LClass)), IJSONRPCMethods, FJSONRPCInstance);
+        end;
+      end;
+    end;
+end;
+
+function TJSONRPCServerWrapper.CreateInvokableClass(AClass: TInvokableClassClass): TObject;
+begin
+  if Assigned(AClass) then
+   Result := AClass.Create else
+   Result := nil;
 end;
 
 // Working, but doesn't handle batch calls
-// parses incoming JSON requests from the client
+// parses incoming JSON requests from the client, server side handling
 procedure TJSONRPCServerWrapper.DispatchJSONRPC(const ARequest, AResponse: TStream);
 type
   TJSONState = (tjParsing, tjGettingMethod, tjLookupMethod, tjLookupParams,
@@ -2281,9 +2407,41 @@ begin
           if LParamsObjOrArray is TJSONArray then
             LParamCount := TJSONArray(LParamsObjOrArray).Count;
           DumpJSONRequest(LJSONRequestObj);
-          var LMethod := FindMethod(LType, LMethodName, LParamCount, LJSONRequestObj);
+          var LMethod: TRttiMethod;
+          LMethod := FindMethod(LType, LMethodName, LParamCount, LJSONRequestObj);
+          if not Assigned(LMethod) then
+            begin
+              var LMapIntfs := InvRegistry.GetInterfaces;
+              for LMapIntf in LMapIntfs do
+                begin
+                  LType := LRttiContext.GetType(LMapIntf.Info);
+                  LMethod := FindMethod(LType, LMethodName, LParamCount, LJSONRequestObj);
+                  if Assigned(LMethod) then
+                    begin
+                      GetIntfMetaData(LMapIntf.Info, FIntfMD, True);
+                      var LClassFound := False;
+                      if not Supports(LClass, LMapIntf.GUID) then
+                        begin
+                          var LClasses := InvRegistry.GetInvokableClasses;
+                          for LClass in LClasses do
+                            begin
+                              if Supports(LClass, LMapIntf.GUID) then
+                                begin
+                                  LClassFound := True;
+                                  Break;
+                                end;
+                            end;
+                        end;
+                      if not LClassFound then
+                        LClass := nil;
+                      Break;
+                    end;
+                end;
+            end;
           if not Assigned(LMethod) then
             MethodNotFoundError;
+          if not Assigned(LClass) then
+            ClassNotFoundError;
           DumpJSONRequest(LJSONRequestObj);
           DumpMethod(LMethod);
           try
@@ -2292,7 +2450,6 @@ begin
             SetLength(LArgs, Length(LParams));
             LJSONState := tjLookupParams;
             var LMDAIndex := LookupMDAIndex(LMethodName, LParams, FIntfMD);
-//              LookupMDAIndex(LMethod, FIntfMD);
 
             for var I := Low(LParams) to High(LParams) do
               begin
@@ -2311,6 +2468,7 @@ begin
 
                 case LParseParamTypeInfo.Kind of
                   tkArray, tkDynArray: begin
+                    // Deliberately empty
                   end;
                 else
                   // This code fails when the param is an array
@@ -2362,22 +2520,6 @@ begin
                       begin
                         LArg := LHandlers.JSONToTValue(LJSON);
                       end else
-//                    if LParseParamTypeInfo = TypeInfo(BigDecimal) then
-//                      begin
-//                        var LParamValue: string;
-//                        LJSONRequestObj.TryGetValue<string>(LParamName, LParamValue);
-//                        LArg := TValue.From(BigDecimal.Create(LParamValue));
-//                      end else
-//                    if LParseParamTypeInfo = TypeInfo(BigInteger) then
-//                      begin
-//                        var LParamValue: string;
-//                        LJSONRequestObj.TryGetValue<string>(LParamName, LParamValue);
-//                        var LBigInteger: BigInteger;
-//                        if LParamValue.StartsWith('0x', True) then
-//                          LParamValue := Copy(LParamValue, Low(LParamValue) + 2);
-//                        BigInteger.TryParse(LParamValue, 16, LBigInteger);
-//                        LArg := TValue.From(LBigInteger);
-//                      end else
                       begin
                         // Default handling of records
                         if Assigned(LParamJSONObject) then
@@ -2408,9 +2550,17 @@ begin
                         end;
                       end else
                       begin // Really an enumeration
-                        var LEnumValue := GetEnumValue(LParseParamTypeInfo,
-                          LParseParamValue
-                        );
+                        var LEnumValue: Integer;
+                        case FPassEnumByName of
+                          True: begin
+                            LEnumValue := GetEnumValue(LParseParamTypeInfo,
+                              LParseParamValue
+                            );
+                          end;
+                        else
+                          // Enum is passed as an ordinal / integer
+                          LEnumValue := StrToInt(LParseParamValue);
+                        end;
                         TValue.Make(@LEnumValue, LParseParamTypeInfo, LArg);
                       end;
                   end;
@@ -2579,7 +2729,20 @@ begin
 
         // {"jsonrpc": "2.0", "result": 19, "id": 1} example of expected result
           // Respond with the same request ID, if the request wasn't not a notification
-            var LInstance := TInvokableClassClass(LClass).Create;
+            var LInstance: TObject;
+            if FPersistent then
+              begin
+                if (not Assigned(FJSONRPCInstance)) or (not Supports(FJSONRPCInstance, LMapIntf.GUID)) then
+                  begin
+                    Supports(CreateInvokableClass(TInvokableClassClass(LClass)), IJSONRPCMethods, FJSONRPCInstance);
+//                       TInvokableClassClass(LClass).Create;
+                  end;
+                LInstance := TInvokableClass(FJSONRPCInstance);
+              end else
+              begin
+                LInstance := CreateInvokableClass(TInvokableClassClass(LClass));
+                  // TInvokableClassClass(LClass).Create;
+              end;
 
             var LIntf: IJSONRPCMethods;
             var LJSONRPCMethodException: IJSONRPCMethodException;
@@ -2633,8 +2796,14 @@ begin
                           LJSONResultObj.AddPair(SRESULT, TJSONBool.Create(LResult.AsBoolean)) else
                         begin // really an enum type
                           var LResultOrdinal := LResult.AsOrdinal;
-                          var LResultValue := GetEnumName(LTypeInfo, LResultOrdinal);
-                          LJSONResultObj.AddPair(SRESULT, TJSONString.Create(LResultValue));
+                          case FPassEnumByName of
+                            True: begin
+                              var LResultName := GetEnumName(LTypeInfo, LResultOrdinal);
+                              LJSONResultObj.AddPair(SRESULT, LResultName);
+                            end;
+                          else
+                            LJSONResultObj.AddPair(SRESULT, LResultOrdinal);
+                          end;
                         end;
                       end;
                       tkString, tkLString, tkUString, tkWString: begin
