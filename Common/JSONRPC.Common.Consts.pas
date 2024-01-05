@@ -14,6 +14,8 @@ const
   SCODE: string    = 'code';
   SMESSAGE: string = 'message';
 
+  SCLASSNAME: string = 'class';
+
   SMethodNotFound: string  = 'Method not found';
   SParseError: string      = 'Parse error';
   SInvalidRequest: string  = 'Invalid Request';
@@ -34,3 +36,40 @@ const
 implementation
 
 end.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// chuacw, Jun 2023
+

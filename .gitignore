@@ -74,3 +74,9 @@ modules/
 
 Win32/
 Win64/
+Linux64/
+Tests/
+Debug/
+Release/
+
+Tests/Win64/Debug/TestInsightSettings.ini

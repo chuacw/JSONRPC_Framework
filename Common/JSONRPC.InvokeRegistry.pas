@@ -357,18 +357,14 @@ begin
   Lock;
   try
     Table := AClass.GetInterfaceTable;
-    { If a class does not implement interfaces, we'll try its parent }
+    { If a class does not implement interfaces, try its parent }
     if Table = nil then
-    begin
-      if (AClass.ClassParent <> nil) then
       begin
-        Table := AClass.ClassParent.GetInterfaceTable;
-        {
-        if Table <> nil then
-          AClass := AClass.ClassParent;
-        }
+        if (AClass.ClassParent <> nil) then
+          begin
+            Table := AClass.ClassParent.GetInterfaceTable;
+          end;
       end;
-    end;
     if Table = nil then
       raise ETypeRegistryException.CreateFmt(SNoInterfacesInClass, [AClass.ClassName]);
     Index := Length(FRegClasses);
@@ -1113,4 +1109,40 @@ initialization
 finalization
   JSONRPCInvRegistryV.Free;
 end.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// chuacw, Jun 2023
 

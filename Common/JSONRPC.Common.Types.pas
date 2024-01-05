@@ -11,6 +11,9 @@ uses
 
 type
 
+  TBeforeExecuteEvent = procedure(const MethodName: string; ARequest: TStream) of object;
+  TAfterExecuteEvent  = procedure(const MethodName: string; AResponse: TStream) of object;
+
   THttpMethodTypeEnum = (hConnect, hDelete, hGet, hHead, hMerge, hOptions,
     hPatch, hPost, hPut, hTrace);
 
@@ -255,7 +258,6 @@ type
     property MethodName: string read GetMethodName write SetMethodName;
   end;
 
-{$M+}
   /// <summary> An exception class that contains the JSON RPC Code
   /// </summary>
   EJSONRPCException = class(Exception)
@@ -266,7 +268,8 @@ type
     constructor Create(AExceptObj: TObject); overload;
     property Code: Integer read FCode write FCode;
   end;
-{$M-}
+
+  EJSONRPCExceptionClass = class of EJSONRPCException;
 
   /// <summary> An exception class that contains the Method Name.
   /// </summary>
@@ -274,6 +277,7 @@ type
   protected
     FMethodName: string;
   public
+    constructor Create(const AMsg, AMethodName: string); overload;
     constructor Create(ACode: Integer; const AMsg: string; const AMethodName: string); overload;
     constructor Create(AExceptObj: TObject); overload;
 {$WARN HIDING_MEMBER OFF}
@@ -282,6 +286,8 @@ type
   end;
 
   EJSONRPCClassException = class(EJSONRPCException)
+  public
+    constructor Create;
   end;
 
   EJSONRPCParamParsingException = class(EJSONRPCException)
@@ -387,6 +393,8 @@ type
     procedure AfterConstruction; override;
   end;
 
+  function FindExceptionClass(const AClassName: string): EJSONRPCExceptionClass;
+
 var
   GOnDispatchedJSONRPC: TOnDispatchedJSONRPC;
   GOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest;
@@ -429,6 +437,11 @@ begin
 end;
 
 { EJSONRPCMethodException }
+
+constructor EJSONRPCMethodException.Create(const AMsg, AMethodName: string);
+begin
+  Create(CMethodNotFound, AMsg, AMethodName);
+end;
 
 constructor EJSONRPCMethodException.Create(ACode: Integer; const AMsg,
   AMethodName: string);
@@ -559,7 +572,44 @@ begin
   FPrefix := '0x';
 end;
 
+{ EJSONRPCClassException }
+
+constructor EJSONRPCClassException.Create;
+begin
+  inherited Create(CInternalError, 'Class not found!'#13#10+
+   'Did you forget to call RegisterInvokableClass?'
+  );
+end;
+
+var
+  GExceptionClasses: TArray<EJSONRPCExceptionClass>;
+
+procedure RegisterExceptionClass(AClass: EJSONRPCExceptionClass);
+begin
+  SetLength(GExceptionClasses, Length(GExceptionClasses) + 1);
+  GExceptionClasses[High(GExceptionClasses)] := AClass;
+end;
+
+function FindExceptionClass(const AClassName: string): EJSONRPCExceptionClass;
+begin
+  for var LClass in GExceptionClasses do
+    if LClass.ClassName = AClassName then
+      Exit(LClass);
+  Result := nil;
+end;
+
+procedure RegisterExceptionClasses;
+begin
+  var LExcClasses := [
+    EJSONRPCException, EJSONRPCMethodException, EJSONRPCClassException,
+    EJSONRPCParamParsingException, EJSONRPCMethodMissingException
+  ];
+  for var LExcClass in LExcClasses do
+    RegisterExceptionClass(LExcClass);
+end;
+
 initialization
+  RegisterExceptionClasses;
 
   {$IF DECLARED(BigDecimal)}
   RegisterRecordHandler(TypeInfo(BigDecimal),
@@ -734,3 +784,40 @@ initialization
   {$ENDIF}
 
 end.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// chuacw, Jun 2023
+

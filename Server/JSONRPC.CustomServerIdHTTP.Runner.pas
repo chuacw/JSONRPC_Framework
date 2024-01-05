@@ -44,6 +44,8 @@ type
 
   public
 
+    destructor Destroy; override;
+
     function CheckPort(const APort: Integer): Integer; override;
     function CheckPort(const APort: string): Integer; override;
 
@@ -86,6 +88,13 @@ end;
 function TCustomJSONRPCServerIdHTTPRunner.CheckPort(const APort: string): Integer;
 begin
   Result := CheckPort(APort.ToInteger);
+end;
+
+destructor TCustomJSONRPCServerIdHTTPRunner.Destroy;
+begin
+  if Assigned(FServer) then
+    FServer.Active := False;
+  inherited;
 end;
 
 procedure TCustomJSONRPCServerIdHTTPRunner.CreateServer;
@@ -244,3 +253,40 @@ begin
 end;
 
 end.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// chuacw, Jun 2023
+

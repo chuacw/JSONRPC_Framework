@@ -146,7 +146,12 @@ begin
       Result := FClient.Execute(LRequest, AResponseContent, AHeaders);
     end;
     hDelete: begin
+      {$IF RTLVersion >= 36}
       Result := FClient.Delete(AURL, ASource, AResponseContent, AHeaders);
+      {$ELSEIF RTLVersion >= 35}
+      var LRequest: IHTTPRequest := FClient.GetRequest(AMethod, AURL);
+      Result := FClient.Execute(LRequest, AResponseContent, AHeaders);
+      {$ENDIF}
     end;
     hGet: begin
       Result := FClient.Get(AURL, AResponseContent, AHeaders);
@@ -207,3 +212,40 @@ initialization
   if not Assigned(GJSONRPCTransportWrapperClass) then
     InitTransportWrapperHTTP;
 end.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// chuacw, Jun 2023
+

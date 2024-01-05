@@ -18,6 +18,8 @@ Contents
 * [Using the TCP transport wrapper](#using-the-tcp-transport-wrapper)
 * [Handling large numbers](#handling-large-numbers)
 * [Extensibility](#extensibility)
+* [Examples](#examples)
+* [Bugs / Feature Requests](#bugs--feature-requests)
 
 Introduction
 ---
@@ -216,6 +218,11 @@ Extensibility
 What if you want to handle custom data types on the server?
 
 You can design a custom record data type, and then register it using RegisterRecordHandler, without altering any part of the framework.
+
+Examples
+---
+
+There are sample clients and servers in the examples directory.
 
 Bugs / Feature Requests
 ---

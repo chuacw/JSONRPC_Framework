@@ -14,7 +14,7 @@ uses
   System.TypInfo, System.Classes, System.Rtti, System.Generics.Collections,
   System.JSON.Serializers,
   JSONRPC.InvokeRegistry, System.SysUtils,
-  Soap.IntfInfo, Soap.Rio,
+  Soap.IntfInfo,
   System.Net.HttpClient, JSONRPC.Common.Types, System.JSON,
   System.Net.URLClient;
 
@@ -97,19 +97,25 @@ type
     function GetPassEnumByName: Boolean;
     procedure SetPassEnumByName(const AValue: Boolean);
 
-    /// <summary> Passes enum by name, if true. Client side must match the server side.
+    /// <summary>Passes enum by name, if true. <para />
+    /// Otherwise, enums are passed by their ordinal value. <para />
+    /// Client side must match the server side.
     /// </summary>
     property PassEnumByName: Boolean read GetPassEnumByName write SetPassEnumByName;
 
-    /// <summary> Passes parameters by name, if true. Client side must match the server side.
+    /// <summary>Passes parameters by name, if true. <para />
+    /// Otherwise, parameters are passed by position. <para />
+    /// Client side must match the server side.
     /// </summary>
     property PassParamsByName: Boolean read GetPassParamsByName write SetPassParamsByName;
 
-    /// <summary> Passes parameters by position, if true. Client side must match the server side.
+    /// <summary>Passes parameters by position, if true. <para />
+    /// Client side must match the server side.
     /// </summary>
     property PassParamsByPos: Boolean read GetPassParamsByPosition write SetPassParamsByPosition;
 
-    /// <summary> Passes parameters by position, if true. Client side must match the server side.
+    /// <summary> Passes parameters by position, if true. <para />
+    /// Client side must match the server side.
     /// </summary>
     property PassParamsByPosition: Boolean read GetPassParamsByPosition write SetPassParamsByPosition;
   end;
@@ -413,7 +419,7 @@ type
     FOnDispatchedJSONRPC: TOnDispatchedJSONRPC;
 
     FPersistent: Boolean;
-    FJSONRPCInstance: IJSONRPCMethods;
+    FJSONRPCInstances: TArray<IJSONRPCMethods>;
 
     procedure SetPersistent(const Value: Boolean);
     function CreateInvokableClass(AClass: TInvokableClassClass): TObject;
@@ -469,6 +475,11 @@ type
     property OnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse
       read FOnLogOutgoingJSONResponse write FOnLogOutgoingJSONResponse;
 
+    /// <summary> Support for persistent interfaces.<para />
+    /// If Persistent is false, each interface is recreated and destroyed
+    /// at every incoming request, otherwise, the required interface is
+    /// created once, and used repeatedly, so it can keep track of state.
+    /// </summary>
     property Persistent: Boolean read FPersistent write SetPersistent;
 
   end;
@@ -496,7 +507,7 @@ implementation
 
 uses
 {$IF DEFINED(DEBUG)} // Figure out which methods are having issues...
-  Winapi.Windows,
+  {$IF DEFINED(MSWINDOWS)}Winapi.Windows,{$ENDIF}
 {$ENDIF}
   System.Types, System.SyncObjs, JSONRPC.Common.Consts,
   System.DateUtils, JSONRPC.JsonUtils,
@@ -1307,6 +1318,14 @@ begin
               var LCode := LError.GetValue<Integer>(SCODE);
               var LMsg := LError.GetValue<string>(SMESSAGE);
               var LMethodName := LError.FindValue(SMETHOD);
+              var LExcClassName: string := '';
+              if LError.TryGetValue<string>(SCLASSNAME, LExcClassName) then
+                begin
+                  // Find the exception class
+                  var LExcClass := FindExceptionClass(LExcClassName);
+                  if Assigned(LExcClass) then
+                    raise LExcClass.Create(LCode, LMsg);
+                end else
               if Assigned(LMethodName) then
                 raise EJSONRPCMethodException.Create(LCode, LMsg, LMethodName.Value) else
                 raise EJSONRPCException.Create(LCode, LMsg);
@@ -1974,6 +1993,7 @@ end;
 constructor TJSONRPCServerWrapper.Create(AOwner: TComponent);
 begin
   inherited;
+  FJSONRPCInstances := [];
 end;
 
 destructor TJSONRPCServerWrapper.Destroy;
@@ -1982,6 +2002,7 @@ begin
   FOnBeforeDispatchJSONRPC := nil;
   FOnDispatchedJSONRPC := nil;
   FOnLogOutgoingJSONResponse := nil;
+  FJSONRPCInstances := nil;
   inherited;
 end;
 
@@ -2301,7 +2322,7 @@ end;
 
 procedure ClassNotFoundError;
 begin
-  raise EJSONRPCClassException.Create('Class not found') at ReturnAddress;
+  raise EJSONRPCClassException.Create at ReturnAddress;
 end;
 
 procedure TJSONRPCServerWrapper.SetPersistent(const Value: Boolean);
@@ -2311,12 +2332,12 @@ begin
       FPersistent := Value;
       case Value of
         False: begin
-          if Assigned(FJSONRPCInstance) then
-            FJSONRPCInstance := nil;
+          if Assigned(FJSONRPCInstances) then
+            FJSONRPCInstances := [];
         end;
         True: begin
-          var LClass := InvRegistry.GetInvokableClass;
-          Supports(CreateInvokableClass(TInvokableClassClass(LClass)), IJSONRPCMethods, FJSONRPCInstance);
+//          var LClass := InvRegistry.GetInvokableClass;
+//          Supports(CreateInvokableClass(TInvokableClassClass(LClass)), IJSONRPCMethods, FJSONRPCInstance);
         end;
       end;
     end;
@@ -2342,14 +2363,14 @@ const CErrorFmt = '%s - Method Name: ''%s'', Param Name: ''%s'', Param Value: ''
 var
   LJSONState: TJSONState;
 
-  LParseParamPosition: Integer;
+  LClassIndex, LParseParamPosition: Integer;
   LParseMethodName, LParseParamName, LParseParamValue: string;
   LParseParamTypeInfo: PTypeInfo;
   LJSONResultObj: TJSONObject;
 begin
 // Set parsing error
   LParseParamPosition := -1;
-
+  LClassIndex := 0;
   ARequest.Position := 0;
   var LJSONRequestBytes: TArray<Byte>;
   var Len := ARequest.Size;
@@ -2359,11 +2380,8 @@ begin
   var LMapIntf := InvRegistry.GetInterface;
   var LClass := InvRegistry.GetInvokableClass;
 
-// Fetch the meta data for the interface, this assumes there's only 1 interface
-// and would need to be updated if there were more than 1 interface
-// Improves performance by checking only if it's not filled up yet
-  if FIntfMD.Name = '' then
-    GetIntfMetaData(LMapIntf.Info, FIntfMD, True);
+// Fetch the meta data for the interface
+  GetIntfMetaData(LMapIntf.Info, FIntfMD, True);
 
   LJSONState := tjParsing;
   var LJSONResponseObj: TJSONObject := TJSONObject.Create;
@@ -2419,22 +2437,38 @@ begin
                   if Assigned(LMethod) then
                     begin
                       GetIntfMetaData(LMapIntf.Info, FIntfMD, True);
-                      var LClassFound := False;
+                      LClassIndex := 0;
+                      if LClass = nil then
+                        Break;
                       if not Supports(LClass, LMapIntf.GUID) then
                         begin
+                          LClass := nil;
                           var LClasses := InvRegistry.GetInvokableClasses;
-                          for LClass in LClasses do
+                          for var LTempClass in LClasses do
                             begin
-                              if Supports(LClass, LMapIntf.GUID) then
+                              if Supports(LTempClass, LMapIntf.GUID) then
                                 begin
-                                  LClassFound := True;
+                                  LClass := LTempClass;
                                   Break;
                                 end;
+                              Inc(LClassIndex);
                             end;
                         end;
-                      if not LClassFound then
-                        LClass := nil;
                       Break;
+                    end;
+                end;
+            end else
+            begin
+              // Update the persistence index
+              if FPersistent then
+                begin
+                  var LMapIntfs := InvRegistry.GetInterfaces;
+                  for LMapIntf in LMapIntfs do
+                    begin
+                      LType := LRttiContext.GetType(LMapIntf.Info);
+                      if LType.Name = LMapIntf.Name then
+                        Break;
+                      Inc(LClassIndex);
                     end;
                 end;
             end;
@@ -2442,6 +2476,8 @@ begin
             MethodNotFoundError;
           if not Assigned(LClass) then
             ClassNotFoundError;
+          if FPersistent and (High(FJSONRPCInstances) < LClassIndex) then
+            SetLength(FJSONRPCInstances, LClassIndex+1);
           DumpJSONRequest(LJSONRequestObj);
           DumpMethod(LMethod);
           try
@@ -2732,12 +2768,14 @@ begin
             var LInstance: TObject;
             if FPersistent then
               begin
-                if (not Assigned(FJSONRPCInstance)) or (not Supports(FJSONRPCInstance, LMapIntf.GUID)) then
+                if (not Assigned(FJSONRPCInstances[LClassIndex])) or
+                  (not Supports(FJSONRPCInstances[LClassIndex], LMapIntf.GUID)) then
                   begin
-                    Supports(CreateInvokableClass(TInvokableClassClass(LClass)), IJSONRPCMethods, FJSONRPCInstance);
+                    Supports(CreateInvokableClass(TInvokableClassClass(LClass)),
+                      IJSONRPCMethods, FJSONRPCInstances[LClassIndex]);
 //                       TInvokableClassClass(LClass).Create;
                   end;
-                LInstance := TInvokableClass(FJSONRPCInstance);
+                LInstance := TInvokableClass(FJSONRPCInstances[LClassIndex]);
               end else
               begin
                 LInstance := CreateInvokableClass(TInvokableClassClass(LClass));
@@ -2757,7 +2795,9 @@ begin
                 LJSONState := tjCallMethod;
 
                 // Dispatch the call to the implementor
-                LResult := LMethod.Invoke(LObj, LArgs); // working
+// ****************************************************************************
+                LResult := LMethod.Invoke(LObj, LArgs);
+// ****************************************************************************
 //                LResult := LMethod.Invoke(LInstance, LArgs); // working
 
                 LJSONState := tjParseResponse;
@@ -2856,6 +2896,10 @@ begin
                     // LJSONResultObj.AddPair(SRESULT, DefaultTrueBoolStr);
                     LJSONResultObj.AddPair('noresult', 'noresult');
                   end;
+              end else
+              begin
+                var LMsg := Format('Method "%s" not found!', [LMethodName]);
+                raise EJSONRPCMethodException.Create(CMethodNotFound, LMsg);
               end;
 
           except
@@ -2916,6 +2960,29 @@ begin
       end;
       FreeAndNil(LJSONResponseObj);
     except
+      on E: EJSONRPCException do
+        begin
+          // Create error object to be returned to JSON RPC client
+          // Add default error
+          if not Assigned(LJSONResponseObj.FindValue(SERROR)) then
+            begin
+              var LJSONErrorObj := TJSONObject.Create;
+              // Add default message
+              LJSONErrorObj.AddPair(SMESSAGE, E.Message);
+
+              // Add default code
+              LJSONErrorObj.AddPair(SCODE, E.Code);
+
+              // Add the class name
+              LJSONErrorObj.AddPair(SCLASSNAME, E.ClassName);
+              LJSONResponseObj.AddPair(SERROR, LJSONErrorObj);
+            end;
+
+          // Add default ID
+          if not Assigned(LJSONResponseObj.FindValue(SID)) then
+            LJSONResponseObj.AddPair(SID, TJSONNull.Create);
+        end;
+    else
       // handle failure to parse
       if Assigned(LJSONRequestObj) then
         begin
@@ -2945,14 +3012,8 @@ begin
                 LJSONResponseObj.AddPair(SMESSAGE, LErrorMessage);
               end;
           end;
-        end else
-        begin
-          LJSONResponseObj.AddPair(SERROR, CInvalidRequest);
-          LJSONResponseObj.AddPair(SMESSAGE, SInvalidRequest);
-          if not Assigned(LJSONResponseObj.FindValue('id')) then
-            LJSONResponseObj.AddPair('id', TJSONNull.Create);
         end;
-    end;
+    end; // on Exception... else
     if Assigned(LJSONResponseObj) then
       begin
         var LJSONResultBytes: TBytes; var LCount: NativeInt;
@@ -3046,3 +3107,40 @@ begin
 end;
 
 end.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// chuacw, Jun 2023
+
