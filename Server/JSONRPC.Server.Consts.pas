@@ -13,7 +13,6 @@ resourcestring
   sServerStopped = '- server stopped';
   sServerNotRunning = '- The server is not running';
   sInvalidCommand = '- Error: Invalid Command';
-  sIndyVersion = '- Indy Version: ';
   sActive = '- Active: ';
   sPort = '- Port: ';
   sSessionID = '- Session ID CookieName: ';
