@@ -23,7 +23,8 @@ uses
   JSONRPC.JsonUtils in '..\Common\JSONRPC.JsonUtils.pas',
   JSONRPC.WebBrokerJSONRPC in 'JSONRPC.WebBrokerJSONRPC.pas',
   JSONRPC.ServerWebBroker.Runner in 'JSONRPC.ServerWebBroker.Runner.pas',
-  JSONRPC.Common.RecordHandlers in '..\Common\JSONRPC.Common.RecordHandlers.pas';
+  JSONRPC.Common.RecordHandlers in '..\Common\JSONRPC.Common.RecordHandlers.pas',
+  CompilerAndRTLVersions in '..\Common\CompilerAndRTLVersions.pas';
 
 {$R *.res}
 
@@ -40,7 +41,7 @@ end;
 
 procedure WriteStatus(const AServerRunner: TJSONRPCServerWebBrokerRunner);
 begin
-  Writeln(sIndyVersion + AServerRunner.Server.SessionList.Version);
+  Writeln(AServerRunner.Server.SessionList.Version);
   Writeln(sActive + AServerRunner.Server.Active.ToString(TUseBoolStrs.True));
   Writeln(sPort + AServerRunner.Server.DefaultPort.ToString);
   Writeln(sSessionID + AServerRunner.Server.SessionIDCookieName);

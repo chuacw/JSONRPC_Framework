@@ -40,7 +40,7 @@ procedure InitTransportWrapperHTTP;
 implementation
 
 uses
-  System.SysUtils;
+  System.SysUtils, JSONRPC.Common.Consts;
 
 { TJSONRPCHTTPTransportWrapper }
 
@@ -96,18 +96,6 @@ begin
   Result := FClient.SendTimeout;
 end;
 
-//const
-//  sHTTPMethodConnect = 'CONNECT'; // do not localize
-//  sHTTPMethodDelete = 'DELETE'; // do not localize
-//  sHTTPMethodGet = 'GET'; // do not localize
-//  sHTTPMethodHead = 'HEAD'; // do not localize
-//  sHTTPMethodOptions = 'OPTIONS'; // do not localize
-//  sHTTPMethodPost = 'POST'; // do not localize
-//  sHTTPMethodPut = 'PUT'; // do not localize
-//  sHTTPMethodTrace = 'TRACE'; // do not localize
-//  sHTTPMethodMerge = 'MERGE'; // do not localize
-//  sHTTPMethodPatch = 'PATCH'; // do not localize
-
 function HttpMethodToEnum(const AMethod: string): THttpMethodTypeEnum;
 begin
 // Search common methods first...
@@ -146,9 +134,9 @@ begin
       Result := FClient.Execute(LRequest, AResponseContent, AHeaders);
     end;
     hDelete: begin
-      {$IF RTLVersion >= 36}
+      {$IF RTLVersion >= RTLVersionDelphi120 }
       Result := FClient.Delete(AURL, ASource, AResponseContent, AHeaders);
-      {$ELSEIF RTLVersion >= 35}
+      {$ELSEIF RTLVersion >= RTLVersionDelphi110}
       var LRequest: IHTTPRequest := FClient.GetRequest(AMethod, AURL);
       Result := FClient.Execute(LRequest, AResponseContent, AHeaders);
       {$ENDIF}

@@ -184,6 +184,7 @@
         <DCCReference Include="JSONRPC.WebBrokerJSONRPC.pas"/>
         <DCCReference Include="JSONRPC.ServerWebBroker.Runner.pas"/>
         <DCCReference Include="..\Common\JSONRPC.Common.RecordHandlers.pas"/>
+        <DCCReference Include="..\Common\CompilerAndRTLVersions.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -235,13 +236,13 @@
                 </DeployFile>
                 <DeployFile LocalName="Win64\Debug\JSONRPC.ServerWebBroker.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win64">
-                        <RemoteName>JSONRPC_ServerWebBroker.exe</RemoteName>
+                        <RemoteName>JSONRPC.ServerWebBroker.exe</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
                 <DeployFile LocalName="Win64\Debug\JSONRPC.ServerWebBroker.rsm" Configuration="Debug" Class="DebugSymbols">
                     <Platform Name="Win64">
-                        <RemoteName>JSONRPC_ServerWebBroker.rsm</RemoteName>
+                        <RemoteName>JSONRPC.ServerWebBroker.rsm</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>

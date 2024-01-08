@@ -451,7 +451,6 @@ type
     function GetOnLogOutgoingJSONResponse: TOnLogOutgoingJSONResponse;
     procedure SetOnLogOutgoingJSONResponse(const AProc: TOnLogOutgoingJSONResponse);
 
-//    procedure GenericServerMethod(AMethod: TRttiMethod; const AArgs: TArray<TValue>; out Result: TValue);
     procedure InitClient; override;
     procedure SetInvokeMethod; override;
 
@@ -3077,11 +3076,20 @@ end;
 function TJSONRPCServerWrapper.InternalQI(const IID: TGUID; out Obj): HResult;
 begin
   { IInterface, IJSONRPCDispatch, IJSONRPCDispatchEvents, IJSONRPCGetSetDispatchEvents, etc... }
-  if ((IID = IInterface) or (IID = IJSONRPCDispatch) or
-      (IID = IJSONRPCDispatchEvents) or
-      (IID = IJSONRPCGetSetDispatchEvents)) and GetInterface(IID, Obj) then
-    Result := S_OK else
-    Result := E_NOINTERFACE;
+  var LIntfs: TArray<TGUID> := [
+    IInterface, IJSONRPCDispatch, IJSONRPCDispatchEvents,
+    IJSONRPCGetSetDispatchEvents,
+    IPassParamsByPosition, IPassParamsByName, IPassEnumByName
+  ];
+  for var LIntf in LIntfs do
+    if (IID = LIntf) and GetInterface(IID, Obj) then
+      Exit(S_OK);
+  Result := E_NOINTERFACE;
+//  if ((IID = IInterface) or (IID = IJSONRPCDispatch) or
+//      (IID = IJSONRPCDispatchEvents) or
+//      (IID = IJSONRPCGetSetDispatchEvents)) and GetInterface(IID, Obj) then
+//    Result := S_OK else
+//    Result := E_NOINTERFACE;
 end;
 
 procedure TJSONRPCServerWrapper.SetInvokeMethod;

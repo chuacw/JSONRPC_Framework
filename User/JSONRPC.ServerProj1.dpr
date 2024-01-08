@@ -39,7 +39,7 @@ end;
 
 procedure WriteStatus(const AServerRunner: TJSONRPCServerRunner);
 begin
-  Writeln(sIndyVersion + AServerRunner.Server.SessionList.Version);
+  Writeln(AServerRunner.Server.SessionList.Version);
   Writeln(sActive + AServerRunner.Server.Active.ToString(TUseBoolStrs.True));
   Writeln(sPort + AServerRunner.Server.DefaultPort.ToString);
   Writeln(sSessionID + AServerRunner.Server.SessionIDCookieName);

@@ -115,6 +115,7 @@ implementation
 
 uses
   JSONRPC.Common.Consts, System.JSON.Serializers, System.JSON.Readers,
+
 {$IF DEFINED(DEBUG)}
   {$IF DEFINED(MSWINDOWS)}
     Winapi.Windows,
@@ -213,7 +214,6 @@ begin
   end;
 end;
 
-{.$DEFINE UseRTL35}
 {$IF DEFINED(UseRTL35) OR (RTLVersion < 36.0)}
 type
   TJsonSerializerHelper = class(TJsonSerializer)

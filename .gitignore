@@ -78,5 +78,8 @@ Linux64/
 Tests/
 Debug/
 Release/
+Android64/
 
-Tests/Win64/Debug/TestInsightSettings.ini
+TestInsightSettings.ini
+dunitx-results.xml
+

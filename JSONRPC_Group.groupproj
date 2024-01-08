@@ -42,9 +42,6 @@
         <Projects Include="README.dproj">
             <Dependencies/>
         </Projects>
-        <Projects Include="Examples\Example3\JSONRPC.Example3.Server.dproj">
-            <Dependencies/>
-        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -170,23 +167,14 @@
     <Target Name="README:Make">
         <MSBuild Projects="README.dproj" Targets="Make"/>
     </Target>
-    <Target Name="JSONRPC_Example3_Server">
-        <MSBuild Projects="Examples\Example3\JSONRPC.Example3.Server.dproj"/>
-    </Target>
-    <Target Name="JSONRPC_Example3_Server:Clean">
-        <MSBuild Projects="Examples\Example3\JSONRPC.Example3.Server.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="JSONRPC_Example3_Server:Make">
-        <MSBuild Projects="Examples\Example3\JSONRPC.Example3.Server.dproj" Targets="Make"/>
-    </Target>
     <Target Name="Build">
-        <CallTarget Targets="TestJSONRPC;JSONRPC_ServerIndy;JSONRPC_ClientProj;JSONRPC_ServerProj1;JSONRPC_ServerWebBroker;JSONRPC_AptosClient;JSONRPC_SolanaClient;TestJSONDictionaryConverter2;JSONRPC_BitcoinClient;JSONRPC_AppWizard;JSONRPC_Example1_Server;JSONRPC_Example1_Client;README;JSONRPC_Example3_Server"/>
+        <CallTarget Targets="TestJSONRPC;JSONRPC_ServerIndy;JSONRPC_ClientProj;JSONRPC_ServerProj1;JSONRPC_ServerWebBroker;JSONRPC_AptosClient;JSONRPC_SolanaClient;TestJSONDictionaryConverter2;JSONRPC_BitcoinClient;JSONRPC_AppWizard;JSONRPC_Example1_Server;JSONRPC_Example1_Client;README"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="TestJSONRPC:Clean;JSONRPC_ServerIndy:Clean;JSONRPC_ClientProj:Clean;JSONRPC_ServerProj1:Clean;JSONRPC_ServerWebBroker:Clean;JSONRPC_AptosClient:Clean;JSONRPC_SolanaClient:Clean;TestJSONDictionaryConverter2:Clean;JSONRPC_BitcoinClient:Clean;JSONRPC_AppWizard:Clean;JSONRPC_Example1_Server:Clean;JSONRPC_Example1_Client:Clean;README:Clean;JSONRPC_Example3_Server:Clean"/>
+        <CallTarget Targets="TestJSONRPC:Clean;JSONRPC_ServerIndy:Clean;JSONRPC_ClientProj:Clean;JSONRPC_ServerProj1:Clean;JSONRPC_ServerWebBroker:Clean;JSONRPC_AptosClient:Clean;JSONRPC_SolanaClient:Clean;TestJSONDictionaryConverter2:Clean;JSONRPC_BitcoinClient:Clean;JSONRPC_AppWizard:Clean;JSONRPC_Example1_Server:Clean;JSONRPC_Example1_Client:Clean;README:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="TestJSONRPC:Make;JSONRPC_ServerIndy:Make;JSONRPC_ClientProj:Make;JSONRPC_ServerProj1:Make;JSONRPC_ServerWebBroker:Make;JSONRPC_AptosClient:Make;JSONRPC_SolanaClient:Make;TestJSONDictionaryConverter2:Make;JSONRPC_BitcoinClient:Make;JSONRPC_AppWizard:Make;JSONRPC_Example1_Server:Make;JSONRPC_Example1_Client:Make;README:Make;JSONRPC_Example3_Server:Make"/>
+        <CallTarget Targets="TestJSONRPC:Make;JSONRPC_ServerIndy:Make;JSONRPC_ClientProj:Make;JSONRPC_ServerProj1:Make;JSONRPC_ServerWebBroker:Make;JSONRPC_AptosClient:Make;JSONRPC_SolanaClient:Make;TestJSONDictionaryConverter2:Make;JSONRPC_BitcoinClient:Make;JSONRPC_AppWizard:Make;JSONRPC_Example1_Server:Make;JSONRPC_Example1_Client:Make;README:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>
