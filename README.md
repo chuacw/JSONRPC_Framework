@@ -44,7 +44,7 @@ ISomeJSONRPC = interface(IJSONRPCMethods)
   [YourGUIDhere] // it is important to declare a GUID, or the compiler will
   complain "E2015 Operator not applicable to this operand type"
     [JSONNotify]
-    procedure ANotifyMethod;  
+    procedure ANotifyMethod;
 
     function AddSomeXY(X, Y: Integer): Integer;
 
@@ -52,6 +52,15 @@ ISomeJSONRPC = interface(IJSONRPCMethods)
 end;
 ```
 No matter what your design is, your interface needs to descend from IJSONRPCMethods.
+
+You'll also need to register the interface by calling InvRegistry.RegisterInterface
+on your interface, like so:
+
+InvRegistry.RegisterInterface(ISomeJSONRPC)
+
+It is recommended that you call RegisterInterface in the initialization, so
+that if you implement the server at the same time, the interface is registered
+on the server side as well.
 
 Obtaining an ISomeJSONRPC interface
 ---
@@ -232,7 +241,8 @@ Delphi doesn't handle serializing large numbers well, as certain routines do
 not transform numbers precise enough, ie, StrToFloat and FloatToStr routines, among others.
 
 In addition, because the range of the MinValue and MaxValue definitions in
-floating point numbers are not compatible between 32-bit and 64-bit Delphi, handling floating point numbers are problematic.
+floating point numbers are not compatible between 32-bit and 64-bit Delphi,
+handling floating point numbers are problematic.
 
 As such, this JSON RPC framework handles large numbers by using Rudy Velthuis'
 BigNumbers framework. You can either get it from GitHub's TurboPack repository,
