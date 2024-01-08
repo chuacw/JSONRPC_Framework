@@ -8,7 +8,7 @@ uses
 
 type
 
-  TJSONRPCServerTCPRunner = class(TJSONRPCServerRunner, IJSONRPCDispatch,
+  TJSONRPCServerTCPRunner = class(TCustomJSONRPCServerRunner, IJSONRPCDispatch,
     IJSONRPCGetSetDispatchEvents, IJSONRPCDispatchEvents)
   public
   type
@@ -37,6 +37,9 @@ type
 //    FOnNotifyServerIsActive: TProcNotifyServerIsActive;
 //    FOnNotifyServerIsInactive: TProcNotifyServerIsInactive;
 
+    procedure CreateServerWrapper; override;
+    procedure FreeServerWrapper; override;
+
     function GetAddress: string; override;
     function GetHost: string; override;
     procedure SetAddress(const Value: string); override;
@@ -55,7 +58,7 @@ type
     function GetPort: Integer; override;
     procedure SetPort(const APort: Integer); override;
 
-    function RunThread(AServerSocket: TServerSocket; ASocket: System.Net.Socket.TSocket): TProc;
+    function RunThread(AServerSocket: TServerSocket; ANewSocket: System.Net.Socket.TSocket): TProc;
 
     procedure DoNotifyPortSet; override;
     procedure DoNotifyPortInUse(const APort: Integer); override;
@@ -145,9 +148,17 @@ end;
 
 procedure TJSONRPCServerTCPRunner.CreateServer;
 begin
+  CreateServerWrapper;
+
   FEndpoint.Family := AF_INET;
   FEndpoint.SetAddress('localhost');
   FServer := TServerSocket.Create(RunThread);
+
+end;
+
+procedure TJSONRPCServerTCPRunner.CreateServerWrapper;
+begin
+  FServerWrapper := TJSONRPCServerWrapper.Create(nil);
 end;
 
 //destructor TJSONRPCServerTCPRunner.Destroy;
@@ -192,6 +203,12 @@ end;
 procedure TJSONRPCServerTCPRunner.FreeServer;
 begin
   FServer.Free;
+  FreeServerWrapper;
+end;
+
+procedure TJSONRPCServerTCPRunner.FreeServerWrapper;
+begin
+  FServerWrapper.Free;
 end;
 
 function TJSONRPCServerTCPRunner.GetActive: Boolean;
@@ -280,7 +297,7 @@ begin
 end;
 
 function TJSONRPCServerTCPRunner.RunThread(AServerSocket: TServerSocket;
-  ASocket: System.Net.Socket.TSocket): TProc;
+  ANewSocket: System.Net.Socket.TSocket): TProc;
 begin
   Result := procedure
   var
@@ -289,7 +306,7 @@ begin
     LRequestBytes, LResponseBytes: TBytes;
     LSocket: System.Net.Socket.TSocket;
   begin
-    LSocket := ASocket;
+    LSocket := ANewSocket;
     while not TThread.CheckTerminated do
       begin
         LRequestStream := GetRequestStream;
@@ -313,6 +330,7 @@ begin
               end;
           end;
       end;
+    ANewSocket.Free;
   end;
 end;
 

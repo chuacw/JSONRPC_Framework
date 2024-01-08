@@ -1352,7 +1352,7 @@ begin
                             TJSONObject(LResultP^) := CloneAndTrackJSONObjectToFree(LJSONObj);
                           end else
                           begin
-                            Assert(False, 'Untested code path: 1004');
+                            Assert(False, 'Untested code path: 1355');
                           end;
                       end else
                       begin
@@ -1364,7 +1364,8 @@ begin
                             TJSONObject(LResultP^) := CloneAndTrackJSONObjectToFree(LJSONResponseObj);
                           end else
                           begin
-                            Assert(False, 'Untested code path: 1018');
+                            // {$LINE 1234} // what does this do?
+                            Assert(False, 'Untested code path: 1367');
                           end;
                       end;
                 end;

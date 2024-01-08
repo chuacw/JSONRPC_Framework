@@ -300,6 +300,8 @@ var
   LContext: TRttiContext;
   LType: TRttiType;
   LInstanceType: TRttiInstanceType absolute LType;
+  LIntf: TRttiInterfaceType;
+  LIntfs: TArray<TRttiInterfaceType>;
 begin
   LContext := TRttiContext.Create;
   LType := LContext.GetType(AClass);
@@ -307,8 +309,10 @@ begin
     begin
       if LType is TRttiInstanceType then
         begin
-          var LIntfs := LInstanceType.GetImplementedInterfaces;
-          RegisterInterface(LIntfs[0].Handle);
+          LIntfs := LInstanceType.GetImplementedInterfaces;
+          for LIntf in LIntfs do
+            if (LIntf.BaseType <> nil) and (LIntf.BaseType.GUID = IJSONRPCMethods) then
+              RegisterInterface(LIntf.Handle);
         end;
     end;
   RegisterInvokableClass(AClass, nil);
@@ -448,6 +452,7 @@ var
 begin
   Lock;
   try
+    // Exit if interface already registered.
     for I := 0 to Length(FRegIntfs) - 1 do
       if FRegIntfs[I].Info = Info then
         Exit;
@@ -463,7 +468,7 @@ begin
 
     if FRegIntfs[Index].DefImpl = nil then
       begin
-        { NOTE: First class that implements this interface wins!! }
+        { NOTE: First class that implements this interface wins! }
         for I := 0 to Length(FRegClasses) - 1 do
           begin
             { Allow for a class whose parent implements interfaces }
@@ -472,6 +477,8 @@ begin
               begin
                 Table := FRegClasses[I].ClassType.ClassParent.GetInterfaceTable;
               end;
+            if Table = nil then // Guard against lack of interface
+              Continue;
             for J := 0 to Table.EntryCount - 1 do
               begin
                 if IsEqualGUID(IntfMD.IID, Table.Entries[J].IID) then
