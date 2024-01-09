@@ -147,13 +147,15 @@ end;
 //end;
 
 procedure TJSONRPCServerTCPRunner.CreateServer;
+var
+  LIPAddr: TIPAddress;
+
 begin
   CreateServerWrapper;
 
   FEndpoint.Family := AF_INET;
-  FEndpoint.SetAddress('localhost');
+  FEndpoint.Address := TIPAddress.Any;
   FServer := TServerSocket.Create(RunThread);
-
 end;
 
 procedure TJSONRPCServerTCPRunner.CreateServerWrapper;
@@ -298,15 +300,19 @@ end;
 
 function TJSONRPCServerTCPRunner.RunThread(AServerSocket: TServerSocket;
   ANewSocket: System.Net.Socket.TSocket): TProc;
+var
+  LNewSocket: System.Net.Socket.TSocket;
 begin
+  LNewSocket := ANewSocket;
   Result := procedure
   var
     LRequestString, LResponseString: string;
     LRequestStream, LResponseStream: TStream;
     LRequestBytes, LResponseBytes: TBytes;
     LSocket: System.Net.Socket.TSocket;
+    LByteCount: Integer;
   begin
-    LSocket := ANewSocket;
+    LSocket := LNewSocket;
     while not TThread.CheckTerminated do
       begin
         LRequestStream := GetRequestStream;
@@ -321,12 +327,15 @@ begin
               begin
                 SetLength(LResponseBytes, LResponseStream.Size);
                 LResponseStream.Read(LResponseBytes, Length(LResponseBytes));
-                LResponseString := StringOf(LResponseBytes);
+                LResponseString := LSocket.Encoding.GetString(LResponseBytes);
+                LByteCount := LSocket.Encoding.GetByteCount(LResponseString);
+                LSocket.Send(LByteCount, SizeOf(LByteCount), []);
                 LSocket.Send(LResponseString);
                 LResponseStream.Size := 0;
                 LRequestStream.Size := 0;
                 LResponseBytes := nil;
                 LRequestBytes := nil;
+                TThread.Current.Terminate;
               end;
           end;
       end;

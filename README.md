@@ -13,7 +13,7 @@ Contents
 * [Logging](#logging)
   * [Client side logging](#client-side-logging)
   * [Server side logging](#server-side-logging)
-* [JSON RPC transport wrapper](#json-rpc-transport-wrapper)
+* [JSON RPC transport wrappers](#json-rpc-transport-wrappers)
 * [Using the HTTP transport wrapper](#using-the-http-transport-wrapper)
 * [Using the TCP transport wrapper](#using-the-tcp-transport-wrapper)
 * [Handling large numbers](#handling-large-numbers)

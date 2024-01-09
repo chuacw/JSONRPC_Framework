@@ -2381,6 +2381,7 @@ begin
   var LClass := InvRegistry.GetInvokableClass;
 
 // Fetch the meta data for the interface
+  FIntfMD := Default(TIntfMetaData);
   GetIntfMetaData(LMapIntf.Info, FIntfMD, True);
 
   LJSONState := tjParsing;
@@ -2436,6 +2437,7 @@ begin
                   LMethod := FindMethod(LType, LMethodName, LParamCount, LJSONRequestObj);
                   if Assigned(LMethod) then
                     begin
+                      FIntfMD := Default(TIntfMetaData);
                       GetIntfMetaData(LMapIntf.Info, FIntfMD, True);
                       LClassIndex := 0;
                       if LClass = nil then

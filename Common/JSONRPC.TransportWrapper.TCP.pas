@@ -5,7 +5,7 @@ interface
 uses
   JSONRPC.Common.Types, System.Classes,
   System.Net.URLClient,
-  System.Net.ClientSocket, System.Net.Socket.Common
+  System.Net.ClientSocket, System.Net.Socket.Common, System.SysUtils
   ;
 
 type
@@ -30,6 +30,8 @@ type
     procedure SetConnectionTimeout(const Value: Integer); override;
     procedure SetResponseTimeout(const Value: Integer); override;
     procedure SetSendTimeout(const Value: Integer); override;
+
+    function GetEncoding: TEncoding;
   public
     procedure Connect; override;
 
@@ -38,6 +40,7 @@ type
     procedure Post(const AURL: string; const ASource, AResponseContent: TStream;
       const AHeaders: TNetHeaders); override;
           property Connected;
+    property Encoding: TEncoding read GetEncoding;
   end;
 
   procedure InitTransportWrapperTCP;
@@ -49,7 +52,7 @@ uses
   Winapi.Windows,
 {$ENDIF}
   System.Net.Socket,
-  Winapi.Winsock2, System.SysUtils;
+  Winapi.Winsock2;
 
 { TJSONRPCTCPTransportWrapper }
 
@@ -88,6 +91,11 @@ end;
 function TJSONRPCTCPTransportWrapper.GetConnectionTimeout: Integer;
 begin
   Result := FSocket.ConnectTimeout;
+end;
+
+function TJSONRPCTCPTransportWrapper.GetEncoding: TEncoding;
+begin
+  Result := FSocket.Encoding;
 end;
 
 function TJSONRPCTCPTransportWrapper.GetRequestStream: TStream;
@@ -134,6 +142,7 @@ procedure TJSONRPCTCPTransportWrapper.Post(const AURL: string; const ASource,
   AResponseContent: TStream; const AHeaders: TNetHeaders);
 var
   LSendBuffer, LReceivedBuffer: TBytes;
+  LLen: Integer;
 begin
 
   if not Connected then
@@ -150,10 +159,11 @@ begin
   SetLength(LSendBuffer, ASource.Size);
   // Send outgoing client data
   ASource.Read(LSendBuffer, Length(LSendBuffer));
-  FSocket.Send(LSendBuffer);
+  LLen := FSocket.Send(LSendBuffer);
 
   // Read incoming server response on client side
-  LReceivedBuffer := FSocket.Receive();
+  SetLength(LReceivedBuffer, LLen);
+  FSocket.Receive(LReceivedBuffer, Length(LReceivedBuffer), []);
   {$IF DEFINED(DEBUG)}
   var LReceivedString := StringOf(LReceivedBuffer);
   OutputDebugString(PChar(LReceivedString));
