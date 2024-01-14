@@ -158,7 +158,10 @@ begin
     hDelete: begin
       {$IF RTLVersion >= TRTLVersion.Delphi120 }
       Result := FClient.Delete(AURL, ASource, AResponseContent, AHeaders);
-      {$ELSEIF RTLVersion >= TRTLVersion.Delphi110}
+      {$ELSE}
+        {$IF RTLVersion < TRTLVersion.Delphi110}
+        {$MESSAGE WARN 'Untested for compilers before Delphi 11'}
+        {$ENDIF}
       var LRequest: IHTTPRequest := FClient.GetRequest(AMethod, AURL);
       Result := FClient.Execute(LRequest, AResponseContent, AHeaders);
       {$ENDIF}
@@ -194,7 +197,6 @@ procedure TJSONRPCHTTPTransportWrapper.Post(const AURL: string; const ASource,
   AResponseContent: TStream; const AHeaders: TNetHeaders);
 begin
   FClient.Post(AURL, ASource, AResponseContent, AHeaders);
-
 end;
 
 procedure TJSONRPCHTTPTransportWrapper.SetResponseTimeout(const Value: Integer);

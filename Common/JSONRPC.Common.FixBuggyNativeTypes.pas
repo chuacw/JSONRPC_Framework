@@ -9,6 +9,9 @@
 {---------------------------------------------------------------------------}
 unit JSONRPC.Common.FixBuggyNativeTypes;
 
+{$ALIGN 16}
+{$CODEALIGN 16}
+
 interface
 
 const

@@ -126,13 +126,14 @@ function IfThen(AValue: Boolean; const ATrue: TFunc<Integer>; const AFalse: TFun
 function IfThen(AValue: Boolean; const ATrue: Integer; const AFalse: TFunc<Integer>): Integer; overload;
 function IfThen(AValue: Boolean; const ATrue: TFunc<Integer>; const AFalse: Integer): Integer; overload;
 
+{$IF DEFINED(UseRTL35) OR (RTLVersion < 36.0)}
 type
 
-{$IF DEFINED(UseRTL35) OR (RTLVersion < 36.0)}
   TJsonSerializerHelper = class(TJsonSerializer)
   public
     function InternalDeserialize(const AReader: TJsonReader; ATypeInf: PTypeInfo): TValue; override;
   end;
+
   TCollectionsHelper = class
   public
     class function ListToArray<T>(const AList: TList<T>): TArray<T>; static;
@@ -505,6 +506,7 @@ end;
 
 { TCollectionsHelper }
 
+{$IF DEFINED(UseRTL35) OR (RTLVersion < 36.0)}
 class function TCollectionsHelper.DictionaryToArray<K, V>(
   const ADictionary: TDictionary<K, V>): TArray<TPair<K, V>>;
 begin
@@ -516,6 +518,7 @@ class function TCollectionsHelper.ListToArray<T>(
 begin
   Result := AList.ToArray;
 end;
+{$ENDIF}
 
 function SameJson(const AJSON1, AJSON2: string): Boolean;
 var
