@@ -1,0 +1,72 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{837C2E73-12A8-4C50-BC10-552790AA3BE6}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="Aptos\JSONRPC.AptosClient.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Bitcoin\JSONRPC.BitcoinClient.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Solana\JSONRPC.SolanaClient.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Ethereum\JSONRPC.EthereumClient.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="JSONRPC_AptosClient">
+        <MSBuild Projects="Aptos\JSONRPC.AptosClient.dproj"/>
+    </Target>
+    <Target Name="JSONRPC_AptosClient:Clean">
+        <MSBuild Projects="Aptos\JSONRPC.AptosClient.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="JSONRPC_AptosClient:Make">
+        <MSBuild Projects="Aptos\JSONRPC.AptosClient.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="JSONRPC_BitcoinClient">
+        <MSBuild Projects="Bitcoin\JSONRPC.BitcoinClient.dproj"/>
+    </Target>
+    <Target Name="JSONRPC_BitcoinClient:Clean">
+        <MSBuild Projects="Bitcoin\JSONRPC.BitcoinClient.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="JSONRPC_BitcoinClient:Make">
+        <MSBuild Projects="Bitcoin\JSONRPC.BitcoinClient.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="JSONRPC_SolanaClient">
+        <MSBuild Projects="Solana\JSONRPC.SolanaClient.dproj"/>
+    </Target>
+    <Target Name="JSONRPC_SolanaClient:Clean">
+        <MSBuild Projects="Solana\JSONRPC.SolanaClient.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="JSONRPC_SolanaClient:Make">
+        <MSBuild Projects="Solana\JSONRPC.SolanaClient.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="JSONRPC_EthereumClient">
+        <MSBuild Projects="Ethereum\JSONRPC.EthereumClient.dproj"/>
+    </Target>
+    <Target Name="JSONRPC_EthereumClient:Clean">
+        <MSBuild Projects="Ethereum\JSONRPC.EthereumClient.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="JSONRPC_EthereumClient:Make">
+        <MSBuild Projects="Ethereum\JSONRPC.EthereumClient.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="JSONRPC_AptosClient;JSONRPC_BitcoinClient;JSONRPC_SolanaClient;JSONRPC_EthereumClient"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="JSONRPC_AptosClient:Clean;JSONRPC_BitcoinClient:Clean;JSONRPC_SolanaClient:Clean;JSONRPC_EthereumClient:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="JSONRPC_AptosClient:Make;JSONRPC_BitcoinClient:Make;JSONRPC_SolanaClient:Make;JSONRPC_EthereumClient:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>

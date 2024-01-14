@@ -1,5 +1,7 @@
 program JSONRPC.ServerProj1;
+
 {$APPTYPE CONSOLE}
+{$WARN DUPLICATE_CTOR_DTOR OFF}
 
 uses
   System.SysUtils,

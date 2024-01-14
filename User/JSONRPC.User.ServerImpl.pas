@@ -1,5 +1,6 @@
 unit JSONRPC.User.ServerImpl;
 
+{$ALIGN 16}
 {$CODEALIGN 16}
 
 interface
@@ -118,7 +119,7 @@ implementation
 uses
   JSONRPC.RIO, System.SysUtils, System.DateUtils, System.Rtti,
   JSONRPC.JsonUtils, System.TypInfo, JSONRPC.Common.Types,
-  System.JSON,
+  System.JSON, JSONRPC.Common.Consts,
   JSONRPC.Common.RecordHandlers;
 
 function TSomeJSONRPC.AddDoubles(A, B: Float64): Float64;
@@ -435,13 +436,13 @@ end;
 procedure TSomeJSONRPC.SomeException;
 begin
   var AErrorMsg := 'Some server error within TSomeJSONRPC.SomeException';  // or your own message
-  raise EJSONRPCException.Create(AErrorMsg);
+  raise EJSONRPCMethodException.Create(CInternalError, AErrorMsg);
 end;
 
 procedure TSomeJSONRPC.SomeSafeCallException;
 begin
   var AErrorMsg := 'Exception within TSomeJSONRPC.SomeSafeCallException'; // or your own message
-  raise EJSONRPCMethodException.Create(-32601, AErrorMsg, FMethodName);
+  raise EJSONRPCMethodException.Create(CInternalError, AErrorMsg, FMethodName);
 end;
 
 initialization

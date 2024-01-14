@@ -1,4 +1,4 @@
-unit Web3.Ethereum.RIO;
+unit JSONRPC.Web3.Ethereum.RIO;
 
 interface
 

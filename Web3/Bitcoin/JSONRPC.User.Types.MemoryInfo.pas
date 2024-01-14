@@ -6,6 +6,10 @@ unit JSONRPC.User.Types.MemoryInfo;
 
 interface
 
+{$IF RTLVersion < 36.00}
+  {$MESSAGE ERROR 'This example requires Delphi 12.0 or later!'}
+{$ELSE}
+
 uses
   System.JSON.Serializers, System.JSON;
 
@@ -60,8 +64,11 @@ type
 //    property Dataset: TArray<MemoryInfoResult> read FDataset write FDataset;
 //  end;
 
+{$ENDIF}
+
 implementation
 
+{$IF RTLVersion >= 36.00}
 class function MemoryInfoResult.FromJSON(const AValue: TJSONValue): MemoryInfoResult;
 begin
   Result := TJSONMapper<MemoryInfoResult>.Default.FromObject(AValue);
@@ -104,4 +111,5 @@ end;
 //  Result := TJSONMapper<JSONRPC2Result>.Default.ToString(Dataset);
 //end;
 
+{$ENDIF}
 end.

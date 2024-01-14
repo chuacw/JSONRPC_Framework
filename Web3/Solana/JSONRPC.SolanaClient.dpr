@@ -1,7 +1,7 @@
 program JSONRPC.SolanaClient;
 
 {$APPTYPE CONSOLE}
-
+{$WARN DUPLICATE_CTOR_DTOR OFF}
 {$R *.res}
 
 uses
@@ -39,5 +39,6 @@ begin
 end;
 
 begin
+  ReportMemoryLeaksOnShutdown := True;
   Main;
 end.

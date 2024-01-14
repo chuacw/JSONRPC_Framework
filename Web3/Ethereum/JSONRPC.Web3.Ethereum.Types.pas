@@ -1,4 +1,4 @@
-unit Web3.Ethereum.Types;
+unit JSONRPC.Web3.Ethereum.Types;
 
 interface
 

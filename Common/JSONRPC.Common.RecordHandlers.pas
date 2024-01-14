@@ -1,5 +1,15 @@
+{---------------------------------------------------------------------------}
+{                                                                           }
+{ File:       JSONRPC.Common.RecordHandlers.pas                             }
+{ Function:   JSON RPC handlers for large numbers                           }
+{                                                                           }
+{ Language:   Delphi version XE11 or later                                  }
+{ Author:     Chee-Wee Chua                                                 }
+{ Copyright:  (c) 2023,2024 Chee-Wee Chua                                   }
+{---------------------------------------------------------------------------}
 unit JSONRPC.Common.RecordHandlers;
 
+{$ALIGN 16}
 {$CODEALIGN 16}
 
 interface

@@ -1,5 +1,6 @@
 unit JSONRPC.User.BitcoinRPC;
 
+{$ALIGN 16}
 {$CODEALIGN 16}
 
 interface

@@ -1,3 +1,12 @@
+{---------------------------------------------------------------------------}
+{                                                                           }
+{ File:       TestJSONRPC.JSONRPCHTTPServer.pas                             }
+{ Function:   A JSON RPC test server                                        }
+{                                                                           }
+{ Language:   Delphi version XE11 or later                                  }
+{ Author:     Chee-Wee Chua                                                 }
+{ Copyright:  (c) 2023,2024 Chee-Wee Chua                                   }
+{---------------------------------------------------------------------------}
 unit TestJSONRPC.JSONRPCHTTPServer;
 
 interface

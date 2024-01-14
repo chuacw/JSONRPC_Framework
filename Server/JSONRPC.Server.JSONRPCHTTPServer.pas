@@ -1,4 +1,16 @@
+{---------------------------------------------------------------------------}
+{                                                                           }
+{ File:      JSONRPC.Server.JSONRPCHTTPServer.pas                           }
+{ Function:  Constants for JSON RPC HTTP server                             }
+{                                                                           }
+{ Language:   Delphi version XE11 or later                                  }
+{ Author:     Chee-Wee Chua                                                 }
+{ Copyright:  (c) 2023,2024 Chee-Wee Chua                                   }
+{---------------------------------------------------------------------------}
 unit JSONRPC.Server.JSONRPCHTTPServer;
+
+{$ALIGN 16}
+{$CODEALIGN 16}
 
 interface
 

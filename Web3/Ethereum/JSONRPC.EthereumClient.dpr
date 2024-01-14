@@ -1,12 +1,12 @@
-program JSONRPC.EthereumProj;
+program JSONRPC.EthereumClient;
 
 {$APPTYPE CONSOLE}
-
+{$WARN DUPLICATE_CTOR_DTOR OFF}
 {$R *.res}
 
 uses
   System.Variants,
-  JSONRPC.RIO in '..\Common\JSONRPC.RIO.pas',
+  JSONRPC.RIO in '..\..\Common\JSONRPC.RIO.pas',
   System.Classes,
   System.Rtti,
   System.JSON,
@@ -15,24 +15,22 @@ uses
   Winapi.Windows,
   System.DateUtils,
   System.JSON.Writers,
-  JSONRPC.Common.Consts in '..\Common\JSONRPC.Common.Consts.pas',
-  JSONRPC.InvokeRegistry in '..\Common\JSONRPC.InvokeRegistry.pas',
-  JSONRPC.User.SomeTypes in '..\Common\JSONRPC.User.SomeTypes.pas',
-  JSONRPC.Common.Types in '..\Common\JSONRPC.Common.Types.pas',
-  JSONRPC.JsonUtils in '..\Common\JSONRPC.JsonUtils.pas',
-  JSONRPC.TransportWrapper.HTTP in '..\Common\JSONRPC.TransportWrapper.HTTP.pas',
-  JSONRPC.TransportWrapper.TCP in '..\Common\JSONRPC.TransportWrapper.TCP.pas',
-  JSONRPC.User.SomeTypes.Impl in 'JSONRPC.User.SomeTypes.Impl.pas',
-  System.Net.ClientSocket in '..\..\NetSocket\Client\System.Net.ClientSocket.pas',
-  System.Net.Socket.Common in '..\..\NetSocket\Common\System.Net.Socket.Common.pas',
-  Web3.Common.Types in '..\Web3\Web3.Common.Types.pas',
-  Web3.Serializers in '..\Web3\Web3.Serializers.pas',
-  Web3.JsonUtils in '..\Web3\Web3.JsonUtils.pas',
-  JSONRPC.Common.RecordHandlers in '..\Common\JSONRPC.Common.RecordHandlers.pas',
-  Web3.Ethereum.Types in '..\Web3\Ethereum\Web3.Ethereum.Types.pas',
-  Web3.EtheerumAPI in '..\Web3\Ethereum\Web3.EtheerumAPI.pas',
-  Web3.Ethereum.RIO in '..\Web3\Ethereum\Web3.Ethereum.RIO.pas',
-  Web3.Ethereum.Serializers in '..\Web3\Ethereum\Web3.Ethereum.Serializers.pas';
+  JSONRPC.Common.Consts in '..\..\Common\JSONRPC.Common.Consts.pas',
+  JSONRPC.InvokeRegistry in '..\..\Common\JSONRPC.InvokeRegistry.pas',
+  JSONRPC.User.SomeTypes in '..\..\Common\JSONRPC.User.SomeTypes.pas',
+  JSONRPC.Common.Types in '..\..\Common\JSONRPC.Common.Types.pas',
+  JSONRPC.JsonUtils in '..\..\Common\JSONRPC.JsonUtils.pas',
+  JSONRPC.TransportWrapper.HTTP in '..\..\Common\JSONRPC.TransportWrapper.HTTP.pas',
+  System.Net.ClientSocket in '..\..\..\NetSocket\Client\System.Net.ClientSocket.pas',
+  System.Net.Socket.Common in '..\..\..\NetSocket\Common\System.Net.Socket.Common.pas',
+  Web3.Common.Types in '..\Web3.Common.Types.pas',
+  Web3.Serializers in '..\Web3.Serializers.pas',
+  Web3.JsonUtils in '..\Web3.JsonUtils.pas',
+  JSONRPC.Common.RecordHandlers in '..\..\Common\JSONRPC.Common.RecordHandlers.pas',
+  JSONRPC.Web3.Ethereum.Types in 'JSONRPC.Web3.Ethereum.Types.pas',
+  JSONRPC.Web3.EthereumAPI in 'JSONRPC.Web3.EthereumAPI.pas',
+  JSONRPC.Web3.Ethereum.RIO in 'JSONRPC.Web3.Ethereum.RIO.pas',
+  JSONRPC.Web3.Ethereum.Serializers in 'JSONRPC.Web3.Ethereum.Serializers.pas';
 
 procedure AssignSafeCallException(const AJSONRPC: IEthereumJSONRPC);
 begin
@@ -101,8 +99,8 @@ begin
 end;
 
 begin
+  ReportMemoryLeaksOnShutdown := True;
   try
-    ReportMemoryLeaksOnShutdown := True;
     Main;
   finally
     Write('Press enter to terminate...');

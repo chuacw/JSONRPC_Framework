@@ -1,4 +1,4 @@
-unit Web3.Ethereum.Serializers;
+unit JSONRPC.Web3.Ethereum.Serializers;
 
 interface
 

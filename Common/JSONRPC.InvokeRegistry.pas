@@ -1,5 +1,15 @@
+{---------------------------------------------------------------------------}
+{                                                                           }
+{ File:       JSONRPC.InvokeRegistry.pas                                    }
+{ Function:   JSON RPC InvokeRegistry                                       }
+{                                                                           }
+{ Language:   Delphi version XE11 or later                                  }
+{ Author:     Chee-Wee Chua                                                 }
+{ Copyright:  (c) 2023,2024 Chee-Wee Chua                                   }
+{---------------------------------------------------------------------------}
 unit JSONRPC.InvokeRegistry;
 
+{$ALIGN 16}
 {$CODEALIGN 16}
 
 interface
@@ -342,7 +352,10 @@ function TInvokableClassRegistry.GetInterface: InterfaceMapItem;
 begin
   if Length(FRegIntfs) > 0 then
     Result := FRegIntfs[0] else
-    Result := Default(InterfaceMapItem);
+    begin
+      Result := Default(InterfaceMapItem);
+      Initialize(Result);
+    end;
 end;
 
 function TInvokableClassRegistry.GetInterfaces: TArray<InterfaceMapItem>;

@@ -1,15 +1,31 @@
+{---------------------------------------------------------------------------}
+{                                                                           }
+{ File:       JSONRPC.Common.Types.pas                                      }
+{ Function:   Common type declarations                                      }
+{                                                                           }
+{ Language:   Delphi version XE11 or later                                  }
+{ Author:     Chee-Wee Chua                                                 }
+{ Copyright:  (c) 2023,2024 Chee-Wee Chua                                   }
+{---------------------------------------------------------------------------}
 unit JSONRPC.Common.Types;
 
+{$ALIGN 16}
 {$CODEALIGN 16}
+{$WARN DUPLICATE_CTOR_DTOR OFF}
 
 interface
 
 uses
   System.SysUtils, System.Classes, System.JSON, System.JSON.Serializers,
   System.Net.URLClient, System.TypInfo, System.Rtti, Soap.IntfInfo,
-  System.Net.HttpClient, System.JSON.Readers, System.JSON.Writers;
+  System.Net.HttpClient, System.JSON.Readers, System.JSON.Writers,
+  JSONRPC.Common.Consts;
 
 type
+
+  TLogFormat = (tlfNative, tlfEncoded, tlfDecoded);
+
+  TOnAuthentication = reference to function(var VUserName, VPassword: string): Boolean;
 
   TBeforeExecuteEvent = procedure(const MethodName: string; ARequest: TStream) of object;
   TAfterExecuteEvent  = procedure(const MethodName: string; AResponse: TStream) of object;
@@ -227,14 +243,21 @@ type
   IJSONRPCInvocationSettings = interface
     ['{F5412FA7-D6A5-4BF7-8A40-E556ABF6432E}']
 
+
+    {$IF RTLVersion >= TRTLVersion.Delphi120 }
     function GetConnectionTimeout: Integer;
+    procedure SetConnectionTimeout(const Value: Integer);
+    {$ENDIF}
+
     function GetSendTimeout: Integer;
     function GetResponseTimeout: Integer;
-    procedure SetConnectionTimeout(const Value: Integer);
     procedure SetSendTimeout(const Value: Integer);
     procedure SetResponseTimeout(const Value: Integer);
 
+    {$IF RTLVersion >= TRTLVersion.Delphi120 }
     property ConnectionTimeout: Integer read GetConnectionTimeout write SetConnectionTimeout;
+    {$ENDIF}
+
     property SendTimeout: Integer read GetSendTimeout write SetSendTimeout;
     property ResponseTimeout: Integer read GetResponseTimeout write SetResponseTimeout;
   end;
@@ -277,9 +300,11 @@ type
   protected
     FMethodName: string;
   public
+    constructor Create(const AMsg: string); overload;
     constructor Create(const AMsg, AMethodName: string); overload;
     constructor Create(ACode: Integer; const AMsg: string; const AMethodName: string); overload;
     constructor Create(AExceptObj: TObject); overload;
+    class function MethodNameCreate(const AMethodName: string): EJSONRPCMethodException; static;
 {$WARN HIDING_MEMBER OFF}
     property MethodName: string read FMethodName write FMethodName;
 {$WARN HIDING_MEMBER ON}
@@ -290,7 +315,12 @@ type
     constructor Create;
   end;
 
-  EJSONRPCParamParsingException = class(EJSONRPCException)
+  EJSONRPCParamParsingException = class(EJSONRPCMethodException)
+  protected
+    FParamName: string;
+  public
+    constructor Create(const AMethodName, AParamName: string);
+    property ParamName: string read FParamName;
   end;
 
   EJSONRPCMethodMissingException = class(EJSONRPCException)
@@ -326,10 +356,13 @@ type
     function GetRequestStream: TStream; virtual; abstract;
     function GetResponseStream: TStream; virtual; abstract;
 
+    {$IF RTLVersion >= TRTLVersion.Delphi120 }
     function GetConnectionTimeout: Integer; virtual; abstract;
+    procedure SetConnectionTimeout(const Value: Integer); virtual; abstract;
+    {$ENDIF}
+
     function GetResponseTimeout: Integer; virtual; abstract;
     function GetSendTimeout: Integer; virtual; abstract;
-    procedure SetConnectionTimeout(const Value: Integer); virtual; abstract;
     procedure SetResponseTimeout(const Value: Integer); virtual; abstract;
     procedure SetSendTimeout(const Value: Integer); virtual; abstract;
   public
@@ -342,7 +375,11 @@ type
     function HttpMethod(const AMethod: string; const AURL: string;
       const ASource, AResponseContent: TStream;
       const AHeaders: TNetHeaders): IHTTPResponse; virtual; abstract;
+
+    {$IF RTLVersion >= TRTLVersion.Delphi120 }
     property ConnectionTimeout: Integer read GetConnectionTimeout write SetConnectionTimeout;
+    {$ENDIF}
+
     property ResponseTimeout: Integer read GetResponseTimeout write SetResponseTimeout;
     property SendTimeout: Integer read GetSendTimeout write SetSendTimeout;
 
@@ -378,7 +415,6 @@ type
     constructor Create(const APrefix: string);
     function ReadJson(const AReader: TJsonReader; ATypeInfo: PTypeInfo;
       const AExistingValue: TValue; const ASerializer: TJsonSerializer): TValue; override;
-    {$MESSAGE WARN 'Untested'}
     procedure WriteJson(const AWriter: TJsonWriter; const AValue: TValue;
       const ASerializer: TJsonSerializer); override;
   end;
@@ -411,7 +447,7 @@ uses
   // Comment out the two following units to remove support for
   // BigDecimals and BigIntegers
   Velthuis.BigDecimals, Velthuis.BigIntegers,
-  JSONRPC.JsonUtils, JSONRPC.Common.Consts;
+  JSONRPC.JsonUtils;
 
 { TJSONRPCBoolean }
 
@@ -438,6 +474,11 @@ end;
 
 { EJSONRPCMethodException }
 
+constructor EJSONRPCMethodException.Create(const AMsg: string);
+begin
+  inherited Create(CMethodNotFound, AMsg);
+end;
+
 constructor EJSONRPCMethodException.Create(const AMsg, AMethodName: string);
 begin
   Create(CMethodNotFound, AMsg, AMethodName);
@@ -455,6 +496,12 @@ var
   LExc: EJSONRPCMethodException absolute AExceptObj;
 begin
   Create(LExc.Code, LExc.Message, LExc.MethodName);
+end;
+
+class function EJSONRPCMethodException.MethodNameCreate(const AMethodName: string): EJSONRPCMethodException;
+begin
+  Result := EJSONRPCMethodException.Create(CMethodNotFound, SMethodNotFound);
+  Result.MethodName := AMethodName;
 end;
 
 { TJSONRPCTransportWrapper }
@@ -490,6 +537,7 @@ destructor TTrackedMemoryStream.Destroy;
 begin
   if Assigned(FProc) then
     FProc(Self);
+  FProc := nil;
   inherited;
 end;
 
@@ -606,6 +654,15 @@ begin
   ];
   for var LExcClass in LExcClasses do
     RegisterExceptionClass(LExcClass);
+end;
+
+{ EJSONRPCParamParsingException }
+
+constructor EJSONRPCParamParsingException.Create(const AMethodName, AParamName: string);
+begin
+  inherited MethodNameCreate(AMethodName);
+  Message := SParseError;
+  FParamName := AParamName;
 end;
 
 initialization

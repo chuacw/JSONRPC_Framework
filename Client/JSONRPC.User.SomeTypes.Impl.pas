@@ -1,5 +1,6 @@
 unit JSONRPC.User.SomeTypes.Impl;
 
+{$ALIGN 16}
 {$CODEALIGN 16}
 
 interface
@@ -23,6 +24,7 @@ uses
 {$IF DEFINED(TEST) OR DEFINED(DEBUG)}
   Winapi.Windows,
 {$ENDIF}
+  JSONRPC.Common.Consts,
   System.JSON, System.Rtti, JSONRPC.InvokeRegistry,
   JSONRPC.JsonUtils;
 
@@ -57,7 +59,9 @@ begin
       var LTimeout := 10*60*1000;
       LJSONRPCWrapper.SendTimeout := LTimeout;
       LJSONRPCWrapper.ResponseTimeout := LTimeout;
+      {$IF RTLVersion >= TRTLVersion.Delphi120 }
       LJSONRPCWrapper.ConnectionTimeout := LTimeout;
+      {$ENDIF}
     end;
 {$ENDIF}
 

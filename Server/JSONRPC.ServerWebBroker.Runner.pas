@@ -1,5 +1,15 @@
+{---------------------------------------------------------------------------}
+{                                                                           }
+{ File:      JSONRPC.ServerWebBroker.Runner.pas                             }
+{ Function:  A JSON RPC web broker runner                                   }
+{                                                                           }
+{ Language:   Delphi version XE11 or later                                  }
+{ Author:     Chee-Wee Chua                                                 }
+{ Copyright:  (c) 2023,2024 Chee-Wee Chua                                   }
+{---------------------------------------------------------------------------}
 unit JSONRPC.ServerWebBroker.Runner;
 
+{$ALIGN 16}
 {$CODEALIGN 16}
 
 interface

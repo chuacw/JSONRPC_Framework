@@ -1,6 +1,19 @@
+{---------------------------------------------------------------------------}
+{                                                                           }
+{ File:      JSONRPC.Wizard.Consts.pas                                      }
+{ Function:  JSON RPC wizard constants                                      }
+{                                                                           }
+{ Language:   Delphi version XE11 or later                                  }
+{ Author:     Chee-Wee Chua                                                 }
+{ Copyright:  (c) 2023,2024 Chee-Wee Chua                                   }
+{---------------------------------------------------------------------------}
 unit JSONRPC.Wizard.Consts;
 
 interface
+
+{$IF CompilerVersion < 36.00 }
+{$MESSAGE ERROR 'This requires Delphi 12.0 or later!'}
+{$ELSE}
 
 const
 
@@ -22,6 +35,7 @@ const
   SMethodSource: string =
 '''
 unit %s;
+{$ALIGN 16}
 {$CODEALIGN 16}
 
 interface
@@ -76,6 +90,7 @@ initialization
 end.
 ''';
 
+{$ENDIF}
 implementation
 
 end.

@@ -1,3 +1,12 @@
+{---------------------------------------------------------------------------}
+{                                                                           }
+{ File:       JSONRPC.TransportWrapper.TCP.pas                              }
+{ Function:   TCP tranport wrapper for JSON RPC                             }
+{                                                                           }
+{ Language:   Delphi version XE11 or later                                  }
+{ Author:     Chee-Wee Chua                                                 }
+{ Copyright:  (c) 2023,2024 Chee-Wee Chua                                   }
+{---------------------------------------------------------------------------}
 unit JSONRPC.TransportWrapper.TCP;
 
 interface
@@ -5,8 +14,8 @@ interface
 uses
   JSONRPC.Common.Types, System.Classes,
   System.Net.URLClient,
-  System.Net.ClientSocket, System.Net.Socket.Common, System.SysUtils
-  ;
+  System.Net.ClientSocket, System.Net.Socket.Common, System.SysUtils,
+  JSONRPC.Common.Consts;
 
 type
 
@@ -24,11 +33,15 @@ type
     function GetRequestStream: TStream; override;
     function GetResponseStream: TStream; override;
 
+    {$IF RTLVersion >= TRTLVersion.Delphi120 }
     function GetConnectionTimeout: Integer; override;
-    function GetResponseTimeout: Integer; override;
-    function GetSendTimeout: Integer; override;
     procedure SetConnectionTimeout(const Value: Integer); override;
+    {$ENDIF}
+
+    function GetResponseTimeout: Integer; override;
     procedure SetResponseTimeout(const Value: Integer); override;
+
+    function GetSendTimeout: Integer; override;
     procedure SetSendTimeout(const Value: Integer); override;
 
     function GetEncoding: TEncoding;
@@ -39,7 +52,8 @@ type
     destructor Destroy; override;
     procedure Post(const AURL: string; const ASource, AResponseContent: TStream;
       const AHeaders: TNetHeaders); override;
-          property Connected;
+
+    property Connected;
     property Encoding: TEncoding read GetEncoding;
   end;
 
@@ -88,10 +102,18 @@ begin
 //  Result := FSocket.Connected;
 end;
 
+{$IF RTLVersion >= RTLVersionDelphi120 }
 function TJSONRPCTCPTransportWrapper.GetConnectionTimeout: Integer;
 begin
   Result := FSocket.ConnectTimeout;
 end;
+
+procedure TJSONRPCTCPTransportWrapper.SetConnectionTimeout(
+  const Value: Integer);
+begin
+  FSocket.ConnectTimeout := Value;
+end;
+{$ENDIF}
 
 function TJSONRPCTCPTransportWrapper.GetEncoding: TEncoding;
 begin
@@ -172,12 +194,6 @@ begin
   AResponseContent.Write(LReceivedBuffer, Length(LReceivedBuffer));
 end;
 
-procedure TJSONRPCTCPTransportWrapper.SetConnectionTimeout(
-  const Value: Integer);
-begin
-  FSocket.ConnectTimeout := Value;
-end;
-
 procedure TJSONRPCTCPTransportWrapper.SetResponseTimeout(const Value: Integer);
 begin
   FSocket.ReceiveTimeout := Value;
@@ -197,3 +213,40 @@ initialization
   if not Assigned(GJSONRPCTransportWrapperClass) then
     InitTransportWrapperTCP;
 end.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// chuacw, Jun 2023
+

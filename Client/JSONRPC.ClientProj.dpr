@@ -1,7 +1,7 @@
 program JSONRPC.ClientProj;
 
 {$APPTYPE CONSOLE}
-
+{$WARN DUPLICATE_CTOR_DTOR OFF}
 {$R *.res}
 
 uses
@@ -30,10 +30,13 @@ begin
   var LJSONRPC := GetSomeJSONRPC('http://localhost:8083',
     procedure(const AJSONRPCRequest: string)
     begin
+      Writeln(StringOfChar('-', 90));
       WriteLn(Format('Outgoing JSON RPC Request: %s', [AJSONRPCRequest]));
+      Writeln(StringOfChar('-', 90));
     end,
     procedure(const AJSONRPCResponse: string)
     begin
+      Writeln(StringOfChar('-', 90));
       WriteLn(Format('Incoming JSON RPC Response: %s', [AJSONRPCResponse]));
       Writeln(StringOfChar('-', 90));
     end
@@ -115,6 +118,7 @@ begin
     // it uses the one assigned by AssignSafeCallExceptionHandler
 
     // This causes an exception that's trapped above
+    LJSONRPC.SomeSafeCallException;
     LJSONRPC.SomeSafeCallException;
 
     LEnum := LJSONRPC.GetEnum(enumB);

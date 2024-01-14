@@ -1,4 +1,4 @@
-unit Web3.Aptos.RIO;
+unit JSONRPC.Web3.Aptos.RIO;
 
 interface
 

@@ -1,12 +1,22 @@
+{---------------------------------------------------------------------------}
+{                                                                           }
+{ File:       JSONRPC.TransportWrapper.HTTP.pas                             }
+{ Function:   HTTP transport wrapper for JSON RPC                           }
+{                                                                           }
+{ Language:   Delphi version XE11 or later                                  }
+{ Author:     Chee-Wee Chua                                                 }
+{ Copyright:  (c) 2023,2024 Chee-Wee Chua                                   }
+{---------------------------------------------------------------------------}
 unit JSONRPC.TransportWrapper.HTTP;
 
+{$ALIGN 16}
 {$CODEALIGN 16}
 
 interface
 
 uses
   JSONRPC.Common.Types, System.Classes,
-  System.Net.HttpClient, System.Net.URLClient;
+  System.Net.HttpClient, System.Net.URLClient, JSONRPC.Common.Consts;
 
 type
 
@@ -19,11 +29,15 @@ type
     function GetRequestStream: TStream; override;
     function GetResponseStream: TStream; override;
 
+    {$IF RTLVersion >= TRTLVersion.Delphi120 }
     function GetConnectionTimeout: Integer; override;
-    function GetResponseTimeout: Integer; override;
-    function GetSendTimeout: Integer; override;
     procedure SetConnectionTimeout(const Value: Integer); override;
+    {$ENDIF}
+
+    function GetResponseTimeout: Integer; override;
     procedure SetResponseTimeout(const Value: Integer); override;
+
+    function GetSendTimeout: Integer; override;
     procedure SetSendTimeout(const Value: Integer); override;
   public
     constructor Create; override;
@@ -40,7 +54,7 @@ procedure InitTransportWrapperHTTP;
 implementation
 
 uses
-  System.SysUtils, JSONRPC.Common.Consts;
+  System.SysUtils;
 
 { TJSONRPCHTTPTransportWrapper }
 
@@ -63,10 +77,18 @@ begin
   Result := True;
 end;
 
+{$IF RTLVersion >= TRTLVersion.Delphi120 }
 function TJSONRPCHTTPTransportWrapper.GetConnectionTimeout: Integer;
 begin
   Result := FClient.ConnectionTimeout;
 end;
+
+procedure TJSONRPCHTTPTransportWrapper.SetConnectionTimeout(
+  const Value: Integer);
+begin
+  FClient.ConnectionTimeout := Value;
+end;
+{$ENDIF}
 
 function TJSONRPCHTTPTransportWrapper.GetRequestStream: TStream;
 begin
@@ -134,9 +156,9 @@ begin
       Result := FClient.Execute(LRequest, AResponseContent, AHeaders);
     end;
     hDelete: begin
-      {$IF RTLVersion >= RTLVersionDelphi120 }
+      {$IF RTLVersion >= TRTLVersion.Delphi120 }
       Result := FClient.Delete(AURL, ASource, AResponseContent, AHeaders);
-      {$ELSEIF RTLVersion >= RTLVersionDelphi110}
+      {$ELSEIF RTLVersion >= TRTLVersion.Delphi110}
       var LRequest: IHTTPRequest := FClient.GetRequest(AMethod, AURL);
       Result := FClient.Execute(LRequest, AResponseContent, AHeaders);
       {$ENDIF}
@@ -173,12 +195,6 @@ procedure TJSONRPCHTTPTransportWrapper.Post(const AURL: string; const ASource,
 begin
   FClient.Post(AURL, ASource, AResponseContent, AHeaders);
 
-end;
-
-procedure TJSONRPCHTTPTransportWrapper.SetConnectionTimeout(
-  const Value: Integer);
-begin
-  FClient.ConnectionTimeout := Value;
 end;
 
 procedure TJSONRPCHTTPTransportWrapper.SetResponseTimeout(const Value: Integer);

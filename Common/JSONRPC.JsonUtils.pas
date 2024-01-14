@@ -1,5 +1,15 @@
+{---------------------------------------------------------------------------}
+{                                                                           }
+{ File:       JSONRPC.JsonUtils.pas                                         }
+{ Function:   Various utiliies for JSON RPC                                 }
+{                                                                           }
+{ Language:   Delphi version XE11 or later                                  }
+{ Author:     Chee-Wee Chua                                                 }
+{ Copyright:  (c) 2023,2024 Chee-Wee Chua                                   }
+{---------------------------------------------------------------------------}
 unit JSONRPC.JsonUtils;
 
+{$ALIGN 16}
 {$CODEALIGN 16}
 
 interface
@@ -83,6 +93,8 @@ function ArrayToJSONArray(const AArray; ATypeInfo: PTypeInfo): TJSONArray;
 /// </summary>
 function ValueToJSONArray(const AValue: TValue; ATypeInfo: PTypeInfo): TJSONArray; inline;
 
+/// <summary>
+/// </summary>
 procedure WriteJSONResult(
   AMethNum: Integer; const ATypeInfo: PTypeInfo; const AMethodID: Int64;
   AResponseValue: TValue; AJSONResponse: TStream);
@@ -94,6 +106,16 @@ procedure CheckTypeInfo(ATypeInfo: PTypeInfo); inline;
 /// Adds the "jsonrpc": "2.0" into the header
 /// </summary>
 procedure AddJSONVersion(const AJSONObj: TJSONObject); inline;
+
+/// <summary>
+/// Adds the "id": string/number into the header
+/// </summary>
+procedure AddJSONID(const AJSONResultObj: TJSONObject;
+  const LIDIsString: Boolean; const LJSONRPCRequestIDString: string;
+  const LIDIsNumber: Boolean; const LJSONRPCRequestID: Int64);
+
+procedure AddJSONIDNull(const AJSONObj: TJSONObject);
+procedure AddJSONCode(const AJSONObj: TJSONObject; ACode: Integer);
 
 function SameJson(const AJSON1, AJSON2: string): Boolean;
 
@@ -132,9 +154,46 @@ end;
 
 procedure AddJSONVersion(const AJSONObj: TJSONObject);
 begin
+  if Assigned(AJSONObj.FindValue(SJSONRPC)) then
+    Exit;
   AJSONObj.AddPair(SJSONRPC, FloatToJson(2.0));
 end;
 
+procedure AddJSONID(const AJSONResultObj: TJSONObject;
+  const LIDIsString: Boolean; const LJSONRPCRequestIDString: string;
+  const LIDIsNumber: Boolean; const LJSONRPCRequestID: Int64);
+begin
+  if Assigned(AJSONResultObj.FindValue(SID)) then
+    Exit;
+  if LIDIsString then
+    AJSONResultObj.AddPair(SID, LJSONRPCRequestIDString) else
+  if LIDIsNumber then
+    AJSONResultObj.AddPair(SID, LJSONRPCRequestID);
+end;
+
+procedure AddJSONIdNull(const AJSONObj: TJSONObject);
+var
+  LID: TJSONPair;
+begin
+  if Assigned(AJSONObj.FindValue(SID)) then
+    begin
+      LID := AJSONObj.RemovePair(SID);
+      LID.Free;
+    end;
+  AJSONObj.AddPair(SID, TJSONNull.Create);
+end;
+
+procedure AddJSONCode(const AJSONObj: TJSONObject; ACode: Integer);
+var
+  LID: TJSONPair;
+begin
+  if Assigned(AJSONObj.FindValue(SCODE)) then
+    begin
+      LID := AJSONObj.RemovePair(SCODE);
+      LID.Free;
+    end;
+  AJSONObj.AddPair(SCODE, ACode);
+end;
 procedure CheckFloatType(AFloatType: TFloatType);
 begin
 {$IF DEFINED(DEBUG)}
@@ -465,9 +524,14 @@ begin
   try
     LJSONV1 := TJSONObject.ParseJSONValue(AJSON1);
     LJSONV2 := TJSONObject.ParseJSONValue(AJSON2);
+    {$IF DEFINED(DEBUG)}
     LJSON1 := LJSONV1.ToString;
     LJSON2 := LJSONV2.ToString;
-    Result := LJSON1 = LJSON2;
+    Result := Assigned(LJSONV2) and Assigned(LJSONV1) and (LJSON1 = LJSON2);
+    {$ELSE}
+    Result := Assigned(LJSONV2) and Assigned(LJSONV1) and
+              (LJSONV1.ToString = LJSONV2.ToString);
+    {$ENDIF}
   except
     Result := False;
   end;
@@ -487,7 +551,7 @@ begin
     Result := AFalse;
 end;
 
-function IfThen(AValue: Boolean; const ATrue: TFunc<Integer>; const AFalse: Integer): Integer; overload;
+function IfThen(AValue: Boolean; const ATrue: TFunc<Integer>; const AFalse: Integer): Integer;
 begin
   if AValue then
     Result := ATrue else

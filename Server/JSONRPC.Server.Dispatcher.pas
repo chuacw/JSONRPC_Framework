@@ -1,5 +1,15 @@
+{---------------------------------------------------------------------------}
+{                                                                           }
+{ File:      JSONRPC.Server.Dispatcher.pas                                  }
+{ Function:  JSON RPC server dispatcher                                     }
+{                                                                           }
+{ Language:   Delphi version XE11 or later                                  }
+{ Author:     Chee-Wee Chua                                                 }
+{ Copyright:  (c) 2023,2024 Chee-Wee Chua                                   }
+{---------------------------------------------------------------------------}
 unit JSONRPC.Server.Dispatcher;
 
+{$ALIGN 16}
 {$CODEALIGN 16}
 
 interface

@@ -1,3 +1,12 @@
+{---------------------------------------------------------------------------}
+{                                                                           }
+{ File:      JSONRPC.ServerTCP.Runer.pas                                    }
+{ Function:  Types for for JSON RPC TCP server                              }
+{                                                                           }
+{ Language:   Delphi version XE11 or later                                  }
+{ Author:     Chee-Wee Chua                                                 }
+{ Copyright:  (c) 2023,2024 Chee-Wee Chua                                   }
+{---------------------------------------------------------------------------}
 unit JSONRPC.ServerTCP.Runner;
 
 interface
@@ -339,7 +348,7 @@ begin
               end;
           end;
       end;
-    ANewSocket.Free;
+    LSocket.Free;
   end;
 end;
 

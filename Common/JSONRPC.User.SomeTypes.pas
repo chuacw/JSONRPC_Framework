@@ -1,5 +1,6 @@
 unit JSONRPC.User.SomeTypes;
 
+{$ALIGN 16}
 {$CODEALIGN 16}
 
 interface
@@ -135,6 +136,7 @@ type
     function SendSomeObj(AObj: TMyObject): TMyObject;
 
     procedure SomeException;
+
     procedure SomeSafeCallException; safecall;
   end;
 

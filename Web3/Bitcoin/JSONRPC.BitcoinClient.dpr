@@ -1,7 +1,7 @@
 program JSONRPC.BitcoinClient;
 
 {$APPTYPE CONSOLE}
-
+{$WARN DUPLICATE_CTOR_DTOR OFF}
 {$R *.res}
 
 uses
