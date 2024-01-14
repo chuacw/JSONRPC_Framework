@@ -21,8 +21,8 @@ implementation
 
 uses
   JSONRPC.JsonUtils, JSONRPC.Common.Types,
-  Web3.Common.Types, System.JSON.Readers, System.JSON.Serializers,
-  Web3.Ethereum.Serializers;
+  JSONRPC.Web3.Common.Types, System.JSON.Readers, System.JSON.Serializers,
+  JSONRPC.Web3.Ethereum.Serializers;
 
 { TWeb3EthereumJSONRPCWrapper }
 

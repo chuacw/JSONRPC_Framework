@@ -1,4 +1,4 @@
-unit Web3.Serializers;
+unit JSONRPC.Web3.Serializers;
 
 interface
 
@@ -18,7 +18,7 @@ type
 implementation
 
 uses
-  Web3.Common.Types, Web3.Ethereum.Types, System.JSON.Writers,
+  JSONRPC.Web3.Common.Types, JSONRPC.Web3.Ethereum.Types, System.JSON.Writers,
   System.JSON.Types;
 
 type

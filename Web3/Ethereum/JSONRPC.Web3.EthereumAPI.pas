@@ -3,7 +3,7 @@ unit JSONRPC.Web3.EthereumAPI;
 interface
 
 uses
-  JSONRPC.RIO, Web3.Common.Types, JSONRPC.Common.Types, Web3.Ethereum.Types,
+  JSONRPC.RIO, JSONRPC.Web3.Common.Types, JSONRPC.Common.Types, Web3.Ethereum.Types,
   System.SysUtils, System.JSON, Velthuis.BigIntegers;
 
 type

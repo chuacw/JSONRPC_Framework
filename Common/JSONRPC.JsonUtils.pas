@@ -16,6 +16,7 @@ interface
 
 uses
   System.SysUtils, System.Rtti, System.Classes, System.TypInfo,
+  System.JSON.Readers, System.JSON.Serializers,
   System.JSON, System.Generics.Collections;
 
 /// <summary>
@@ -126,18 +127,24 @@ function IfThen(AValue: Boolean; const ATrue: Integer; const AFalse: TFunc<Integ
 function IfThen(AValue: Boolean; const ATrue: TFunc<Integer>; const AFalse: Integer): Integer; overload;
 
 type
+
+{$IF DEFINED(UseRTL35) OR (RTLVersion < 36.0)}
+  TJsonSerializerHelper = class(TJsonSerializer)
+  public
+    function InternalDeserialize(const AReader: TJsonReader; ATypeInf: PTypeInfo): TValue; override;
+  end;
   TCollectionsHelper = class
   public
     class function ListToArray<T>(const AList: TList<T>): TArray<T>; static;
     class function DictionaryToArray<K, V>(
       const ADictionary: TDictionary<K, V>): TArray<TPair<K, V>>;
   end;
+{$ENDIF}
 
 implementation
 
 uses
-  JSONRPC.Common.Consts, System.JSON.Serializers, System.JSON.Readers,
-
+  JSONRPC.Common.Consts,
 {$IF DEFINED(DEBUG)}
   {$IF DEFINED(MSWINDOWS)}
     Winapi.Windows,
@@ -274,12 +281,6 @@ begin
 end;
 
 {$IF DEFINED(UseRTL35) OR (RTLVersion < 36.0)}
-type
-  TJsonSerializerHelper = class(TJsonSerializer)
-  public
-    function InternalDeserialize(const AReader: TJsonReader; ATypeInf: PTypeInfo): TValue; override;
-  end;
-
 function TJsonSerializerHelper.InternalDeserialize(const AReader: TJsonReader; ATypeInf: PTypeInfo): TValue;
 begin
   Result := inherited;

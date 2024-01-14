@@ -175,9 +175,8 @@
         <DCCReference Include="..\..\Common\JSONRPC.TransportWrapper.HTTP.pas"/>
         <DCCReference Include="..\..\..\NetSocket\Client\System.Net.ClientSocket.pas"/>
         <DCCReference Include="..\..\..\NetSocket\Common\System.Net.Socket.Common.pas"/>
-        <DCCReference Include="..\Web3.Common.Types.pas"/>
-        <DCCReference Include="..\Web3.Serializers.pas"/>
-        <DCCReference Include="..\Web3.JsonUtils.pas"/>
+        <DCCReference Include="..\JSONRPC.Web3.Common.Types.pas"/>
+        <DCCReference Include="..\JSONRPC.Web3.Serializers.pas"/>
         <DCCReference Include="..\..\Common\JSONRPC.Common.RecordHandlers.pas"/>
         <DCCReference Include="JSONRPC.Web3.Ethereum.Types.pas"/>
         <DCCReference Include="JSONRPC.Web3.EthereumAPI.pas"/>
@@ -241,13 +240,13 @@
                 </DeployFile>
                 <DeployFile LocalName="Win64\Debug\JSONRPC.EthereumClient.exe" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="Win64">
-                        <RemoteName>JSONRPC.EthereumClient.exe</RemoteName>
+                        <RemoteName>JSONRPC_EthereumClient.exe</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
                 <DeployFile LocalName="Win64\Debug\JSONRPC.EthereumClient.rsm" Configuration="Debug" Class="DebugSymbols">
                     <Platform Name="Win64">
-                        <RemoteName>JSONRPC.EthereumClient.rsm</RemoteName>
+                        <RemoteName>JSONRPC_EthereumClient.rsm</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
@@ -280,6 +279,12 @@
                     </Platform>
                     <Platform Name="Android64">
                         <RemoteDir>res\xml</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="AndroidGDBServer">
+                    <Platform Name="Android">
+                        <RemoteDir>library\lib\armeabi-v7a</RemoteDir>
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
