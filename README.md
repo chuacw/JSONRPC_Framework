@@ -279,7 +279,7 @@ and Windows.
 
 Bugs / Feature Requests
 ---
-If you find any bugs or have any feature requests, please file an issue on the
-repository.
+If you find any bugs or have any feature requests, please [file an issue on the
+repository](https://github.com/chuacw/JSONRPC_Framework/issues/new).
 
 
