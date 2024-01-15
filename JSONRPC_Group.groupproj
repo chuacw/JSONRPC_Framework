@@ -93,4 +93,42 @@
         <CallTarget Targets="Build_JSONRPC_Framework:Make;JSONRPC_ServerIndy:Make;JSONRPC_ClientProj:Make;JSONRPC_ServerProj1:Make;README:Make;JSONRPC_AppWizard:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+    <ItemGroup Condition="'$(BuildGroup)'=='Build All'">
+        <BuildGroupProject Include="User\JSONRPC.ServerIndy.dproj">
+            <ProjectGuid>{45868586-A83E-48F8-B996-C03B920F3D7E}</ProjectGuid>
+            <Configurations>Debug;Release</Configurations>
+            <Platforms>Linux64;Win32;Win64</Platforms>
+            <Enabled>True</Enabled>
+        </BuildGroupProject>
+        <BuildGroupProject Include="README.dproj">
+            <ProjectGuid>{C9D6BDF0-D1D0-4071-A490-ADD5CFD8C168}</ProjectGuid>
+            <Configurations>Debug</Configurations>
+            <Platforms>Linux64;Win32;Win64</Platforms>
+            <Enabled>True</Enabled>
+        </BuildGroupProject>
+        <BuildGroupProject Include="Client\JSONRPC.ClientProj.dproj">
+            <ProjectGuid>{79EE9236-EE43-4F81-888E-B4A270818087}</ProjectGuid>
+            <Configurations>Debug;Release</Configurations>
+            <Platforms>Linux64;Win32;Win64</Platforms>
+            <Enabled>True</Enabled>
+        </BuildGroupProject>
+        <BuildGroupProject Include="Wizard\JSONRPC.AppWizard.dproj">
+            <ProjectGuid>{CAC21F3D-6368-4CD6-8731-D39EE75706D4}</ProjectGuid>
+            <Configurations>Debug;Release</Configurations>
+            <Platforms>Win32;Win64</Platforms>
+            <Enabled>True</Enabled>
+        </BuildGroupProject>
+        <BuildGroupProject Include="User\JSONRPC.ServerProj1.dproj">
+            <ProjectGuid>{E2676F43-BA09-479F-A64F-A81B7FB1F5B3}</ProjectGuid>
+            <Configurations>Debug;Release</Configurations>
+            <Platforms>Linux64;Win32;Win64</Platforms>
+            <Enabled>True</Enabled>
+        </BuildGroupProject>
+        <BuildGroupProject Include="Build\Build_JSONRPC_Framework.dproj">
+            <ProjectGuid>{14F22B99-AF36-48B9-B792-6201E9E6270C}</ProjectGuid>
+            <Configurations>Debug;Release</Configurations>
+            <Platforms>Linux64;Win32;Win64</Platforms>
+            <Enabled>True</Enabled>
+        </BuildGroupProject>
+    </ItemGroup>
 </Project>

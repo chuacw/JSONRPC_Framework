@@ -12,7 +12,9 @@ uses
   System.JSON,
   System.SysUtils,
   System.TypInfo,
+  {$IF DEFINED(MSWINDOWS)}
   Winapi.Windows,
+  {$ENDIF}
   System.DateUtils,
   System.JSON.Serializers,
   System.JSON.Writers,

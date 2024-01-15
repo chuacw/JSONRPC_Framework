@@ -21,7 +21,7 @@ function GetSomeJSONRPC(const ServerURL: string = '';
 implementation
 
 uses
-{$IF DEFINED(TEST) OR DEFINED(DEBUG)}
+{$IF (DEFINED(TEST) OR DEFINED(DEBUG)) AND DEFINED(MSWINDOWS)}
   Winapi.Windows,
 {$ENDIF}
   JSONRPC.Common.Consts,

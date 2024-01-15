@@ -155,7 +155,7 @@ uses
 
 procedure OutputDebugString(const AMsg: string);
 begin
-  {$IF DEFINED(MSWINDOWS)}
+  {$IF DEFINED(MSWINDOWS) AND DEFINED(DEBUG)}
   Winapi.Windows.OutputDebugString(PChar(AMsg));
   {$ENDIF}
 end;
