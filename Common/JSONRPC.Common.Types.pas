@@ -106,6 +106,8 @@ type
   /// </summary>
   JSONNotifyAttribute = JSONNotificationAttribute;
 
+  ParamsByArrayAttribute = class(TCustomAttribute);
+
   /// <summary> An attribute to apply on a method to tell the JSON RPC wrapper
   /// to modify the server URL before calling on it.
   /// </summary>
@@ -123,6 +125,7 @@ type
   /// </summary>
   IJSONRPCMethods = interface(IInvokable)
     ['{77E7ACCD-3C1E-45CF-8DA9-171444F5338F}']
+    procedure SendJSON(const AJSON: string);
   end;
   {$METHODINFO OFF}
   {$TYPEINFO OFF}

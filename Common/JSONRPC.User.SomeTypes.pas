@@ -138,6 +138,9 @@ type
     procedure SomeException;
 
     procedure SomeSafeCallException; safecall;
+
+    [ParamsByArray]
+    procedure update(const a, b, c, d, e: Integer);
   end;
 
   ISomeExtendedJSONRPC = interface(ISomeJSONRPC)

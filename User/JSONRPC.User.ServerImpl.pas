@@ -110,6 +110,8 @@ type
 
     procedure SomeException;
     procedure SomeSafeCallException; safecall;
+
+    procedure update(const a, b, c, d, e: Integer);
   end;
 
 implementation
@@ -443,6 +445,10 @@ procedure TSomeJSONRPC.SomeSafeCallException;
 begin
   var AErrorMsg := 'Exception within TSomeJSONRPC.SomeSafeCallException'; // or your own message
   raise EJSONRPCMethodException.Create(CInternalError, AErrorMsg, FMethodName);
+end;
+
+procedure TSomeJSONRPC.update(const a, b, c, d, e: Integer);
+begin
 end;
 
 initialization

@@ -61,6 +61,23 @@ type
     function SafeCallException(ExceptObject: TObject;
       ExceptAddr: Pointer): HResult; override;
 
+    { IJSONRPCMethods }
+    /// <summary>
+    /// Directly sends a JSON to the server.
+    /// <example>
+    /// This shows how to send a JSON.
+    /// In this case, this is a broken JSON.
+    /// <code>
+    /// LJSONRPCWrapper.SendJSON('{"jsonrpc": "2.0", "method": "foobar, "params": "bar", "baz]');
+    /// </code>
+    /// </example>
+    /// </summary>
+    /// <exception cref="SomeException">when things go wrong.</exception>
+    /// <c> some code </c>
+    /// <param name="AJSON">The UTF8 message to be sent
+    /// </param>
+    procedure SendJSON(const AJSON: string);
+
     { IJSONRPCException }
     function GetCode: Integer;
     procedure SetCode(ACode: Integer);
@@ -672,6 +689,12 @@ end;
 function TInvokableClass.GetCode: Integer;
 begin
   Result := FCode;
+end;
+
+procedure TInvokableClass.SendJSON(const AJSON: string);
+begin
+  // Not implemented yet...
+  // {"jsonrpc": "2.0", "method": "foobar, "params": "bar", "baz]
 end;
 
 procedure TInvokableClass.SetCode(ACode: Integer);

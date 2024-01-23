@@ -185,6 +185,9 @@ type
     FOnLogOutgoingJSONRequest: TOnLogOutgoingJSONRequest;
     FOnLogIncomingJSONResponse: TOnLogIncomingJSONResponse;
     FOnLogServerURL: TOnLogServerURL;
+
+    /// <summary> Parses the enum with the given parameters.
+    /// </summary>
     FOnParseEnum: TOnParseEnum;
     FRttiContext: TRttiContext;
     FOwnsObjects: Boolean;
@@ -219,7 +222,12 @@ type
 
     procedure DoSync(AJSONRequest, AJSONResponse: TStream); virtual;
 
-    procedure DoDispatch(const AContext: TInvContext; AMethNum: Integer; const AMethMD: TIntfMethEntry); {$IF DEFINED(BASECLASS)}override;{$ENDIF}
+    /// <summary> Converts the Delphi native call to a JSON RPC 2.0 method call
+    /// and dispatches the call to the registered transport wrapper.
+    /// </summary>
+    /// <remarks> Client side JSON RPC parameter conversion </remarks>
+    procedure DoDispatch(const AContext: TInvContext; AMethNum: Integer;
+      const AMethMD: TIntfMethEntry); {$IF DEFINED(BASECLASS)}override;{$ENDIF}
 
     /// <summary>
     /// Logs the outgoing request.
@@ -235,6 +243,10 @@ type
     /// </summary>
     procedure DoLogIncomingResponse(const AResponse: string);
 
+    /// <summary> Gets the first chance to parse the enum that comes through
+    /// the native Delphi call. By default, it's not handled, unless
+    /// OnParseEnum is assigned. Calls FOnParseEnum with all the given parameters.
+    /// </summary>
     function DoParseEnum(const ARttiContext: TRttiContext;
       const AMethMD: TIntfMethEntry;
       AParamIndex: Integer;
@@ -390,6 +402,8 @@ type
     property OnLogServerURL: TOnLogServerURL
       read GetOnLogServerURL write SetOnLogServerURL;
 
+    /// <summary> Parses the enum specified in a native Delphi call.
+    /// </summary>
     property OnParseEnum: TOnParseEnum read FOnParseEnum write FOnParseEnum;
 
     /// <summary> Specifies that safecall exception handler
@@ -487,6 +501,13 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
+    /// <summary>
+    /// Parses incoming JSON requests from the client.
+    /// </summary>
+    /// <exception cref="EJSONRPCParamParsingException" >
+    /// <EJSONRPCParamParsingException, EJSONRPCMethodException
+    /// </exception>
+    /// <remarks> server side handler </remarks>
     procedure DispatchJSONRPC(const ARequest, AResponse: TStream);
 
     /// <summary> Response to client
@@ -977,7 +998,6 @@ begin
   OutputDebugString(AIntfType.Name);
 end;
 
-// Client side JSON RPC parameter conversion
 procedure TJSONRPCWrapper.DoDispatch(const AContext: TInvContext;
   AMethNum: Integer; const AMethMD: TIntfMethEntry);
 var
@@ -2369,8 +2389,6 @@ begin
    Result := nil;
 end;
 
-// Working, but doesn't handle batch calls
-// parses incoming JSON requests from the client, server side handler
 procedure TJSONRPCServerWrapper.DispatchJSONRPC(const ARequest, AResponse: TStream);
 type
   TJSONState = (tjParsing, tjGettingMethod, tjLookupMethod, tjLookupMDAIndex,
@@ -3029,6 +3047,7 @@ begin
               end;
           end;
           LJSONResponseObj.AddPair(SERROR, LJSONErrorObj);
+          AddJSONIDNull(LJSONResponseObj);
         end;
     end; // on Exception... else
     if Assigned(LJSONResponseObj) then
