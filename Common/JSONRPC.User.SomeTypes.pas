@@ -2,6 +2,7 @@ unit JSONRPC.User.SomeTypes;
 
 {$ALIGN 16}
 {$CODEALIGN 16}
+{$WARN UNKNOWN_CUSTOM_ATTRIBUTE ERROR}
 
 interface
 
@@ -139,8 +140,15 @@ type
 
     procedure SomeSafeCallException; safecall;
 
-    [ParamsByArray]
+    [ParamsByPos]
     procedure update(const a, b, c, d, e: Integer);
+
+    [ParamsByPos]
+    procedure notify_sum(const a, b, c: Integer);
+
+    [ParamsByPos]
+    procedure notify_hello(const a: Integer);
+
   end;
 
   ISomeExtendedJSONRPC = interface(ISomeJSONRPC)

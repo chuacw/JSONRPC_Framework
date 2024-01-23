@@ -126,6 +126,31 @@ function IfThen(AValue: Boolean; const ATrue: TFunc<Integer>; const AFalse: TFun
 function IfThen(AValue: Boolean; const ATrue: Integer; const AFalse: TFunc<Integer>): Integer; overload;
 function IfThen(AValue: Boolean; const ATrue: TFunc<Integer>; const AFalse: Integer): Integer; overload;
 
+type
+
+  /// <summary>
+  /// This class automatically restores a value of a variable, after setting it to a new value.
+  /// </summary>
+  TSaveRestore<T> = class(TInterfacedObject)
+  protected
+    FOldValue: T;
+    FValueAddr: ^T;
+    constructor Create; overload;
+  public
+    /// <summary>
+    /// This function takes a variable, saves its original value, sets it to the new value
+    /// and returns an IInterface.
+    /// <param name="OriginVar"> The var address of a value</param>
+    /// <param name="NewValue"> The new value to set OriginVar to. </param>
+    /// <returns> An IInterface, which will restore the value when destroyed. </returns>
+    /// </summary>
+    class function Create(var OriginVar: T; const NewValue: T): IInterface; overload; static;
+
+    /// <summary> Restores the OriginVar to its original value
+    /// </summary>
+    destructor Destroy; override;
+  end;
+
 {$IF DEFINED(UseRTL35) OR (RTLVersion < 36.0)}
 type
 
@@ -162,7 +187,8 @@ end;
 
 procedure AddJSONVersion(const AJSONObj: TJSONObject);
 begin
-  if Assigned(AJSONObj.FindValue(SJSONRPC)) then
+  if not Assigned(AJSONObj) or // If it's empty, don't add
+     Assigned(AJSONObj.FindValue(SJSONRPC)) then  // or if it's already assigned
     Exit;
   AJSONObj.AddPair(SJSONRPC, FloatToJson(2.0));
 end;
@@ -171,7 +197,8 @@ procedure AddJSONID(const AJSONResultObj: TJSONObject;
   const LIDIsString: Boolean; const LJSONRPCRequestIDString: string;
   const LIDIsNumber: Boolean; const LJSONRPCRequestID: Int64);
 begin
-  if Assigned(AJSONResultObj.FindValue(SID)) then
+  if not Assigned(AJSONResultObj) or // If it's empty, don't add
+    Assigned(AJSONResultObj.FindValue(SID)) then
     Exit;
   if LIDIsString then
     AJSONResultObj.AddPair(SID, LJSONRPCRequestIDString) else
@@ -560,6 +587,33 @@ begin
   if AValue then
     Result := ATrue else
     Result := AFalse;
+end;
+
+{ TSaveRestore<T> }
+
+class function TSaveRestore<T>.Create(var OriginVar: T;
+  const NewValue: T): IInterface;
+var
+  LSaveRestore: TSaveRestore<T>;
+begin
+  LSaveRestore := TSaveRestore<T>.Create;
+  LSaveRestore.FValueAddr := @OriginVar;
+  LSaveRestore.FOldValue := OriginVar;
+  OriginVar := NewValue;
+  Result := LSaveRestore as IInterface;
+end;
+
+constructor TSaveRestore<T>.Create;
+begin
+  inherited Create;
+end;
+
+destructor TSaveRestore<T>.Destroy;
+type
+  PT = ^T;
+begin
+  PT(FValueAddr)^ := FOldValue;
+  inherited;
 end;
 
 end.

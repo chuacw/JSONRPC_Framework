@@ -44,6 +44,7 @@ begin
     end
   );
   try
+    LJSONRPC.update(1, 2, 3, 4, 5);
     Write('Press enter to see the value, press enter again to continue...');
     var LEnum := LJSONRPC.GetEnum(enumB);
     ReadLn;

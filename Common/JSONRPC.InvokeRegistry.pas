@@ -92,6 +92,8 @@ type
     procedure SetMethodName(const AMethodName: string);
 
     {$WARN HIDING_MEMBER OFF}
+    /// <summary> Sets or gets the JSONMethodName that is currently being called.
+    /// </summary>
     property MethodName: string read GetMethodName write SetMethodName;
     {$WARN HIDING_MEMBER ON}
 

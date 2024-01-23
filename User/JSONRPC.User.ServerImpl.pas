@@ -112,6 +112,8 @@ type
     procedure SomeSafeCallException; safecall;
 
     procedure update(const a, b, c, d, e: Integer);
+    procedure notify_sum(const a, b, c: Integer);
+    procedure notify_hello(const a: Integer);
   end;
 
 implementation
@@ -448,6 +450,14 @@ begin
 end;
 
 procedure TSomeJSONRPC.update(const a, b, c, d, e: Integer);
+begin
+end;
+
+procedure TSomeJSONRPC.notify_hello(const a: Integer);
+begin
+end;
+
+procedure TSomeJSONRPC.notify_sum(const a, b, c: Integer);
 begin
 end;
 

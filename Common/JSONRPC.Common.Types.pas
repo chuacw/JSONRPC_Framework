@@ -106,7 +106,16 @@ type
   /// </summary>
   JSONNotifyAttribute = JSONNotificationAttribute;
 
-  ParamsByArrayAttribute = class(TCustomAttribute);
+  /// <summary> When placed on a method, tells the runtime to dispatch
+  /// parameters by position (in an array, with no parameter names).
+  /// </summary>
+  /// <remarks> Used in <c>TIntfMethEntryHelper.JSONParamsByPos</c> </remarks>
+  ParamsByPosAttribute = class(TCustomAttribute);
+
+  /// <summary> When placed on a method, tells the runtime to dispatch
+  /// parameters by name.
+  /// </summary>
+  ParamsByNameAttribute = class(TCustomAttribute);
 
   /// <summary> An attribute to apply on a method to tell the JSON RPC wrapper
   /// to modify the server URL before calling on it.
@@ -125,7 +134,7 @@ type
   /// </summary>
   IJSONRPCMethods = interface(IInvokable)
     ['{77E7ACCD-3C1E-45CF-8DA9-171444F5338F}']
-    procedure SendJSON(const AJSON: string);
+//    procedure SendJSON(const AJSON: string);
   end;
   {$METHODINFO OFF}
   {$TYPEINFO OFF}
