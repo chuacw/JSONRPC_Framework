@@ -2455,7 +2455,7 @@ begin
   var LMapIntf := InvRegistry.GetInterface;
   var LClass := InvRegistry.GetInvokableClass;
 
-  var LJSONResponseObj: TJSONObject := TJSONObject.Create;
+  var LJSONResponseObj: TJSONObject := nil;
   var LJSONRequestObj: TJSONObject := nil;
 
     try
@@ -2499,15 +2499,16 @@ begin
         if not LIDIsNumber then
           LIDIsString := LJSONRequestObj.TryGetValue<string>(SID, LJSONRPCRequestIDString);
         var LIsNotification := not (LIDIsNumber or LIDIsString);
-        if LIsNotification then
-          FreeAndNil(LJSONResponseObj);
-        // LJSONResultObj := TJSONObject.Create;
-        // try
+
+        if not LIsNotification then
+          LJSONResponseObj := TJSONObject.Create;
+
         AddJSONVersion(LJSONResponseObj);
         AddJSONID(LJSONResponseObj,
           LIDIsString, LJSONRPCRequestIDString,
           LIDIsNumber, LJSONRPCRequestID
         );
+
         LJSONState := tjLookupMethod;
         LParseMethodName := LMethodName;
         var LParamCount := 0;

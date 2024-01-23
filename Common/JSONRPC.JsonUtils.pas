@@ -104,14 +104,15 @@ procedure CheckFloatType(AFloatType: TFloatType); inline;
 procedure CheckTypeInfo(ATypeInfo: PTypeInfo); inline;
 
 /// <summary>
-/// Adds the "jsonrpc": "2.0" into the header
+/// Adds the "jsonrpc": "2.0" into the header, only if AJSONObj is non-null
 /// </summary>
 procedure AddJSONVersion(const AJSONObj: TJSONObject); inline;
 
 /// <summary>
-/// Adds the "id": string/number into the header
+/// Adds the "id": string/number into the header, only if AJSONResultObj is
+/// non-null
 /// </summary>
-procedure AddJSONID(const AJSONResultObj: TJSONObject;
+procedure AddJSONID(const AJSONObj: TJSONObject;
   const LIDIsString: Boolean; const LJSONRPCRequestIDString: string;
   const LIDIsNumber: Boolean; const LJSONRPCRequestID: Int64);
 
@@ -190,20 +191,22 @@ begin
   if not Assigned(AJSONObj) or // If it's empty, don't add
      Assigned(AJSONObj.FindValue(SJSONRPC)) then  // or if it's already assigned
     Exit;
+
   AJSONObj.AddPair(SJSONRPC, FloatToJson(2.0));
 end;
 
-procedure AddJSONID(const AJSONResultObj: TJSONObject;
+procedure AddJSONID(const AJSONObj: TJSONObject;
   const LIDIsString: Boolean; const LJSONRPCRequestIDString: string;
   const LIDIsNumber: Boolean; const LJSONRPCRequestID: Int64);
 begin
-  if not Assigned(AJSONResultObj) or // If it's empty, don't add
-    Assigned(AJSONResultObj.FindValue(SID)) then
+  if not Assigned(AJSONObj) or // If it's empty, don't add
+    Assigned(AJSONObj.FindValue(SID)) then
     Exit;
+
   if LIDIsString then
-    AJSONResultObj.AddPair(SID, LJSONRPCRequestIDString) else
+    AJSONObj.AddPair(SID, LJSONRPCRequestIDString) else
   if LIDIsNumber then
-    AJSONResultObj.AddPair(SID, LJSONRPCRequestID);
+    AJSONObj.AddPair(SID, LJSONRPCRequestID);
 end;
 
 procedure AddJSONIdNull(const AJSONObj: TJSONObject);
