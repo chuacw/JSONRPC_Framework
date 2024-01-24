@@ -49,7 +49,7 @@ var
 begin
   WriteCommands;
   LServer := TJSONRPCServerIdHTTPRunner.Create; // Match the runner type with the client's
-  LServer.Host := 'localhost';
+  LServer.Host := '0.0.0.0';
   LServer.Port := 8083;
 
   LServer.OnNotifyPortSet := procedure(const APort: Integer)

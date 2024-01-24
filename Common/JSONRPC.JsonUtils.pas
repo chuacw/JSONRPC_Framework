@@ -213,6 +213,8 @@ procedure AddJSONIdNull(const AJSONObj: TJSONObject);
 var
   LID: TJSONPair;
 begin
+  if not Assigned(AJSONObj) then
+    Exit;
   if Assigned(AJSONObj.FindValue(SID)) then
     begin
       LID := AJSONObj.RemovePair(SID);
@@ -483,6 +485,11 @@ end;
 
 procedure JsonToTBytesCount(const AJSON: string; out VBytes: TBytes; out VCount: NativeInt);
 begin
+  if Length(AJSON) = 0 then
+    begin
+      VCount := 0;
+      Exit;
+    end;
   VBytes := TEncoding.UTF8.GetBytes(AJSON);
   VCount := Length(VBytes);
 end;

@@ -47,9 +47,11 @@ type
   TIntfMethEntryHelper = record helper for TIntfMethEntry
   protected
     function IJSONRPCMethods_Length(const ARttiContext: TRttiContext): Integer;
+    function GetSelfInfo: PTypeInfo; inline;
   public
     function JSONMethodName(const ARttiContext: TRttiContext): string;
     function JSONParamsByPos(const ARttiContext: TRttiContext): Boolean;
+    property MethodInfo: PTypeInfo read GetSelfInfo;
   end;
 
 {$IF DEFINED(BASECLASS)}
@@ -505,17 +507,27 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
+    /// <summary> Dispatches a single RPC call.
+    /// </summary>
+    /// <param name="ARequestObj"> contains the RPC JSON call data </param>
+    /// <param name="VResponseObj"> returns nil if call is a notification,
+    /// otherwise, this is the result of the call</param>
     procedure DispatchJSONRPC(
       const ARequestObj: TJSONValue; var VResponseObj: TJSONObject); overload;
 
     /// <summary>
     /// Parses incoming JSON requests from the client.
+    /// Handles both single and batch RPC calls.
     /// </summary>
     /// <exception cref="EJSONRPCParamParsingException" >
     /// <EJSONRPCParamParsingException, EJSONRPCMethodException
     /// </exception>
     /// <remarks> server side handler </remarks>
     procedure DispatchJSONRPC(const ARequest, AResponse: TStream); overload;
+
+    /// <summary> This is te old DispatchJSONRPC. Once the new DispatchJSONRPC
+    /// method has been confirmed to be stable, this can be removed.
+    /// </summary>
     procedure OldDispatchJSONRPC(const ARequest, AResponse: TStream);
 
     /// <summary> Response to client
@@ -966,6 +978,11 @@ begin
 end;
 
 {$WRITEABLECONST ON}
+function TIntfMethEntryHelper.GetSelfInfo: PTypeInfo;
+begin
+  Result := SelfInfo;
+end;
+
 function TIntfMethEntryHelper.IJSONRPCMethods_Length(const ARttiContext: TRttiContext): Integer;
 const
   FLength: Integer = -1;
@@ -989,7 +1006,7 @@ var
   LMethod: TRttiMethod;
   LJSONMethodNameAttr: JSONMethodNameAttribute;
 begin
-  LType := ARttiContext.GetType(Self.SelfInfo); // TRttiInterfaceType
+  LType := ARttiContext.GetType(Self.MethodInfo); // TRttiInterfaceType
   DeclaredMethods := LType.GetDeclaredMethods;
   LMethod := DeclaredMethods[Self.Pos-3-IJSONRPCMethods_Length(ARttiContext)]; // 3 is number of methods in IInterface
   LJSONMethodNameAttr := LMethod.GetAttribute<JSONMethodNameAttribute>;
@@ -1004,7 +1021,7 @@ var
   LMethod: TRttiMethod;
   LParamByPos: ParamsByPosAttribute;
 begin
-  LType := ARttiContext.GetType(Self.SelfInfo); // TRttiInterfaceType
+  LType := ARttiContext.GetType(Self.MethodInfo); // TRttiInterfaceType
   DeclaredMethods := LType.GetDeclaredMethods;
   LMethod := DeclaredMethods[Self.Pos-3-IJSONRPCMethods_Length(ARttiContext)]; // 3 is number of methods in IInterface
   LParamByPos := LMethod.GetAttribute<ParamsByPosAttribute>;
@@ -1013,7 +1030,7 @@ end;
 
 function TJSONRPCWrapper.GetMethod(const AMethMD: TIntfMethEntry): TRttiMethod;
 begin
-  var LType := FRttiContext.GetType(AMethMD.SelfInfo); // TRttiInterfaceType
+  var LType := FRttiContext.GetType(AMethMD.MethodInfo); // TRttiInterfaceType
   Result := LType.GetDeclaredMethods[AMethMD.Pos-3];
 end;
 
@@ -1064,7 +1081,7 @@ begin
     {$REGION 'Convert native Delphi call to a JSON string'}
     AddJSONVersion(LJSONMethodObj);
 
-    var LIntfType := FRttiContext.GetType(AMethMD.SelfInfo);
+    var LIntfType := FRttiContext.GetType(AMethMD.MethodInfo);
     DumpType(LIntfType);
     var LJSONMethodName := GetMethodName(AMethMD);
     LJSONMethodObj.AddPair(SMETHOD, LJSONMethodName);
@@ -2058,7 +2075,7 @@ function LookupMDAIndex(const AMethod: TRttiMethod;
   deprecated 'Use LookupMDAIndex with AParams';
 begin
   for var I := 0 to High(AIntfMD.MDA) do
-   if AIntfMD.MDA[I].SelfInfo = AMethod.Handle then
+   if AIntfMD.MDA[I].MethodInfo = AMethod.Handle then
      Exit(I);
   Result := -1;
 end;
@@ -2983,7 +3000,8 @@ begin
               begin
                 // Default result when none is expected
                 // LJSONResultObj.AddPair(SRESULT, DefaultTrueBoolStr);
-                LJSONResponseObj.AddPair('noresult', 'noresult');
+                if LJSONResponseObj <> nil then
+                  LJSONResponseObj.AddPair('noresult', 'noresult');
               end;
               {$ENDREGION 'Parse results'} // TODO -ochuacw -ccat: ENDREGION Parse results
           end else
@@ -3020,6 +3038,11 @@ begin
     except
       on E: EJSONRPCException do
         begin
+          // When it's a non-existent call, LJSONResponseObj is not
+          // assigned on Linux
+          if not Assigned(LJSONResponseObj) then
+            LJSONResponseObj := TJSONObject.Create;
+
           // Create error object to be returned to JSON RPC client
           // Add default error
           AddJSONVersion(LJSONResponseObj);
@@ -3091,10 +3114,11 @@ end;
 procedure TJSONRPCServerWrapper.DispatchJSONRPC(const ARequest, AResponse: TStream);
 var
   JSONResponse: TJSONValue;
+  JSONResponseArray: TJSONArray absolute JSONResponse;
 begin
   JSONResponse := nil;
   ARequest.Position := 0;
-  var LJSONRequestBytes: TArray<Byte>;
+  var LJSONRequestBytes: TArray<Byte> := [];
   var Len := ARequest.Size;
   SetLength(LJSONRequestBytes, Len);
   ARequest.Read(LJSONRequestBytes, Len);
@@ -3104,14 +3128,15 @@ begin
     // batch RPC calls
     if LJSONRequestVal is TJSONArray then
       begin
-        JSONResponse := TJSONArray.Create;
-        for var LJSONRequestItem in TJSONArray(LJSONRequestVal) do
+        JSONResponseArray := TJSONArray.Create;
+        for var LJSONRequestItem in JSONResponseArray do
           begin
             var LJSONResponseObj: TJSONObject := nil;
             var LJSONRequestObj := LJSONRequestItem;
             DispatchJSONRPC(LJSONRequestObj, LJSONResponseObj);
+            // If the call is a notification, response obj is not assigned
             if Assigned(LJSONResponseObj) then
-              TJSONArray(JSONResponse).AddElement(LJSONResponseObj);
+              JSONResponseArray.AddElement(LJSONResponseObj);
           end;
       end else
     if LJSONRequestVal is TJSONObject then // single RPC call
@@ -3122,11 +3147,13 @@ begin
         JSONResponse := LJSONResponseObj;
       end;
 
-    var LJSONResultBytes: TBytes; var LCount: NativeInt;
+    var LFormatJSON := ((JSONResponse is TJSONArray) and (TJSONArray(JSONResponse).Count <> 0))
+      or           ((JSONResponse <> nil) and (JSONResponse is TJSONObject));
     var LJSONResult: string;
-    if (JSONResponse is TJSONArray) and (TJSONArray(JSONResponse).Count <> 0) then
+    if LFormatJSON then
       LJSONResult := JSONResponse.Format;
     DoBeforeDispatchJSONRPC(LJSONResult);
+    var LJSONResultBytes: TBytes := []; var LCount: NativeInt;
     JsonToTBytesCount(LJSONResult, LJSONResultBytes, LCount);
     AResponse.Write(LJSONResultBytes, LCount);
     DoLogOutgoingResponse(LJSONResult);
