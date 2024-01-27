@@ -90,9 +90,17 @@ procedure SerializeValue(const AValue: TValue; ATypeInfo: PTypeInfo; out VJSONVa
 function ArrayToJSONArray(const AArray; ATypeInfo: PTypeInfo): TJSONArray;
 
 /// <summary>
-/// Serialize the given AValue of type TValue into a TJSONArray
+/// Serialize the given native array into a TJSONArray
 /// </summary>
-function ValueToJSONArray(const AValue: TValue; ATypeInfo: PTypeInfo): TJSONArray; inline;
+function ArrayPtrToJSONArray(const PArray; ATypeInfo: PTypeInfo): TJSONArray;
+
+function ValueToJSONArray(const AValue: TValue; ATypeInfo: PTypeInfo): TJSONArray;
+
+function VariantOpenArrayToDynArray(const AData: array of const): TArray<TVarRec>;
+
+///// <summary> Converts an variant open array (which have no RTTI) to a dynamic array (which supports RTTI).
+///// </summary>
+//function VariantOpenArrayToJSONArray(const Args: array of const): TJSONArray;
 
 /// <summary>
 /// </summary>
@@ -118,14 +126,21 @@ procedure AddJSONID(const AJSONObj: TJSONObject;
 
 procedure AddJSONIDNull(const AJSONObj: TJSONObject);
 procedure AddJSONCode(const AJSONObj: TJSONObject; ACode: Integer);
+procedure AddJSONError(const AJSONObj: TJSONObject; const AErrorObj: TJSONObject);
+procedure RemoveJSONResult(const AJSONObj: TJSONObject);
 
-function SameJson(const AJSON1, AJSON2: string): Boolean;
+function SameJSON(const AJSON1, AJSON2: TJSONArray): Boolean; overload;
+function SameJSON(const AJSON1, AJSON2: TJSONValue): Boolean; overload;
+function SameJSON(const AJSONObj1, AJSONObj2: TJSONObject): Boolean; overload;
+function SameJson(const AJSONStr1, AJSONStr2: string): Boolean; overload;
 
 procedure OutputDebugString(const AMsg: string); inline;
 
 function IfThen(AValue: Boolean; const ATrue: TFunc<Integer>; const AFalse: TFunc<Integer>): Integer; overload;
 function IfThen(AValue: Boolean; const ATrue: Integer; const AFalse: TFunc<Integer>): Integer; overload;
 function IfThen(AValue: Boolean; const ATrue: TFunc<Integer>; const AFalse: Integer): Integer; overload;
+
+function MakeTypeInfo(ATypeKind: TTypeKind): PTypeInfo;
 
 type
 
@@ -177,6 +192,7 @@ uses
     Winapi.Windows,
   {$ENDIF}
 {$ENDIF}
+  JSONRPC.Common.Types,
   System.JSON.Writers;
 
 procedure OutputDebugString(const AMsg: string);
@@ -234,6 +250,29 @@ begin
     end;
   AJSONObj.AddPair(SCODE, ACode);
 end;
+
+procedure AddJSONError(const AJSONObj: TJSONObject; const AErrorObj: TJSONObject);
+begin
+  if Assigned(AJSONObj) then
+    begin
+      if Assigned(AErrorObj) then
+        AJSONObj.AddPair(SERROR, AErrorObj);
+    end;
+end;
+
+procedure RemoveJSONResult(const AJSONObj: TJSONObject);
+begin
+  if Assigned(AJSONObj) then
+    begin
+      var LResult := AJSONObj.FindValue(SRESULT);
+      if Assigned(LResult) then
+        begin
+          var LPair := AJSONObj.RemovePair(SRESULT);
+          LPair.Free;
+        end;
+    end;
+end;
+
 procedure CheckFloatType(AFloatType: TFloatType);
 begin
 {$IF DEFINED(DEBUG)}
@@ -376,6 +415,7 @@ procedure DeserializeJSON(const AJsonValue: TJSONValue; ATypeInfo: PTypeInfo;
   var VValue: TValue);
 var
   LObjReader: TJsonReader;
+  LJsonValue: TJSONValue;
 {$IF DEFINED(UseRTL35) OR (RTLVersion < 36.0)}
   LSerializer: TJsonSerializerHelper;
 {$ELSE }
@@ -384,10 +424,17 @@ var
 begin
   if not Assigned(AJsonValue) then
     begin
-//      VValue := TValue.Empty;
+      VValue := TValue.Empty;
       Exit;
     end;
-  LObjReader := TJsonObjectReader.Create(AJsonValue);
+  if ATypeInfo = TypeInfo(TConstArray) then
+    begin
+
+    end else
+    begin
+      LJsonValue := AJsonValue;
+    end;
+  LObjReader := TJsonObjectReader.Create(LJsonValue);
 {$IF DEFINED(UseRTL35) OR (RTLVersion < 36.0)}
   LSerializer := TJsonSerializerHelper.Create;
 {$ELSEIF RTLVersion >= 36.0 }
@@ -435,6 +482,28 @@ begin
   Result := TJSONArray.ParseJSONValue(LStr) as TJSONArray;
 end;
 
+function ArrayPtrToJSONArray(const PArray; ATypeInfo: PTypeInfo): TJSONArray;
+type
+  TDynArray = TArray<Integer>;
+  PDynArray = ^TDynArray;
+var
+  P: PByte;
+  Size, Len: Integer;
+  LValue: TValue;
+  LValues: TArray<TValue>;
+begin
+  Result := TJSONArray.Create;
+  Size := ATypeInfo.TypeData.elSize;
+  Len := System.Length(TDynArray(PArray)) div ATypeInfo.TypeData.elSize;
+  P := Pointer(PArray);
+  for var I := 0 to Len-1 do
+    begin
+      TValue.Make(P, ATypeInfo, LValue);
+      Inc(P, Size);
+      Result.Add(LValue.AsOrdinal);
+    end;
+end;
+
 function SerializeRecord(const PtrToRecord: Pointer; ATypeInfo: PTypeInfo): string;
 var
   LValue: TValue;
@@ -459,15 +528,100 @@ begin
   end;
 end;
 
+function ConstItemToTJsonValue(const Item: TVarRec): TJsonValue;
+begin
+  case Item.VType of
+    vtInteger:
+      begin
+        Result := TJSONNumber.Create(Item.VInteger);
+      end;
+    vtExtended:
+      begin
+        Result := TJSONNumber.Create(Item.VExtended^);
+      end;
+    vtString:
+      begin
+        Result := TJSONString.Create(string(Item.VString^));
+      end;
+    vtPChar:
+      begin
+        var LStr := Item.VPChar;
+        Result := TJSONString.Create(string(LStr));
+      end;
+    vtPWideChar:
+      begin
+        var LStr := Item.VPWideChar;
+        Result := TJSONString.Create(LStr);
+      end;
+    vtAnsiString:
+      begin
+        // A little trickier: casting to AnsiString will ensure
+        // reference counting is done properly.
+        Result := TJSONString.Create(string(AnsiString(Item.VAnsiString)));
+      end;
+    vtCurrency:
+      begin
+        Result := TJSONNumber.Create(Item.VCurrency^);
+      end;
+    // Casting ensures a proper copy is created.
+    vtWideString:
+      begin
+        Result := TJSONString.Create(WideString(Item.VWideString));
+      end;
+    vtInt64:
+      begin
+        Result := TJSONNumber.Create(Item.VInt64^);
+      end;
+    vtUnicodeString:
+      begin
+        // Similar to AnsiString.
+        Result := TJSONString.Create(UnicodeString(Item.VUnicodeString));
+      end;
+  else
+    // VPointer and VObject don't have proper copy semantics so it
+    // is impossible to write generic code that copies the contents
+    Result := nil;
+    Assert(False, '');
+  end;
+end;
+
 function ValueToJSONArray(const AValue: TValue; ATypeInfo: PTypeInfo): TJSONArray;
 begin
+  if (ATypeInfo = TypeInfo(TConstArray)) then
+    begin
+      var LJSONArray := TJSONArray.Create;
+      var LConstArray := TConstArray(AValue.GetReferenceToRawData^);
+      for var I := Low(LConstArray) to High(LConstArray) do
+        begin
+          var LItem := LConstArray[I];
+          var LJSONValue := ConstItemToTJsonValue(LItem);
+          LJSONArray.AddElement(LJSONValue);
+        end;
+      FinalizeVarRecArray(LConstArray);
+      Exit(LJSONArray);
+    end;
   var LStr := SerializeRecord(AValue, ATypeInfo);
   Result := TJSONArray.ParseJSONValue(LStr) as TJSONArray;
 end;
 
+function VariantOpenArrayToDynArray(const AData: array of const): TArray<TVarRec>;
+begin
+  SetLength(Result, Length(AData));
+  for var I := Low(AData) to High(AData) do
+    begin
+      Result[I] := CopyVarRec(AData[I]);
+    end;
+end;
+
 function SerializeRecord(const AValue: TValue; ATypeInfo: PTypeInfo): string;
 begin
-  Result := SerializeValue(AValue, ATypeInfo);
+  if ATypeInfo = TypeInfo(TConstArray) then
+    begin
+      Assert(False, 'Untested');
+    end else
+    begin
+      Result := SerializeValue(AValue, ATypeInfo);
+    end;
 end;
 
 procedure SerializeValue(const AValue: TValue; ATypeInfo: PTypeInfo; out VJSONValue: TJSONValue);
@@ -557,26 +711,120 @@ begin
 end;
 {$ENDIF}
 
-function SameJson(const AJSON1, AJSON2: string): Boolean;
-var
-  LJSONV1, LJSONV2: TJSONValue;
-  LJSON1, LJSON2: string;
+function SameJSON(const AJSON1, AJSON2: TJSONValue): Boolean;
 begin
+  Result := AJSON1.ToString = AJSON2.ToString;
+end;
+
+function SameJSON(const AJSON1, AJSON2: TJSONArray): Boolean;
+begin
+  Result := AJSON1.Count = AJSON2.Count;
+  for var I := 0 to AJSON1.Count-1 do
+    begin
+      if (AJSON1.Items[I].ClassType = TJSONObject) and
+         (AJSON2.Items[I].ClassType = TJSONObject) then
+        Result := Result and SameJSON(TJSONObject(AJSON1.Items[I]), TJSONObject(AJSON2.Items[I])) else
+        Result := Result and SameJSON(AJSON1.Items[I], AJSON2.Items[I]);
+      if not Result then
+        Exit(Result);
+    end;
+end;
+
+function SameJSON(const AJSONObj1, AJSONObj2: TJSONObject): Boolean; overload;
+var
+  LJSONObj1, LJSONObj2: TJSONObject;
+begin
+  if AJSONObj1.Count <= AJSONObj2.Count then
+    begin
+      LJSONObj1 := AJSONObj1;
+      LJSONObj2 := AJSONObj2;
+    end else
+    begin
+      LJSONObj2 := AJSONObj1;
+      LJSONObj1 := AJSONObj2;
+    end;
+  Result := LJSONObj1.Count <= LJSONObj2.Count;
   try
-    LJSONV1 := TJSONObject.ParseJSONValue(AJSON1);
-    LJSONV2 := TJSONObject.ParseJSONValue(AJSON2);
-    {$IF DEFINED(DEBUG)}
-    LJSON1 := LJSONV1.ToString;
-    LJSON2 := LJSONV2.ToString;
-    Result := Assigned(LJSONV2) and Assigned(LJSONV1) and (LJSON1 = LJSON2);
-    {$ELSE}
-    Result := Assigned(LJSONV2) and Assigned(LJSONV1) and
-              (LJSONV1.ToString = LJSONV2.ToString);
-    {$ENDIF}
+    for var I := 0 to LJSONObj1.Count-1 do
+      begin
+        var LPair1 := LJSONObj1.Pairs[I];
+        var LPair2 := LJSONObj2.Get(LPair1.JsonString.Value);
+
+        Result := Result and Assigned(LPair1) and Assigned(LPair2);
+        if not Result then
+          Exit(Result);
+
+        if (LPair1.JsonValue is TJSONObject) and
+           (LPair2.JsonValue.ClassType = LPair1.JsonValue.ClassType) then
+          Result := Result and
+            SameJSON(LPair1.JsonValue as TJSONObject, LPair2.JsonValue as TJSONObject) else
+        if (LPair1.JsonValue is TJSONArray) and
+           (LPair2.JsonValue.ClassType = LPair1.JsonValue.ClassType) then
+          Result := Result and
+            SameJSON(LPair1.JsonValue as TJSONArray, LPair2.JsonValue as TJSONArray) else
+        if (LPair1.JsonValue is TJSONValue) and
+           (LPair2.JsonValue.ClassType = LPair1.JsonValue.ClassType) then
+          Result := Result and
+            SameJSON(LPair1.JsonValue, LPair2.JsonValue);
+        if not Result then
+          Exit(Result);
+      end;
   except
     Result := False;
   end;
 end;
+
+function SameJSON(const AJSONStr1, AJSONStr2: string): Boolean; overload;
+var
+  LJSONVal1, LJSONVal2: TJSONValue;
+
+  LJSONObj1: TJSONObject absolute LJSONVal1;
+  LJSONObj2: TJSONObject absolute LJSONVal2;
+
+  LJSONArray1: TJSONArray absolute LJSONVal1;
+  LJSONArray2: TJSONArray absolute LJSONVal2;
+begin
+  if AJSONStr1 = AJSONStr2 then
+    Exit(True);
+  LJSONVal1 := TJSONValue.ParseJSONValue(AJSONStr1);
+  try
+    LJSONVal2 := TJSONValue.ParseJSONValue(AJSONStr2);
+    try
+      if (LJSONVal1 is TJSONObject) then
+        Result := ((LJSONVal1.ClassType = LJSONVal2.ClassType) and
+                   SameJSON(LJSONObj1, LJSONObj2)) else
+      if (LJSONVal1 is TJSONArray) then
+        Result := ((LJSONVal1.ClassType = LJSONVal2.ClassType) and
+                    SameJSON(LJSONArray1, LJSONArray2)) else
+        Result := False;
+    finally
+      LJSONObj2.Free;
+    end;
+  finally
+    LJSONObj1.Free;
+  end;
+end;
+
+//function SameJson(const AJSON1, AJSON2: string): Boolean;
+//var
+//  LJSONV1, LJSONV2: TJSONValue;
+//  LJSON1, LJSON2: string;
+//begin
+//  try
+//    LJSONV1 := TJSONObject.ParseJSONValue(AJSON1);
+//    LJSONV2 := TJSONObject.ParseJSONValue(AJSON2);
+//    {$IF DEFINED(DEBUG)}
+//    LJSON1 := LJSONV1.ToString;
+//    LJSON2 := LJSONV2.ToString;
+//    Result := Assigned(LJSONV2) and Assigned(LJSONV1) and (LJSON1 = LJSON2);
+//    {$ELSE}
+//    Result := Assigned(LJSONV2) and Assigned(LJSONV1) and
+//              (LJSONV1.ToString = LJSONV2.ToString);
+//    {$ENDIF}
+//  except
+//    Result := False;
+//  end;
+//end;
 
 function IfThen(AValue: Boolean; const ATrue: TFunc<Integer>; const AFalse: TFunc<Integer>): Integer;
 begin
@@ -597,6 +845,10 @@ begin
   if AValue then
     Result := ATrue else
     Result := AFalse;
+end;
+
+function MakeTypeInfo(ATypeKind: TTypeKind): PTypeInfo;
+begin
 end;
 
 { TSaveRestore<T> }

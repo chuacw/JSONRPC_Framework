@@ -12,8 +12,9 @@ unit TestJSONRPC.Client;
 interface
 
 uses
+  Winapi.Windows,
   DUnitX.TestFramework, JSONRPC.User.SomeTypes, JSONRPC.ServerBase.Runner,
-  Velthuis.BigDecimals, Velthuis.BigIntegers;
+  Velthuis.BigDecimals, Velthuis.BigIntegers, System.SysUtils;
 
 {$IF NOT DECLARED(Velthuis.BigDecimals) AND NOT DECLARED(Velthuis.BigIntegers)}
   {$MESSAGE HINT 'Include Velthuis.BigDecimals to automatically enable SendExtended'}
@@ -35,12 +36,20 @@ type
 
     FStartPort: Integer;
     procedure FindOpenPort;
+
+    procedure SendJSON(const AJSON: string; const AProc: TProc);
   public
     [SetupFixture]
     procedure Setup;
 
     [TearDownFixture]
     procedure TearDown;
+
+    [Test]
+    procedure Example1_1;
+
+    [Test]
+    procedure Example1_2;
 
     [Test]
     procedure TestOnLogIncomingJSONResponse;
@@ -171,11 +180,129 @@ type
 implementation
 
 uses
-  System.SysUtils, JSONRPC.RIO, JSONRPC.Common.Types,
+  JSONRPC.RIO, JSONRPC.Common.Types,
   IPPeerServer, IPPeerAPI, JSONRPC.User.SomeTypes.Impl,
   System.DateUtils,
   JSONRPC.Common.FixBuggyNativeTypes, System.Math,
+  System.Classes,
   TestJSONRPC.JSONRPCHTTPServer;
+
+type
+
+  // procedure(const MethodName: string; ARequest: TStream) of object;
+
+  TCbStdMethod2<T1, T2> = procedure(const P1: T1; P2: T2) of object;
+
+  IOnBeforeExecuteHandler = interface
+    ['{6C4819F3-C9B7-4260-8127-C9F5BDE7F68C}']
+//    function Invoke(errorCode: HResult; const createdController: ICoreWebView2Controller): HResult; stdcall;
+    procedure Invoke(const MethodName: string; ARequest: TStream);
+  end;
+
+  // Helper types converting method types
+  Callback<T1, T2> = record
+    type
+      TStdMethod2 = TCbStdMethod2<T1, T2>;
+    class function CreateAs<INTF>(P: TStdMethod2): INTF; overload; static;
+  end;
+
+class function Callback<T1, T2>.CreateAs<INTF>(P: TStdMethod2): INTF;
+type
+  PIntf = ^INTF;
+begin
+  Result := PIntf(@P)^;
+end;
+
+procedure TTestJSONRPCClient.FindOpenPort;
+begin
+  var LPortSet: Boolean;
+  FStartPort := 8085;
+  repeat
+    LPortSet := FServerRunner.CheckPort(FStartPort) > 0;
+    if not LPortSet then
+      Inc(FStartPort);
+  until LPortSet;
+end;
+
+procedure TTestJSONRPCClient.Setup;
+begin
+// Set up internal server
+  FServerRunner := TJSONRPCServerIdHTTPRunner.Create;
+  FindOpenPort;
+  FServerRunner.Host := 'localhost';
+  FServerRunner.StartServer(FStartPort);
+
+// Set up RPC client
+  var LServerURL := Format('http://localhost:%d', [FStartPort]);
+  FSomeJSONRPC := GetSomeJSONRPC(LServerURL);
+end;
+
+procedure TTestJSONRPCClient.TearDown;
+begin
+  FSomeJSONRPC := nil;
+  FreeAndNil(FServerRunner);
+end;
+
+procedure TTestJSONRPCClient.Example1_1;
+begin
+  var A := 42;
+  var B := 13;
+  var LResult := FSomeJSONRPC.subtract(A, B);
+  Assert.AreEqual<Integer>(LResult, A-B);
+end;
+
+procedure TTestJSONRPCClient.SendJSON(const AJSON: string; const AProc: TProc);
+var
+  LOnBeforeExecute: TBeforeExecuteEvent;
+  LJSON: string;
+begin
+  LJSON := AJSON;
+
+  var LIJSONRPCWrapper: IJSONRPCWrapper;
+  var LJSONRPCWrapper: TJSONRPCWrapper;
+  if Supports(FSomeJSONRPC, IJSONRPCWrapper, LIJSONRPCWrapper) then
+    begin
+      LJSONRPCWrapper := LIJSONRPCWrapper.JSONRPCWrapper;
+      LOnBeforeExecute := LJSONRPCWrapper.OnBeforeExecute;
+      LJSONRPCWrapper.OnBeforeExecute :=
+      procedure(const MethodName: string; ARequest: TStream)
+      begin
+        var LJSONRequest := LJSON;
+        var LJSONRequestBytes := TEncoding.UTF8.GetBytes(LJSONRequest);
+        ARequest.Write(LJSONRequestBytes, Length(LJSONRequestBytes));
+      end;
+    end;
+
+  AProc;
+
+  if Supports(FSomeJSONRPC, IJSONRPCWrapper, LIJSONRPCWrapper) then
+  begin
+    LJSONRPCWrapper := LIJSONRPCWrapper.JSONRPCWrapper;
+    LJSONRPCWrapper.OnBeforeExecute := LOnBeforeExecute;
+  end;
+end;
+
+procedure TTestJSONRPCClient.Example1_2;
+begin
+
+  var LResult := 0;
+  var A := 42;
+  var B := 21;
+
+  var LJSON := Format(
+    '{"jsonrpc": "2.0", "method": "subtract", "params": [%d, %d], "id": 2}',
+    [B, A]);
+
+  SendJSON(LJSON, procedure
+    begin
+      // Native call, as the result is required
+      LResult := FSomeJSONRPC.subtract(0, 0);
+    end
+  );
+
+  Assert.AreEqual<Integer>(LResult, B-A);
+end;
+
 
 procedure TTestJSONRPCClient.SendBigNumbers;
 {$IF DECLARED(Velthuis.BigDecimal)}
@@ -315,10 +442,13 @@ end;
 
 procedure TTestJSONRPCClient.SendEnum;
 begin
+  DebugBreak;
   var LResult := FSomeJSONRPC.SendEnum(enumA);
+  DebugBreak;
   Assert.IsTrue(LResult = 'enumA', 'Enums are not marshalled correctly!');
-
+  DebugBreak;
   LResult := FSomeJSONRPC.SendEnum(enumB);
+  DebugBreak;
   Assert.IsTrue(LResult = 'enumB', 'Enums are not marshalled correctly!');
 end;
 
@@ -455,30 +585,6 @@ begin
   Assert.IsTrue(LResult = Value, 'WordBools are not the same!');
 end;
 
-procedure TTestJSONRPCClient.FindOpenPort;
-begin
-  var LPortSet: Boolean;
-  FStartPort := 8085;
-  repeat
-    LPortSet := FServerRunner.CheckPort(FStartPort) > 0;
-    if not LPortSet then
-      Inc(FStartPort);
-  until LPortSet;
-end;
-
-procedure TTestJSONRPCClient.Setup;
-begin
-// Set up internal server
-  FServerRunner := TJSONRPCServerIdHTTPRunner.Create;
-  FindOpenPort;
-  FServerRunner.Host := 'localhost';
-  FServerRunner.StartServer(FStartPort);
-
-// Set up RPC client
-  var LServerURL := Format('http://localhost:%d', [FStartPort]);
-  FSomeJSONRPC := GetSomeJSONRPC(LServerURL);
-end;
-
 procedure TTestJSONRPCClient.SomeException;
 begin
   var LException := False;
@@ -536,12 +642,6 @@ begin
       Assert.IsTrue(LSafeCallIntercepted, 'safecall exception wasn''t intercepted');
     end;
   end;
-end;
-
-procedure TTestJSONRPCClient.TearDown;
-begin
-  FSomeJSONRPC := nil;
-  FreeAndNil(FServerRunner);
 end;
 
 procedure TTestJSONRPCClient.TestOnLogIncomingJSONResponse;

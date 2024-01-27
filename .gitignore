@@ -75,7 +75,6 @@ modules/
 Win32/
 Win64/
 Linux64/
-Tests/
 Debug/
 Release/
 Android64/
@@ -85,3 +84,4 @@ dunitx-results.xml
 README.res
 Examples/
 
+*._@emb_.tmp

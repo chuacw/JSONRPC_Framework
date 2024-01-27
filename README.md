@@ -62,6 +62,17 @@ It is recommended that you call RegisterInterface in the initialization, so
 that if you implement the server at the same time, the interface is registered
 on the server side as well.
 
+Passing parameters
+---
+The passing of most parameters are supported with the exception of the following:
+
+* open arrays,
+* array of const
+
+
+* array of X, instead, specify the parameter type as TArray<X>
+* array of const, instead, specify the parameter type as TArray<TVarRec>
+
 Obtaining an ISomeJSONRPC interface
 ---
 Create a function that returns an ISomeJSONRPC interface.

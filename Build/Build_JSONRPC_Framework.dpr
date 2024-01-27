@@ -1,3 +1,12 @@
+{---------------------------------------------------------------------------}
+{                                                                           }
+{ File:       Build_JSONRPC_Framework.dpr                                   }
+{ Function:   Builds the JSON RPC framework                                 }
+{                                                                           }
+{ Language:   Delphi version XE11 or later                                  }
+{ Author:     Chee-Wee Chua                                                 }
+{ Copyright:  (c) 2023,2024 Chee-Wee Chua                                   }
+{---------------------------------------------------------------------------}
 program Build_JSONRPC_Framework;
 
 {$APPTYPE CONSOLE}

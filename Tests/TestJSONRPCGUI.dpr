@@ -23,9 +23,11 @@ uses
   JSONRPC.InvokeRegistry in '..\Common\JSONRPC.InvokeRegistry.pas',
   JSONRPC.Common.Types in '..\Common\JSONRPC.Common.Types.pas',
   JSONRPC.Common.Consts in '..\Common\JSONRPC.Common.Consts.pas',
-  JSONRPC.ServerIdHTTP.Runner in '..\Server\JSONRPC.ServerIdHTTP.Runner.pas',
   JSONRPC.ServerBase.Runner in '..\Server\JSONRPC.ServerBase.Runner.pas',
-  JSONRPC.User.SomeTypes.Impl in '..\Client\JSONRPC.User.SomeTypes.Impl.pas';
+  JSONRPC.User.SomeTypes.Impl in '..\Client\JSONRPC.User.SomeTypes.Impl.pas',
+  JSONRPC.Common.RecordHandlers in '..\Common\JSONRPC.Common.RecordHandlers.pas',
+  JSONRPC.Common.FixBuggyNativeTypes in '..\Common\JSONRPC.Common.FixBuggyNativeTypes.pas',
+  JSONRPC.CustomServerIdHTTP.Runner in '..\Server\JSONRPC.CustomServerIdHTTP.Runner.pas';
 
 {$R *.RES}
 

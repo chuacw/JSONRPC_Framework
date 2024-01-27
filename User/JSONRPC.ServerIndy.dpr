@@ -1,8 +1,17 @@
+{---------------------------------------------------------------------------}
+{                                                                           }
+{ File:       JSONRPC.ServerIndy.dpr                                        }
+{ Function:   An implementation of a JSON RPC server in Indy                }
+{                                                                           }
+{ Language:   Delphi version XE11 or later                                  }
+{ Author:     Chee-Wee Chua                                                 }
+{ Copyright:  (c) 2023,2024 Chee-Wee Chua                                   }
+{---------------------------------------------------------------------------}
 program JSONRPC.ServerIndy;
 
 {$APPTYPE CONSOLE}
 {$WARN DUPLICATE_CTOR_DTOR OFF}
-
+{$INLINE OFF}
 uses
   System.SysUtils,
   System.Types,
