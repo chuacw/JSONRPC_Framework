@@ -490,7 +490,6 @@ var
   P: PByte;
   Size, Len: Integer;
   LValue: TValue;
-  LValues: TArray<TValue>;
 begin
   Result := TJSONArray.Create;
   Size := ATypeInfo.TypeData.elSize;
