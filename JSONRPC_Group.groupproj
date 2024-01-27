@@ -27,9 +27,6 @@
         <Projects Include="Tests\TestJSONRPC.dproj">
             <Dependencies/>
         </Projects>
-        <Projects Include="..\RRUZ-Rodrigo\RTTI\Rtti Explorer Lite\Rtti_Explorer.dproj">
-            <Dependencies/>
-        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -110,32 +107,17 @@
     <Target Name="TestJSONRPC:Make">
         <MSBuild Projects="Tests\TestJSONRPC.dproj" Targets="Make"/>
     </Target>
-    <Target Name="Rtti_Explorer">
-        <MSBuild Projects="..\RRUZ-Rodrigo\RTTI\Rtti Explorer Lite\Rtti_Explorer.dproj"/>
-    </Target>
-    <Target Name="Rtti_Explorer:Clean">
-        <MSBuild Projects="..\RRUZ-Rodrigo\RTTI\Rtti Explorer Lite\Rtti_Explorer.dproj" Targets="Clean"/>
-    </Target>
-    <Target Name="Rtti_Explorer:Make">
-        <MSBuild Projects="..\RRUZ-Rodrigo\RTTI\Rtti Explorer Lite\Rtti_Explorer.dproj" Targets="Make"/>
-    </Target>
     <Target Name="Build">
-        <CallTarget Targets="Build_JSONRPC_Framework;JSONRPC_ServerIndy;JSONRPC_ClientProj;JSONRPC_ServerProj1;README;JSONRPC_AppWizard;TestJSONRPC2;TestJSONRPC;Rtti_Explorer"/>
+        <CallTarget Targets="Build_JSONRPC_Framework;JSONRPC_ServerIndy;JSONRPC_ClientProj;JSONRPC_ServerProj1;README;JSONRPC_AppWizard;TestJSONRPC2;TestJSONRPC"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="Build_JSONRPC_Framework:Clean;JSONRPC_ServerIndy:Clean;JSONRPC_ClientProj:Clean;JSONRPC_ServerProj1:Clean;README:Clean;JSONRPC_AppWizard:Clean;TestJSONRPC2:Clean;TestJSONRPC:Clean;Rtti_Explorer:Clean"/>
+        <CallTarget Targets="Build_JSONRPC_Framework:Clean;JSONRPC_ServerIndy:Clean;JSONRPC_ClientProj:Clean;JSONRPC_ServerProj1:Clean;README:Clean;JSONRPC_AppWizard:Clean;TestJSONRPC2:Clean;TestJSONRPC:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="Build_JSONRPC_Framework:Make;JSONRPC_ServerIndy:Make;JSONRPC_ClientProj:Make;JSONRPC_ServerProj1:Make;README:Make;JSONRPC_AppWizard:Make;TestJSONRPC2:Make;TestJSONRPC:Make;Rtti_Explorer:Make"/>
+        <CallTarget Targets="Build_JSONRPC_Framework:Make;JSONRPC_ServerIndy:Make;JSONRPC_ClientProj:Make;JSONRPC_ServerProj1:Make;README:Make;JSONRPC_AppWizard:Make;TestJSONRPC2:Make;TestJSONRPC:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
     <ItemGroup Condition="'$(BuildGroup)'=='Build All'">
-        <BuildGroupProject Include="..\RRUZ-Rodrigo\RTTI\Rtti Explorer Lite\Rtti_Explorer.dproj">
-            <ProjectGuid>{040A83C0-1EE8-41B8-99A9-B5A9D8B6361A}</ProjectGuid>
-            <Configurations>Debug</Configurations>
-            <Platforms>Win32</Platforms>
-            <Enabled>False</Enabled>
-        </BuildGroupProject>
         <BuildGroupProject Include="Wizard\JSONRPC.AppWizard.dproj">
             <ProjectGuid>{CAC21F3D-6368-4CD6-8731-D39EE75706D4}</ProjectGuid>
             <Configurations>Debug;Release</Configurations>
@@ -148,6 +130,12 @@
             <Platforms>Win32</Platforms>
             <Enabled>False</Enabled>
         </BuildGroupProject>
+        <BuildGroupProject Include="User\JSONRPC.ServerProj1.dproj">
+            <ProjectGuid>{E2676F43-BA09-479F-A64F-A81B7FB1F5B3}</ProjectGuid>
+            <Configurations>Debug;Release</Configurations>
+            <Platforms>Linux64;Win32;Win64</Platforms>
+            <Enabled>True</Enabled>
+        </BuildGroupProject>
         <BuildGroupProject Include="Build\Build_JSONRPC_Framework.dproj">
             <ProjectGuid>{14F22B99-AF36-48B9-B792-6201E9E6270C}</ProjectGuid>
             <Configurations>Debug;Release</Configurations>
@@ -156,12 +144,6 @@
         </BuildGroupProject>
         <BuildGroupProject Include="User\JSONRPC.ServerIndy.dproj">
             <ProjectGuid>{45868586-A83E-48F8-B996-C03B920F3D7E}</ProjectGuid>
-            <Configurations>Debug;Release</Configurations>
-            <Platforms>Linux64;Win32;Win64</Platforms>
-            <Enabled>True</Enabled>
-        </BuildGroupProject>
-        <BuildGroupProject Include="User\JSONRPC.ServerProj1.dproj">
-            <ProjectGuid>{E2676F43-BA09-479F-A64F-A81B7FB1F5B3}</ProjectGuid>
             <Configurations>Debug;Release</Configurations>
             <Platforms>Linux64;Win32;Win64</Platforms>
             <Enabled>True</Enabled>
