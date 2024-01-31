@@ -30,7 +30,7 @@ resourcestring
     '   - "stop" to stop the server'+ slineBreak +
     '   - "set port" to change the default port'+ slineBreak +
     '   - "status" for Server status'+ slineBreak +
-    '   - "help" to show commands'+ slineBreak +
+    '   - "help" or "?" to show commands'+ slineBreak +
     '   - "exit" to close the application';
 
 const
@@ -39,6 +39,7 @@ const
   cCommandStop = 'stop';
   cCommandStatus = 'status';
   cCommandHelp = 'help';
+  cCommandHelpAlt = '?';
   cCommandSetPort = 'set port';
   cCommandExit = 'exit';
   cCommandQUit = 'quit';

@@ -148,7 +148,7 @@ begin
         begin
           LServer.StopServer;
         end
-      else if SameText(LResponse, cCommandHelp) then
+      else if SameText(LResponse, cCommandHelp) or SameText(LResponse, cCommandHelpAlt) then
         WriteCommands
       else if SameText(LResponse, cCommandExit) or SameText(LResponse, cCommandQUit) then
         begin
