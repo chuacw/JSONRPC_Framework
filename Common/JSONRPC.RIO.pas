@@ -1144,6 +1144,7 @@ begin
               var LTypeKind := LParamTypeInfo.Kind;
 
 {$IF DEFINED(HANDLE_MISSING_RTTI)}
+/// See type specification vs type declaration
             The code below is written to handle array of T, where T is any native type
             Unfortunately, there's an issue marshalling it
               if ([pfArray, pfReference] * AMethMD.Params[LParamIndex].Flags <> []) and

@@ -140,7 +140,9 @@ function IfThen(AValue: Boolean; const ATrue: TFunc<Integer>; const AFalse: TFun
 function IfThen(AValue: Boolean; const ATrue: Integer; const AFalse: TFunc<Integer>): Integer; overload;
 function IfThen(AValue: Boolean; const ATrue: TFunc<Integer>; const AFalse: Integer): Integer; overload;
 
+{$IF DEFINED(HANDLE_MISSING_RTTI)}
 function MakeTypeInfo(ATypeKind: TTypeKind): PTypeInfo;
+{$ENDIF}
 
 type
 
@@ -427,10 +429,12 @@ begin
       VValue := TValue.Empty;
       Exit;
     end;
+{$IF DEFINED(HANDLE_MISSING_RTTI)}
   if ATypeInfo = TypeInfo(TConstArray) then
     begin
 
     end else
+{$ENDIF}
     begin
       LJsonValue := AJsonValue;
     end;
@@ -846,9 +850,11 @@ begin
     Result := AFalse;
 end;
 
+{$IF DEFINED(HANDLE_MISSING_RTTI)}
 function MakeTypeInfo(ATypeKind: TTypeKind): PTypeInfo;
 begin
 end;
+{$ENDIF}
 
 { TSaveRestore<T> }
 
