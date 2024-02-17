@@ -41,7 +41,7 @@ const
 
   SApplicationJson: string     = 'application/json';
   SApplicationJsonRPC: string  = 'application/json-rpc';
-  SAccept: string              = 'accept';
+  SHeadersAccept: string       = 'accept';
   SHeadersContentType: string  = 'content-type';
 
   CParseErrorInvalidCharacter    = -32702;

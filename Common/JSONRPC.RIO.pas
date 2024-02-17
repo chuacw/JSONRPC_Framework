@@ -2767,7 +2767,7 @@ begin
 
             if ([pfArray] * LParams[I].Flags <> []) and
                (LTypeKind <> tkDynArray) then
-              LTypeKind := tkArray else
+              LTypeKind := tkArray;
 
             case LTypeKind of
               tkArray, tkDynArray: begin
