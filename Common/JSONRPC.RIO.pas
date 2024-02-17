@@ -40,8 +40,12 @@ type
 
   TNetHeaders = System.Net.URLClient.TNetHeaders;
   TNameValuePair = System.Net.URLClient.TNameValuePair;
-  TOnBeforeInitializeHeaders = reference to procedure(var ANetHeaders: TNetHeaders);
-  TOnAfterInitializeHeaders = reference to procedure(var ANetHeaders: TNetHeaders);
+  /// <summary>
+  /// </summary>
+  /// <params name="VNetHeaders">
+  /// </params>
+  TOnBeforeInitializeHeaders = reference to procedure(var VNetHeaders: TNetHeaders);
+  TOnAfterInitializeHeaders = reference to procedure(var VNetHeaders: TNetHeaders);
 
   TInvContext = JSONRPC.InvokeRegistry.TInvContext;
   TIntfMethEntryHelper = record helper for TIntfMethEntry
@@ -396,6 +400,9 @@ type
 
     property OnBeforeParse: TOnBeforeParseEvent read FOnBeforeParse write FOnBeforeParse;
 
+    /// <summary> Called before HTTP headers are initialized.
+    /// Only necessary if transport mechanism is HTTP
+    /// </summary>
     property OnBeforeInitializeHeaders: TOnBeforeInitializeHeaders
       read FOnBeforeInitializeHeaders write FOnBeforeInitializeHeaders;
     property OnAfterInitializeHeaders: TOnAfterInitializeHeaders
@@ -476,16 +483,16 @@ type
 
     /// <summary>
     /// Logs the incoming request.
+    /// </summary>
     /// <remarks> It is essential that any exceptions be trapped within.
     /// </remarks>
-    /// </summary>
     procedure DoLogIncomingRequest(const ARequest: string);
 
     /// <summary>
     /// Logs the outgoing response.
+    /// </summary>
     /// <remarks> It is essential that any exceptions be trapped within.
     /// </remarks>
-    /// </summary>
     procedure DoLogOutgoingResponse(const AResponse: string);
 
     { IJSONRPCGetSetDispatchEvents }
@@ -507,7 +514,7 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
-    /// <summary> Dispatches a single RPC call.
+    /// <summary> Dispatches a single RPC call to the native implementation.
     /// </summary>
     /// <param name="ARequestObj"> contains the RPC JSON call data </param>
     /// <param name="VResponseObj"> returns nil if call is a notification,
@@ -1388,8 +1395,9 @@ begin
 
     // Only add ID if it's not a Notification call
     var LMethodType := LIntfType;
-    var LJSONNotify := LMethodType.GetAttribute<JSONNotifyAttribute>;
-    var LIsNotification := LJSONNotify <> nil;
+//    var LJSONNotify := LMethodType.GetAttribute<JSONNotifyAttribute>;
+//    var LIsNotification := LJSONNotify <> nil;
+    var LIsNotification := LMethodType.HasAttribute<JSONNotifyAttribute>;
     var LMethodID := -1;
     if not LIsNotification then
       begin
@@ -1868,12 +1876,12 @@ begin
   Result := [];
   DoBeforeInitializeHeaders(Result);
 
-  if not Result.ContainsName('accept') then
-    Result := Result + [TNameValuePair.Create('accept', SApplicationJson)];
-  if not Result.ContainsName('Content-Length') then
-    Result := Result + [TNameValuePair.Create('Content-Length', IntToStr(ARequestStream.Size))];
-  if not Result.ContainsName('Content-Type') then
-    Result := Result + [TNameValuePair.Create('Content-Type', SApplicationJsonRPC)];
+  if not Result.ContainsName(SHeadersAccept) then
+    Result := Result + [TNameValuePair.Create(SHeadersAccept, SApplicationJson)];
+  if not Result.ContainsName(CHeadersContentLength) then
+    Result := Result + [TNameValuePair.Create(CHeadersContentLength, IntToStr(ARequestStream.Size))];
+  if not Result.ContainsName(SHeadersContentType) then
+    Result := Result + [TNameValuePair.Create(SHeadersContentType, SApplicationJsonRPC)];
 
   DoAfterInitializeHeaders(Result);
 end;
@@ -1930,7 +1938,8 @@ begin
     raise Exception.Create('No GUID assigned to interface');
 
   if not FRegistry.TryGetValue(ATypeInfo.TypeData.GUID, LTypeInfo) then
-    FRegistry.Add(ATypeInfo.TypeData.GUID, ATypeInfo) {$IF DEFINED(DEBUG)} else
+    FRegistry.Add(ATypeInfo.TypeData.GUID, ATypeInfo)
+  {$IF DEFINED(DEBUG)} else
   begin
     {$IF DECLARED(OutputDebugString)}
       var LMsg := Format('Trying to register duplicate interface: GUID: %s, Name: %s',
@@ -2523,6 +2532,840 @@ end;
 procedure TJSONRPCServerWrapper.DispatchJSONRPC(
   const ARequestObj: TJSONValue; var VResponseObj: TJSONObject;
   const E: Exception = nil);
+type
+  TJSONState = (tjNothing, tjParsing, tjGettingMethod, tjLookupMethod, tjLookupMDAIndex,
+    tjLookupParams, tjParseDateTime, tjParseString, tjParseInteger,
+    tjCallMethod, tjParseResponse);
+
+const CErrorFmt = '%s - Method Name: ''%s'', Param Name: ''%s'', Param Value: ''%s'', position: ''%d'', Param Kind: ''%s''';
+
+var
+  LJSONState: TJSONState;
+
+  LClassIndex, LParseParamPosition: Integer;
+  LParseMethodName, LParseParamName, LParseParamValue: string;
+  LParseParamTypeInfo: PTypeInfo;
+begin
+
+  LParseParamPosition := -1;
+  LClassIndex := 0;
+  LJSONState := tjParsing;
+
+  var LMapIntf: InterfaceMapItem;
+  var LClass: TClass;
+
+  var LJSONResponseObj: TJSONObject := nil;
+  var LJSONRequestObj: TJSONObject := nil;
+
+    try
+      if E <> nil then
+        raise E;
+      if (ARequestObj = nil) or
+         ((ARequestObj is TJSONArray) and (TJSONArray(ARequestObj).Count = 0)) then
+        InvalidRequest;
+
+      {$REGION 'parse incoming JSON RPC request'} // TODO -ochuacw -ccat: REGION parse incoming JSON RPC request
+      if not (ARequestObj is TJSONObject) then
+        InvalidRequest;
+
+      var LJSONRequestStr := ARequestObj.ToJSON;
+      LJSONRequestObj := ARequestObj as TJSONObject;
+      TThread.Current.NameThreadForDebugging(LJSONRequestStr);
+      case LogFormat of
+        tlfNative: begin
+          try
+            // Dump the decoded JSON request
+            DoLogIncomingRequest(LJSONRequestObj.ToString);
+          except
+            // If the JSON request can't be decoded, dump the received JSON bytes
+            DoLogIncomingRequest(LJSONRequestStr);
+          end;
+        end;
+      else
+        DoLogIncomingRequest(LJSONRequestStr);
+      end;
+      {$ENDREGION 'parse incoming JSON RPC request'} // TODO -ochuacw -ccat: ENDREGION parse incoming JSON RPC request
+
+      var LJSONRequest := LJSONRequestObj.Format();
+      try
+        var LJSONRPCVersion := LJSONRequestObj.FindValue(SJSONRPC);
+        var LRPCVersion: Double := 0.0;
+        if (not Assigned(LJSONRPCVersion)) or
+           ((not LJSONRPCVersion.TryGetValue<Double>(LRPCVersion)) and
+            (not SameValue(LRPCVersion, 2.0))) then
+          InvalidRequest;
+
+        LJSONState := tjGettingMethod;
+        var LMethodName: string;
+        var LJSONValue := LJSONRequestObj.FindValue(SMETHOD);
+        if (LJSONValue = nil) or (not LJSONValue.IsJsonString) then
+          InvalidRequest;
+        LMethodName := LJSONValue.Value;
+        if not IsValidIdent(LMethodName, True) then
+          InvalidRequest;
+
+        var LResult: TValue;
+        var LArgs: TArray<TValue> := [];
+
+        var LRttiContext := TRttiContext.Create;
+        LMapIntf := InvRegistry.GetInterface;
+        var LType: TRttiType := LRttiContext.GetType(LMapIntf.Info);
+
+//    // NOTE!!! Notifications are requests without an ID
+//        var LJSONRPCRequestID: Int64 := -1;
+//        var LJSONRPCRequestIDString := '';
+//        // string, number, or NULL
+//        var LIDIsNumber := LJSONRequestObj.TryGetValue<Int64>(SID, LJSONRPCRequestID);
+//        var LIDIsString := False;
+//        if not LIDIsNumber then
+//          LIDIsString := LJSONRequestObj.TryGetValue<string>(SID, LJSONRPCRequestIDString);
+//        var LIsNotification := not (LIDIsNumber or LIDIsString);
+
+        LJSONState := tjLookupMethod;
+        LParseMethodName := LMethodName;
+        var LParamCount := 0;
+        var LParamsObjOrArray := LJSONRequestObj.FindValue(SPARAMS);
+        if LParamsObjOrArray is TJSONObject then
+          LParamCount := TJSONObject(LParamsObjOrArray).Count else
+        if LParamsObjOrArray is TJSONArray then
+          LParamCount := TJSONArray(LParamsObjOrArray).Count;
+        DumpJSONRequest(LJSONRequestObj);
+
+        // Fetch the meta data for the interface
+        LClass := InvRegistry.GetInvokableClass;
+        FIntfMD := Default(TIntfMetaData);
+        GetIntfMetaData(LMapIntf.Info, FIntfMD, True);
+
+        {$REGION 'Find method'} // TODO -ochuacw -ccat: REGION Find method
+        var LMethod: TRttiMethod;
+        LMethod := FindMethod(LType, LMethodName, LParamCount, LJSONRequestObj);
+        if not Assigned(LMethod) then
+          begin
+            var LMapIntfs := InvRegistry.GetInterfaces;
+            for LMapIntf in LMapIntfs do
+              begin
+                LType := LRttiContext.GetType(LMapIntf.Info);
+                LMethod := FindMethod(LType, LMethodName, LParamCount, LJSONRequestObj);
+                if Assigned(LMethod) then
+                  begin
+                    FIntfMD := Default(TIntfMetaData);
+                    GetIntfMetaData(LMapIntf.Info, FIntfMD, True);
+                    LClassIndex := 0;
+                    if LClass = nil then
+                      Break;
+                    if not Supports(LClass, LMapIntf.GUID) then
+                      begin
+                        LClass := nil;
+                        var LClasses := InvRegistry.GetInvokableClasses;
+                        for var LTempClass in LClasses do
+                          begin
+                            if Supports(LTempClass, LMapIntf.GUID) then
+                              begin
+                                LClass := LTempClass;
+                                Break;
+                              end;
+                            Inc(LClassIndex);
+                          end;
+                      end;
+                    if LClass <> nil then
+                      Break;
+                  end;
+              end;
+          end else
+          begin
+            // Update the persistence index
+            if FPersistent then
+              begin
+                var LMapIntfs := InvRegistry.GetInterfaces;
+                for LMapIntf in LMapIntfs do
+                  begin
+                    LType := LRttiContext.GetType(LMapIntf.Info);
+                    if LType.Name = LMapIntf.Name then
+                      Break;
+                    Inc(LClassIndex);
+                  end;
+              end;
+          end;
+        {$ENDREGION 'Find method'} // TODO -ochuacw -ccat: ENDREGION Find method
+        if not Assigned(LMethod) then
+          MethodNotFoundError(LMethodName);
+        if not Assigned(LClass) then
+          ClassNotFoundError;
+
+    // NOTE!!! Notifications are requests without an ID
+        var LJSONRPCRequestID: Int64 := -1;
+        var LJSONRPCRequestIDString := '';
+        // string, number, or NULL
+        var LIDIsNumber := LJSONRequestObj.TryGetValue<Int64>(SID, LJSONRPCRequestID);
+        var LIDIsString := False;
+        if not LIDIsNumber then
+          LIDIsString := LJSONRequestObj.TryGetValue<string>(SID, LJSONRPCRequestIDString);
+        var LIsNotification := not (LIDIsNumber or LIDIsString);
+
+        if (not LIsNotification) or Assigned(LMethod.ReturnType) then
+          LJSONResponseObj := TJSONObject.Create;
+
+        AddJSONVersion(LJSONResponseObj);
+
+        if FPersistent and (High(FJSONRPCInstances) < LClassIndex) then
+          SetLength(FJSONRPCInstances, LClassIndex+1);
+
+        var LParams := LMethod.GetParameters;
+        // SetLength so that parameters can be parsed by position or name
+        SetLength(LArgs, Length(LParams));
+        LJSONState := tjLookupMDAIndex;
+        var LMDAIndex := LookupMDAIndex(LMethodName, LParams, FIntfMD);
+
+        Assert( (LMDAIndex >= Low(FIntfMD.MDA)) and
+                (LMDAIndex <= High(FIntfMD.MDA)), 'Cannot locate MDA Index!');
+
+        LJSONState := tjLookupParams;
+
+        {$REGION 'Loop over params'}
+        for var I := Low(LParams) to High(LParams) do
+          begin
+            var LArg: TValue;
+            var LParamName := Format('params.%s', [LParams[I].Name]);
+
+            LParseParamName := LParams[I].Name;
+            LParseParamPosition := I+1;
+            LParseParamValue := '';
+            LParseParamTypeInfo := LParams[I].ParamType.Handle;
+
+            // look up parameter's position using name
+            var LParamPosition :=  LookupParamPosition(FIntfMD.MDA[LMDAIndex].Params, LParams[I].Name);
+            if LParamPosition = -1 then
+              LParamPosition := I;
+
+            case LParseParamTypeInfo.Kind of
+              tkArray, tkDynArray: begin
+                // Deliberately empty
+              end;
+            else
+              // This code fails when the param is an array
+              // Set up value in case it has an error
+              try
+                if (LJSONRequestObj is TJSONObject) and
+                    (not LJSONRequestObj.TryGetValue<string>(LParamName, LParseParamValue)) then
+                  begin
+                    var LParamsArr: TJSONArray;
+                    if LJSONRequestObj.P[SPARAMS] is TJSONArray then
+                      begin
+                        LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
+                        LParseParamValue := LParamsArr[I].AsType<string>;
+                      end else
+                    if LJSONRequestObj.P[SPARAMS] is TJSONObject then
+                      begin
+                        // This code handles the case when there's a mismatch between the
+                        // formal and actual parameter name, so the parameter value is then
+                        // fetched using the parameter position instead of the parameter name
+                        // The mismatch occurs when the client side decides to use a parameter name
+                        // different from that of the formal parameter name, but matches the formal
+                        // parameter signature
+                        LParseParamValue := TJSONObject(LJSONRequestObj.P[SPARAMS]).Pairs[LParamPosition].JsonValue.ToString;
+                      end;
+                  end;
+              except
+                raise EJSONRPCParamParsingException.Create(LMethodName, LParseParamName);
+              end;
+            end;
+
+            var LTypeKind  := LParams[I].ParamType.TypeKind;
+            // LJSONState := TJSONState(Ord(High(TJSONState)) + Ord(LTypeKind));
+            // params may be by name or by position, parse incoming client JSON requests
+
+            if ([pfArray] * LParams[I].Flags <> []) and
+               (LTypeKind <> tkDynArray) then
+              LTypeKind := tkArray;
+
+            case LTypeKind of
+              tkArray, tkDynArray: begin
+                var LParamJSONObject := LJSONRequestObj.FindValue(LParamName);
+                if Assigned(LParamJSONObject) then
+                  DeserializeJSON(LParamJSONObject, LParseParamTypeInfo, LArg) else
+                begin
+                  var LParam := LJSONRequestObj.P[SPARAMS];
+                  if Assigned(LParam) then
+                    begin
+                      var LParamsArray := (LParam as TJSONArray);
+                      var LParamElem := LParamsArray[I];
+
+                      if not (LParamElem is TJSONArray) then
+                        InvalidRequest;
+
+                      if Assigned(LParamElem) then
+                        begin
+                          var LParamElemJSONArray := LParamElem as TJSONArray;
+                          DeserializeJSON(LParamElemJSONArray, LParseParamTypeInfo, LArg);
+                        end;
+                    end;
+                end;
+              end;
+              tkRecord: begin
+                var LParamJSONObject := LJSONRequestObj.FindValue(LParamName);
+                var LHandlers: TRecordHandlers;
+                var LJSON := '';
+                // Try looking up the parameter by name and if it fails
+                // look up the parameter by position
+                // The JSON is then passed to the handler
+                if Assigned(LParamJSONObject) then
+                  LJSONRequestObj.TryGetValue<string>(LParamName, LJSON) else
+                  LJSON := TJSONArray(LParamsObjOrArray)[LParamPosition].Value;
+                if LookupRecordHandlers(LParseParamTypeInfo, LHandlers) then
+                  begin
+                    LArg := LHandlers.JSONToTValue(LJSON);
+                  end else
+                  begin
+                    // Default handling of records
+                    if Assigned(LParamJSONObject) then
+                      DeserializeJSON(LParamJSONObject, LParseParamTypeInfo, LArg);
+                  end;
+              end;
+              tkEnumeration: begin // False, True, etc...
+                // Supported types are strings, numbers, boolean, null, objects and arrays
+                if IsBoolType(LParseParamTypeInfo) then
+                  begin
+                    case LParseParamTypeInfo^.TypeData^.OrdType of
+                      otSByte, otUByte: begin
+                        LArg := TValue.From(Boolean(SameText(
+                          LParseParamValue, STrue)));
+                      end;
+                      otSWord, otUWord: begin
+                        LArg := TValue.From(WordBool(SameText(
+                          LParseParamValue, STrue)));
+                      end;
+                      otSLong, otULong: begin
+                        LArg := TValue.From(LongBool(SameText(
+                          LParseParamValue, STrue)));
+                      end;
+                    end;
+                  end else
+                  begin // Really an enumeration
+                    var LEnumValue: Integer;
+                    case FPassEnumByName of
+                      True: begin
+                        LEnumValue := GetEnumValue(LParseParamTypeInfo,
+                          LParseParamValue
+                        );
+                      end;
+                    else
+                      // Enum is passed as an ordinal / integer
+                      LEnumValue := StrToInt(LParseParamValue);
+                    end;
+                    TValue.Make(@LEnumValue, LParseParamTypeInfo, LArg);
+                  end;
+              end;
+              tkString, tkLString, tkUString, tkWString: begin
+                LArg := TValue.From<string>(LParseParamValue);
+              end;
+              tkInteger: begin
+                var LTypeName := LParams[I].ParamType.Name;
+                var LTypeInfo := LParseParamTypeInfo;
+                begin
+                  case LTypeInfo.TypeData.OrdType of
+                    otSByte: begin // ShortInt
+                      Assert(SameText(LTypeName, 'ShortInt'), 'Type mismatch!');
+                      LArg := TValue.From(StrToInt(LParseParamValue));
+                    end;
+                    otSWord: begin // SmallInt
+                      Assert(SameText(LTypeName, 'SmallInt'), 'Type mismatch!');
+                      LArg := TValue.From(StrToInt(LParseParamValue));
+                    end;
+                    otSLong: begin // Integer
+                      Assert(SameText(LTypeName, 'Integer'), 'Type mismatch!');
+                      LArg := TValue.From(StrToInt(LParseParamValue));
+                    end;
+                    otUByte: begin // Byte
+                      Assert(SameText(LTypeName, 'Byte'), 'Type mismatch!');
+                      LArg := TValue.From(Byte(StrToInt(LParseParamValue)));
+                    end;
+                    otUWord: begin // Word
+                      Assert(SameText(LTypeName, 'Word'), 'Type mismatch!');
+                      LArg := TValue.From(StrToUInt(LParseParamValue));
+                    end;
+                    otULong: begin // Cardinal
+                      Assert(SameText(LTypeName, 'Cardinal'), 'Type mismatch!');
+                      LArg := TValue.From(StrToUInt(LParseParamValue));
+                    end;
+                  end;
+                end;
+
+              end; // tkInteger
+              tkInt64: begin
+                var LParamValue: Int64;
+                if not LJSONRequestObj.TryGetValue<Int64>(LParamName, LParamValue) then
+                  begin
+                    var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
+                    var LParamElem := LParamsArr[I];
+                    LParamValue := LParamElem.AsType<Int64>;
+                  end;
+                LArg := TValue.From(LParamValue);
+              end;
+              tkFloat: begin
+                // check if it's a date time
+                var LTypeInfo := FIntfMD.MDA[LMDAIndex].Params[I].Info;
+                var LFloatType := LTypeInfo^.TypeData.FloatType;
+                begin
+                  CheckTypeInfo(LTypeInfo);
+                  CheckFloatType(LFloatType);
+                  case LFloatType of
+                    ftComp: begin
+                      var LValue: Comp;
+                      if not LJSONRequestObj.TryGetValue<Comp>(LParamName, LValue) then
+                        begin
+                          var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
+                          var LParamElem := LParamsArr[I];
+                          LValue := LParamElem.AsType<Comp>;
+                        end;
+                      LArg := TValue.From(LValue);
+                    end;
+                    ftCurr, ftDouble, ftExtended, ftSingle:
+                    begin
+                      if (LTypeInfo = System.TypeInfo(TDate)) or
+                         (LTypeInfo = System.TypeInfo(TTime)) or
+                         (LTypeInfo = System.TypeInfo(TDateTime)) then
+                        begin
+                          var LDateTimeStr: string;
+                          if not LJSONRequestObj.TryGetValue<string>(LParamName, LDateTimeStr) then
+                            begin
+                              var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
+                              var LParamElem := LParamsArr[I];
+                              LDateTimeStr := LParamElem.AsType<string>;
+                            end;
+                          var LDateTime: TDateTime := ISO8601ToDate(LDateTimeStr, False); // Convert to local date/time
+                          LArg := TValue.From(LDateTime);
+                        end else
+                      if LTypeInfo = TypeInfo(Single) then
+                        begin
+                          var LValue: Single;
+                          if not LJSONRequestObj.TryGetValue<Single>(LParamName, LValue) then
+                            begin
+                              var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
+                              var LParamElem := LParamsArr[I];
+                              LValue := LParamElem.AsType<Single>;
+                            end;
+                          LArg := TValue.From(LValue);
+                        end else
+                      if LTypeInfo = TypeInfo(Extended) then
+                        begin
+                          // Delphi cannot handle the precision of Extended
+                          // if/when the client is 32-bit and the server is 64-bit
+                          // because Extended.MaxValue (32-bit) > Extended.MaxValue (64-bit)
+                          // so convert to BigDecimal
+                          var LHandlers: TRecordHandlers;
+                          if LookupRecordHandlers(LTypeInfo, LHandlers) then
+                            begin
+                              var LValue: Extended;
+
+                              if not LJSONRequestObj.TryGetValue<Extended>(LParamName, LValue) then
+                                begin
+                                  var LParamsArr := LJSONRequestObj.P[SPARAMS] as TJSONArray;
+                                  var LJSON := LParamsArr[I].Value;
+                                  LArg := LHandlers.JSONToTValue(LJSON);
+                                end else
+                                begin
+                                  LArg := TValue.From(LValue);
+                                end;
+
+                            end;
+                        end else
+                        begin
+                          // ftCurr, ftDouble
+                          var LValue: Double := StrToFloat(LParseParamValue);
+                          LArg := TValue.From(LValue);
+                        end;
+                    end; // ftDouble, ftSingle, etc...
+                  end; // case
+                end; // begin
+              end;
+            else
+              raise EJSONException.Create(SParseError);
+            end;
+            if LParamPosition <> -1 then
+              LArgs[LParamPosition] := LArg;
+          end; // end for
+          {$ENDREGION 'Loop over params'}
+
+        // {"jsonrpc": "2.0", "result": 19, "id": 1} example of expected result
+        // Respond with the same request ID, if the request wasn't not a notification
+        var LInstance: TObject;
+        if FPersistent then
+          begin
+            if (not Assigned(FJSONRPCInstances[LClassIndex])) or
+              (not Supports(FJSONRPCInstances[LClassIndex], LMapIntf.GUID)) then
+              begin
+                Supports(CreateInvokableClass(TInvokableClassClass(LClass)),
+                  IJSONRPCMethods, FJSONRPCInstances[LClassIndex]);
+              end;
+            LInstance := TInvokableClass(FJSONRPCInstances[LClassIndex]);
+          end else
+          begin
+            LInstance := CreateInvokableClass(TInvokableClassClass(LClass));
+              // TInvokableClassClass(LClass).Create;
+          end;
+
+        var LIntf: IJSONRPCMethods;
+
+        var LJSONRPCMethodException: IJSONRPCMethodException;
+        if Supports(LInstance, IJSONRPCMethodException, LJSONRPCMethodException) then
+          begin
+            LJSONRPCMethodException.MethodName := LMethodName;
+          end;
+
+        {$REGION 'Execute method'} // TODO -ochuacw -ccat: REGION Execute method
+        if Supports(LInstance, LMapIntf.GUID, LIntf) then
+          begin
+            var LObj := TValue.From(LIntf);
+            LJSONState := tjCallMethod;
+
+            // Dispatch the call to the implementor
+            // ****************************************************************************
+            LResult := LMethod.Invoke(LObj, LArgs);
+            // ****************************************************************************
+            // LResult := LMethod.Invoke(LInstance, LArgs); // working
+
+            LJSONState := tjParseResponse;
+
+            {$REGION 'Parse results'}  // TODO -ochuacw -ccat: REGION Parse results
+            if Assigned(LMethod.ReturnType) then
+              begin
+                // Add result into the response
+                // process outgoing response from server to client
+                case LMethod.ReturnType.TypeKind of
+                  tkArray,
+                  tkDynArray: begin
+
+                    var LJSONArray := ValueToJSONArray(LResult, LMethod.ReturnType.Handle);
+                    LJSONResponseObj.AddPair(SRESULT, LJSONArray);
+
+                  end;
+                  tkRecord: begin
+                    var LTypeInfo := LMethod.ReturnType.Handle;
+                    var LJSONObject: TJSONValue;
+                    var LHandlers: TRecordHandlers;
+                    // Look up custom handlers for records
+                    if LookupRecordHandlers(LTypeInfo, LHandlers) then
+                      begin
+                        LHandlers.TValueToJSON(
+                          LResult, LTypeInfo, LJSONResponseObj
+                        );
+                      end else
+                      begin
+                        // default handler for records
+                        var LJSON := SerializeRecord(LResult, LTypeInfo);
+                        LJSONObject := TJSONObject.ParseJSONValue(LJSON);
+                        LJSONResponseObj.AddPair(SRESULT, LJSONObject);
+                      end;
+                  end;
+                  tkEnumeration: begin
+                    // Only possible values are True, False
+                    var LTypeInfo := LMethod.ReturnType.Handle;
+                    if IsBoolType(LTypeInfo) then
+                      LJSONResponseObj.AddPair(SRESULT, TJSONBool.Create(LResult.AsBoolean)) else
+                    begin // really an enum type
+                      var LResultOrdinal := LResult.AsOrdinal;
+                      case FPassEnumByName of
+                        True: begin
+                          var LResultName := GetEnumName(LTypeInfo, LResultOrdinal);
+                          LJSONResponseObj.AddPair(SRESULT, LResultName);
+                        end;
+                      else
+                        LJSONResponseObj.AddPair(SRESULT, LResultOrdinal);
+                      end;
+                    end;
+                  end;
+                  tkString, tkLString, tkUString, tkWString: begin
+                    LJSONResponseObj.AddPair(SRESULT, LResult.AsString);
+                  end;
+                  tkFloat: begin
+                    var LTypeInfo := LMethod.ReturnType.Handle;
+                    var LFloatType := LTypeInfo^.TypeData.FloatType;
+
+                    CheckTypeInfo(LTypeInfo);
+                    CheckFloatType(LFloatType);
+                    case LFloatType of
+                      ftComp: begin
+                        //
+                      end;
+                      ftCurr: begin
+                        LJSONResponseObj.AddPair(SRESULT, LResult.AsCurrency);
+                      end;
+                      ftDouble, ftExtended, ftSingle:
+                      begin
+                        if (LTypeInfo = System.TypeInfo(TDate)) or
+                           (LTypeInfo = System.TypeInfo(TTime)) or
+                           (LTypeInfo = System.TypeInfo(TDateTime)) then
+                          begin
+                            var LDateTimeStr :=  System.DateUtils.DateToISO8601(LResult.AsExtended, False);
+                            LJSONResponseObj.AddPair(SRESULT, LDateTimeStr);
+                          end else
+                        if LTypeInfo = System.TypeInfo(Single) then
+                          begin
+                            LJSONResponseObj.AddPair(SRESULT, LResult.AsExtended);
+                          end else
+                        if LTypeInfo = System.TypeInfo(Extended) then
+                          begin
+                            LJSONResponseObj.AddPair(SRESULT, LResult.AsExtended);
+                          end else
+                          begin
+                            // Currency and Double
+                            LJSONResponseObj.AddPair(SRESULT, LResult.AsExtended);
+                          end;
+                      end;
+                    end;
+
+                  end;
+                  tkInteger, tkInt64: LJSONResponseObj.AddPair(SRESULT, LResult.AsOrdinal);
+                else
+                end;
+              end else
+              begin
+                // Default result when none is expected
+                // LJSONResultObj.AddPair(SRESULT, DefaultTrueBoolStr);
+                if LJSONResponseObj <> nil then
+                  LJSONResponseObj.AddPair('noresult', 'noresult');
+              end;
+              {$ENDREGION 'Parse results'} // TODO -ochuacw -ccat: ENDREGION Parse results
+          end else
+          begin
+//            var LMsg := Format('Method "%s" not found!', [LMethodName]);
+//            raise EJSONRPCMethodException.Create(CMethodNotFound, LMsg);
+            MethodNotFoundError(LMethodName);
+          end;
+        {$ENDREGION 'Execute method'} // TODO -ochuacw -ccat: ENDREGION Execute method
+
+        // add Notification ID here
+        if not LIsNotification then
+          begin
+            AddJSONID(LJSONResponseObj,
+              LIDIsString, LJSONRPCRequestIDString,
+              LIDIsNumber, LJSONRPCRequestID
+            );
+          end;
+
+        // Convert the JSON object to JSON
+//        var LJSONResult := LJSONResponseObj.ToJSON;
+//        var LJSONResultBytes: TBytes; var LCount: NativeInt;
+//        DoBeforeDispatchJSONRPC(LJSONResult);
+//        JsonToTBytesCount(LJSONResult, LJSONResultBytes, LCount);
+//        AResponse.Write(LJSONResultBytes, LCount);
+
+        VResponseObj := LJSONResponseObj;
+
+        DoDispatchedJSONRPC(LJSONRequest);
+        LRttiContext.Free;
+      finally
+        FreeAndNil(LJSONRequestObj);
+      end;
+    except
+      on E: EJSONParseException do
+        begin
+          // When it's a non-existent call, LJSONResponseObj is not
+          // assigned on Linux
+          if not Assigned(LJSONResponseObj) then
+            LJSONResponseObj := TJSONObject.Create;
+          AddJSONVersion(LJSONResponseObj);
+          if not Assigned(LJSONResponseObj.FindValue(SERROR)) then
+            begin
+              var LJSONErrorObj := TJSONObject.Create;
+              // Add default code
+              LJSONErrorObj.AddPair(SCODE, CParseErrorNotWellFormed);
+
+              // Add default message
+              LJSONErrorObj.AddPair(SMESSAGE, JSONRPC.Common.Consts.SParseError);
+
+              // Add the class name
+              LJSONErrorObj.AddPair(SCLASSNAME, E.ClassName);
+              LJSONResponseObj.AddPair(SERROR, LJSONErrorObj);
+            end;
+          // Add default ID
+          AddJSONIDNull(LJSONResponseObj);
+          VResponseObj := LJSONResponseObj;
+        end;
+      on E: EJSONRPCException do
+        begin
+          // When it's a non-existent call, LJSONResponseObj is not
+          // assigned on Linux
+          if not Assigned(LJSONResponseObj) then
+            LJSONResponseObj := TJSONObject.Create;
+
+          // Create error object to be returned to JSON RPC client
+          // Add default error
+          AddJSONVersion(LJSONResponseObj);
+
+          if not Assigned(LJSONResponseObj.FindValue(SERROR)) then
+            begin
+              var LJSONErrorObj := TJSONObject.Create;
+              // Add default code
+              LJSONErrorObj.AddPair(SCODE, E.Code);
+
+              // Add default message
+              LJSONErrorObj.AddPair(SMESSAGE, E.Message);
+
+              if E is EJSONRPCMethodException then
+                begin
+                  LJSONErrorObj.AddPair(SMETHOD, EJSONRPCMethodException(E).MethodName);
+                  AddJSONCode(LJSONErrorObj, EJSONRPCMethodException(E).Code);
+                end;
+              if E is EJSONRPCParamParsingException then
+                LJSONErrorObj.AddPair(SPARAM, EJSONRPCParamParsingException(E).ParamName);
+
+              // Add the class name
+              LJSONErrorObj.AddPair(SCLASSNAME, E.ClassName);
+              LJSONResponseObj.AddPair(SERROR, LJSONErrorObj);
+            end;
+
+          // Add default ID
+          AddJSONIDNull(LJSONResponseObj);
+          VResponseObj := LJSONResponseObj;
+        end;
+    else
+      // rpc call with invalid Batch
+      if LJSONState in
+        [tjParsing, tjParseResponse, tjGettingMethod, tjLookupMethod] then
+        begin
+          // If still in parsing state, then it must be a parsing error
+          if LJSONResponseObj = nil then
+            LJSONResponseObj := TJSONObject.Create;
+        end;
+
+      // handle failure to parse
+      if Assigned(LJSONResponseObj) then
+        begin
+          AddJSONVersion(LJSONResponseObj);
+          var LJSONErrorObj := TJSONObject.Create;
+          case LJSONState of
+            tjGettingMethod, tjLookupMethod: begin
+              LJSONErrorObj.AddPair(SCODE, CParseErrorNotWellFormed);
+              LJSONErrorObj.AddPair(SMESSAGE, SMethodNotFound);
+            end;
+            tjParsing: begin
+              LJSONErrorObj.AddPair(SCODE, CParseErrorNotWellFormed);
+              LJSONErrorObj.AddPair(SMESSAGE, SParseError);
+            end;
+            tjParseResponse: begin
+              // This occurs when the server response cannot be parsed.
+              LJSONErrorObj.AddPair(SCODE, CServerError001);
+              LJSONErrorObj.AddPair(SMESSAGE, SInternalServerError);
+            end;
+          else
+            if LJSONState > High(TJSONState) then // parsing error
+              begin
+                var LTypeKind := Ord(LJSONState) - Ord(High(TJSONState));
+                LJSONErrorObj.AddPair(SCODE, CParseErrorNotWellFormed);
+                var LErrorMessage := Format(
+'%s - Method Name: ''%s'', Param Name: ''%s'', Param Value: ''%s'', position: ''%d'', Param Kind: ''%s'' ',
+                  [
+                   SParseError, LParseMethodName, LParseParamName, LParseParamValue,
+                   LParseParamPosition,
+                   GetEnumName(TypeInfo(TTypeKind), Ord(LTypeKind))
+                  ]
+                );
+                LJSONErrorObj.AddPair(SMESSAGE, LErrorMessage);
+              end;
+          end;
+          LJSONResponseObj.AddPair(SERROR, LJSONErrorObj);
+          AddJSONIDNull(LJSONResponseObj);
+          VResponseObj := LJSONResponseObj;
+        end;
+    end; // on Exception... else
+end;
+
+procedure TJSONRPCServerWrapper.DispatchJSONRPC(const ARequest, AResponse: TStream);
+var
+  LJSONRequestVal,
+  LJSONResponse: TJSONValue;
+  LJSONResponseArray: TJSONArray absolute LJSONResponse;
+  LJSONRequestArray: TJSONArray absolute LJSONRequestVal;
+  LOffset: Integer;
+  LException: Exception;
+begin
+  LJSONResponse := nil;
+  ARequest.Position := 0;
+  var LJSONRequestBytes: TArray<Byte> := [];
+  var Len := ARequest.Size;
+  SetLength(LJSONRequestBytes, Len);
+  ARequest.Read(LJSONRequestBytes, Len);
+  var LJSONRequestStr := TEncoding.UTF8.GetString(LJSONRequestBytes);
+  LException := nil;
+  LOffset := 0;
+  try
+    // Check if there's a parse error
+    LJSONRequestVal := TJSONObject.ParseJSONValue(LJSONRequestBytes, LOffset,
+      [TJSONValue.TJSONParseOption.IsUTF8, TJSONValue.TJSONParseOption.RaiseExc]);
+  except
+    on E: EJSONParseException do
+      begin
+        LJSONRequestVal := nil;
+        LException := AcquireExceptionObject as Exception;
+      end;
+  end;
+  try
+    // batch RPC calls
+    if (LJSONRequestVal is TJSONArray) then
+      begin
+        // Invalid Request
+        if (LJSONRequestArray.Count = 0)  then
+          begin
+            var LJSONResponseObj: TJSONObject := nil;
+            var LJSONRequestObj := LJSONRequestVal;
+            DispatchJSONRPC(LJSONRequestObj, LJSONResponseObj);
+            LJSONResponse := LJSONResponseObj;
+          end else
+          begin
+            LJSONResponseArray := TJSONArray.Create;
+            for var LJSONRequestItem in LJSONRequestArray do
+              begin
+                var LJSONResponseObj: TJSONObject := nil;
+                var LJSONRequestObj := LJSONRequestItem.Clone as TJSONValue;
+                DispatchJSONRPC(LJSONRequestObj, LJSONResponseObj);
+                // If the call is a notification, response obj is not assigned
+                if Assigned(LJSONResponseObj) then
+                  LJSONResponseArray.AddElement(LJSONResponseObj);
+              end;
+            if LJSONResponseArray.Count = 0 then
+              FreeAndNil(LJSONResponseArray);
+          end;
+      end else
+    if LJSONRequestVal is TJSONObject then // single RPC call
+      begin
+        var LJSONResponseObj: TJSONObject := nil;
+        var LJSONRequestObj := LJSONRequestVal.Clone as TJSONValue;
+        DispatchJSONRPC(LJSONRequestObj, LJSONResponseObj);
+        LJSONResponse := LJSONResponseObj;
+      end else
+      begin
+        // Parse error
+        var LJSONResponseObj: TJSONObject := nil;
+        DispatchJSONRPC(nil, LJSONResponseObj, LException);
+        LJSONResponse := LJSONResponseObj;
+      end;
+
+    var LJSONResult: string;
+
+    if FFormatJSONResponse then
+      begin
+        if Assigned(LJSONResponse) then
+          LJSONResult := LJSONResponse.Format;
+      end else
+      begin
+        if Assigned(LJSONResponse) then
+          LJSONResult := LJSONResponse.ToJSON;
+      end;
+
+    var LJSONResultBytes: TBytes := []; var LCount: NativeInt;
+    JsonToTBytesCount(LJSONResult, LJSONResultBytes, LCount);
+    DoBeforeDispatchJSONRPC(LJSONResult);
+    AResponse.Write(LJSONResultBytes, LCount);
+    DoLogOutgoingResponse(LJSONResult);
+
+  finally
+    LJSONRequestVal.Free;
+    LJSONResponse.Free;
+  end;
+end;
+
+procedure TJSONRPCServerWrapper.OldDispatchJSONRPC(const ARequest, AResponse: TStream);
 type
   TJSONState = (tjNothing, tjParsing, tjGettingMethod, tjLookupMethod, tjLookupMDAIndex,
     tjLookupParams, tjParseDateTime, tjParseString, tjParseInteger,

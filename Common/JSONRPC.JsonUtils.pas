@@ -427,14 +427,8 @@ begin
       VValue := TValue.Empty;
       Exit;
     end;
-  if ATypeInfo = TypeInfo(TConstArray) then
-    begin
-      raise EJSONException.Create('Untested code area');
-    end else
-    begin
-      LJsonValue := AJsonValue;
-    end;
-  LObjReader := TJsonObjectReader.Create(LJsonValue);
+  LJsonValue := AJsonValue;
+  LObjReader := TJsonObjectReader.Create(AJsonValue);
 {$IF DEFINED(UseRTL35) OR (RTLVersion < 36.0)}
   LSerializer := TJsonSerializerHelper.Create;
 {$ELSEIF RTLVersion >= 36.0 }
@@ -914,5 +908,6 @@ end.
 
 
 // chuacw, Jun 2023
+
 
 
