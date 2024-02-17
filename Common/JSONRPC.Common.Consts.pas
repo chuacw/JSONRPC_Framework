@@ -36,10 +36,12 @@ const
   SParseError: string       = 'Parse error';
   SInvalidRequest: string   = 'Invalid Request';
 
+  CHeadersContentLength: string  = 'Content-Length';
+
   SApplicationJson: string    = 'application/json';
   SApplicationJsonRPC: string = 'application/json-rpc';
-  SAccept: string             = 'accept';
-  SContentType: string        = 'content-type';
+  SHeadersAccept: string      = 'accept';
+  SHeadersContentType: string = 'Content-Type';
 
   CParseErrorInvalidCharacter    = -32702;
   CParseErrorUnsupportedEncoding = -32701;

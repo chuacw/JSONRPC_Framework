@@ -119,7 +119,14 @@ procedure AddJSONID(const AJSONObj: TJSONObject;
 procedure AddJSONIDNull(const AJSONObj: TJSONObject);
 procedure AddJSONCode(const AJSONObj: TJSONObject; ACode: Integer);
 
+<<<<<<< Updated upstream
 function SameJson(const AJSON1, AJSON2: string): Boolean;
+=======
+function SameJSON(const AJSON1, AJSON2: TJSONArray): Boolean; overload;
+function SameJSON(const AJSON1, AJSON2: TJSONValue): Boolean; overload;
+function SameJSON(const AJSONObj1, AJSONObj2: TJSONObject): Boolean; overload;
+function SameJSON(const AJSONStr1, AJSONStr2: string): Boolean; overload;
+>>>>>>> Stashed changes
 
 procedure OutputDebugString(const AMsg: string); inline;
 
@@ -387,7 +394,18 @@ begin
 //      VValue := TValue.Empty;
       Exit;
     end;
+<<<<<<< Updated upstream
   LObjReader := TJsonObjectReader.Create(AJsonValue);
+=======
+  if ATypeInfo = TypeInfo(TConstArray) then
+    begin
+      Assert(False, 'No code developed here');
+    end else
+    begin
+      LJsonValue := AJsonValue;
+    end;
+  LObjReader := TJsonObjectReader.Create(LJsonValue);
+>>>>>>> Stashed changes
 {$IF DEFINED(UseRTL35) OR (RTLVersion < 36.0)}
   LSerializer := TJsonSerializerHelper.Create;
 {$ELSEIF RTLVersion >= 36.0 }
@@ -663,5 +681,6 @@ end.
 
 
 // chuacw, Jun 2023
+
 
 
