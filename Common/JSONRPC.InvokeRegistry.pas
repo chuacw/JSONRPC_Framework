@@ -62,21 +62,23 @@ type
       ExceptAddr: Pointer): HResult; override;
 
     { IJSONRPCMethods }
-    /// <summary>
-    /// Directly sends a JSON to the server.
-    /// <example>
-    /// This shows how to send a JSON.
-    /// In this case, this is a broken JSON.
-    /// <code>
-    /// LJSONRPCWrapper.SendJSON('{"jsonrpc": "2.0", "method": "foobar, "params": "bar", "baz]');
-    /// </code>
-    /// </example>
-    /// </summary>
-    /// <exception cref="SomeException">when things go wrong.</exception>
-    /// <c> some code </c>
-    /// <param name="AJSON">The UTF8 message to be sent
-    /// </param>
-    procedure SendJSON(const AJSON: string);
+
+//    /// <summary>
+//    /// Directly sends a JSON to the server.
+//    /// <example>
+//    /// This shows how to send a JSON.
+//    /// In this case, this is a broken JSON.
+//    /// <code>
+//    /// LJSONRPCWrapper.SendJSON('{"jsonrpc": "2.0", "method": "foobar, "params": "bar", "baz]');
+//    /// </code>
+//    /// </example>
+//    /// </summary>
+//    /// <exception cref="SomeException">when things go wrong.</exception>
+//    /// <c> some code </c>
+//    /// <param name="AJSON">The UTF8 message to be sent
+//    /// </param>
+//    procedure SendJSON(const AJSON: string; const AProc: TProc);
+//    procedure FakeCall;
 
     { IJSONRPCException }
     function GetCode: Integer;
@@ -693,11 +695,40 @@ begin
   Result := FCode;
 end;
 
-procedure TInvokableClass.SendJSON(const AJSON: string);
-begin
-  // Not implemented yet...
-  // {"jsonrpc": "2.0", "method": "foobar, "params": "bar", "baz]
-end;
+//procedure TInvokableClass.FakeCall;
+//begin
+//end;
+//
+//procedure TInvokableClass.SendJSON(const AJSON: string;
+//  const AProc: TProc);
+//var
+//  LJSON: string;
+//  LOnBeforeExecute: TBeforeExecuteEvent;
+//begin
+//  LJSON := AJSON;
+//  var LIJSONRPCWrapper: IJSONRPCWrapper;
+//  var LJSONRPCWrapper: TJSONRPCWrapper;
+//  if Supports(Self, IJSONRPCWrapper, LIJSONRPCWrapper) then
+//    begin
+//      LJSONRPCWrapper := LIJSONRPCWrapper.JSONRPCWrapper;
+//      LOnBeforeExecute := LJSONRPCWrapper.OnBeforeExecute;
+//      LJSONRPCWrapper.OnBeforeExecute :=
+//      procedure(const MethodName: string; ARequest: TStream)
+//      begin
+//        var LJSONRequest := LJSON;
+//        var LJSONRequestBytes := TEncoding.UTF8.GetBytes(LJSONRequest);
+//        ARequest.Write(LJSONRequestBytes, Length(LJSONRequestBytes));
+//      end;
+//    end;
+//
+//  AProc;
+//
+//  if Supports(Self, IJSONRPCWrapper, LIJSONRPCWrapper) then
+//    begin
+//      LJSONRPCWrapper := LIJSONRPCWrapper.JSONRPCWrapper;
+//      LJSONRPCWrapper.OnBeforeExecute := LOnBeforeExecute;
+//    end;
+//end;
 
 procedure TInvokableClass.SetCode(ACode: Integer);
 begin

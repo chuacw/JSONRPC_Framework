@@ -44,8 +44,8 @@ function TWeb3AptosJSONRPCWrapper.InitializeHeaders(
   const ARequestStream: TStream): TNetHeaders;
 begin
   Result := [
-    TNameValuePair.Create(SAccept, SApplicationJson),
-    TNameValuePair.Create(SContentType, SApplicationJson)
+    TNameValuePair.Create(SHeadersAccept, SApplicationJson),
+    TNameValuePair.Create(SHeadersContentType, SApplicationJson)
   ];
 end;
 

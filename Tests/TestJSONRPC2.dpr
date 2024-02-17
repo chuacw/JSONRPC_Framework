@@ -1,4 +1,17 @@
-program TestJSONRPC;
+{---------------------------------------------------------------------------}
+{                                                                           }
+{ File:      TestJSONRPC2.dproj                                             }
+{ Function:  A test project to test all JSON RPC 2.0 spec examples          }
+{                                                                           }
+{ Language:   Delphi version XE11 or later                                  }
+{ Author:     Chee-Wee Chua                                                 }
+{ Copyright:  (c) 2023,2024 Chee-Wee Chua                                   }
+{---------------------------------------------------------------------------}
+program TestJSONRPC2;
+
+{$APPTYPE CONSOLE}
+
+{$R *.res}
 
 (*
 The following should be in the first part of the unit clause
@@ -9,12 +22,13 @@ The following should be in the first part of the unit clause
   DUnitX.Loggers.Xml.NUnit,
   {$ENDIF }
 *)
-{$IFNDEF XTESTINSIGHT}
-{$APPTYPE CONSOLE}
+{$IFNDEF TESTINSIGHT}
+  {$APPTYPE CONSOLE}
 {$ENDIF}
+
 {$STRONGLINKTYPES ON}
 uses
-  {$IFDEF XTESTINSIGHT}
+  {$IFDEF TESTINSIGHT}
   TestInsight.DUnitX,
   {$ELSE}
   DUnitX.Loggers.Console,
@@ -22,25 +36,15 @@ uses
   DUnitX.TestFramework,
   DUnitX.Loggers.XML.NUnit,
   System.SysUtils,
+  System.Classes,
+  IdHTTP,
+  TestJSONRPC2.Main in 'TestJSONRPC2.Main.pas',
   JSONRPC.JsonUtils in '..\Common\JSONRPC.JsonUtils.pas',
-  JSONRPC.User.SomeTypes in '..\Common\JSONRPC.User.SomeTypes.pas',
-  JSONRPC.RIO in '..\Common\JSONRPC.RIO.pas',
-  JSONRPC.InvokeRegistry in '..\Common\JSONRPC.InvokeRegistry.pas',
-  JSONRPC.Common.Types in '..\Common\JSONRPC.Common.Types.pas',
   JSONRPC.Common.Consts in '..\Common\JSONRPC.Common.Consts.pas',
-  JSONRPC.User.ServerImpl in '..\User\JSONRPC.User.ServerImpl.pas',
-  TestJSONRPC.Client in 'TestJSONRPC.Client.pas',
-  JSONRPC.ServerBase.Runner in '..\Server\JSONRPC.ServerBase.Runner.pas',
-  JSONRPC.User.SomeTypes.Impl in '..\Client\JSONRPC.User.SomeTypes.Impl.pas',
-  JSONRPC.TransportWrapper.HTTP in '..\Common\JSONRPC.TransportWrapper.HTTP.pas',
-  JSONRPC.Common.FixBuggyNativeTypes in '..\Common\JSONRPC.Common.FixBuggyNativeTypes.pas',
-  JSONRPC.Common.RecordHandlers in '..\Common\JSONRPC.Common.RecordHandlers.pas',
-  JSONRPC.CustomServerIdHTTP.Runner in '..\Server\JSONRPC.CustomServerIdHTTP.Runner.pas',
-  TestJSONRPC.JSONRPCHTTPServer in 'TestJSONRPC.JSONRPCHTTPServer.pas';
+  JSONRPC.Common.Types in '..\Common\JSONRPC.Common.Types.pas',
+  JSONRPC.Common.RecordHandlers in '..\Common\JSONRPC.Common.RecordHandlers.pas';
 
-// Comments to prevent {$IFNDEF } from being overwritten
-
-{$IFNDEF XTESTINSIGHT}
+{$IFNDEF TESTINSIGHT}
 var
   runner: ITestRunner;
   results: IRunResults;
@@ -48,9 +52,16 @@ var
   nunitLogger : ITestLogger;
 {$ENDIF}
 begin
-{$IFDEF XTESTINSIGHT}
+  ReportMemoryLeaksOnShutdown := True;
+{$IFDEF TESTINSIGHT}
   TestInsight.DUnitX.RunRegisteredTests;
 {$ELSE}
+
+  {$IFNDEF CI}
+  // Pause when not running under CI.
+    TDUnitX.Options.ExitBehavior := TDUnitXExitBehavior.Pause;
+  {$ENDIF}
+
   try
     //Check command line options, will exit if invalid
     TDUnitX.CheckCommandLine;

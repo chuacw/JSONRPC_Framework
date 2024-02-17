@@ -1,3 +1,12 @@
+{---------------------------------------------------------------------------}
+{                                                                           }
+{ File:      JSONRPC.User.ServerImpl.pas                                    }
+{ Function:  Example server implementation of JSON RPC types                }
+{                                                                           }
+{ Language:   Delphi version XE11 or later                                  }
+{ Author:     Chee-Wee Chua                                                 }
+{ Copyright:  (c) 2023,2024 Chee-Wee Chua                                   }
+{---------------------------------------------------------------------------}
 unit JSONRPC.User.ServerImpl;
 
 {$ALIGN 16}
@@ -10,6 +19,7 @@ uses
 // Create a common interface for both client and server
   JSONRPC.User.SomeTypes,
   JSONRPC.InvokeRegistry,
+  JSONRPC.Common.Types,
 {$IF DEFINED(ISomeJSONRPC_SendBigDecimals)}
   Velthuis.BigDecimals,
 {$ENDIF}
@@ -114,6 +124,23 @@ type
     procedure update(const a, b, c, d, e: Integer);
     procedure notify_sum(const a, b, c: Integer);
     procedure notify_hello(const a: Integer);
+
+    function sum(const a, b, c: Integer): Integer; overload;
+    function sum(const values: TArray<Integer>): Integer; overload;
+    function get_data: TConstArray;
+    procedure send_data(const data: array of const);
+    function send_integers(const data: array of Integer): TArray<Integer>;
+    function sum2_1(const values: array of Integer): Integer; overload;
+    function sum2_2(var values: array of Integer): Integer; overload;
+    function sum2_3(values: array of Integer): Integer; overload;
+    function sum3(const values: array of const): Integer; overload;
+    function get_data2: TArray<TVarRec>;
+    procedure send_data1(const data: array of const);
+    procedure send_data2(var data: array of const);
+    procedure send_data3(data: array of const);
+    function send_integers1(const data: array of Integer): TArray<Integer>;
+    function send_integers2(var data: array of Integer): TArray<Integer>;
+    function send_integers3(data: array of Integer): TArray<Integer>;
   end;
 
 implementation
@@ -122,7 +149,7 @@ implementation
 
 uses
   JSONRPC.RIO, System.SysUtils, System.DateUtils, System.Rtti,
-  JSONRPC.JsonUtils, System.TypInfo, JSONRPC.Common.Types,
+  JSONRPC.JsonUtils, System.TypInfo,
   System.JSON, JSONRPC.Common.Consts,
   JSONRPC.Common.RecordHandlers;
 
@@ -458,6 +485,85 @@ begin
 end;
 
 procedure TSomeJSONRPC.notify_sum(const a, b, c: Integer);
+begin
+end;
+
+function TSomeJSONRPC.sum(const a, b, c: Integer): Integer;
+begin
+  Result := sum([a, b, c]);
+end;
+
+function TSomeJSONRPC.sum(const values: TArray<Integer>): Integer;
+begin
+  Result := 0;
+  for var value in values do
+    begin
+      Inc(Result, value);
+    end;
+end;
+
+function TSomeJSONRPC.sum2_1(const values: array of Integer): Integer;
+begin
+end;
+
+function TSomeJSONRPC.sum2_2(var values: array of Integer): Integer;
+begin
+end;
+
+function TSomeJSONRPC.sum2_3(values: array of Integer): Integer;
+begin
+end;
+
+function TSomeJSONRPC.sum3(const values: array of const): Integer;
+begin
+end;
+
+function TSomeJSONRPC.get_data: TConstArray;
+begin
+  Result := CreateConstArray(['hello', 5]);
+end;
+
+function TSomeJSONRPC.get_data2: TArray<TVarRec>;
+begin
+end;
+
+procedure TSomeJSONRPC.send_data(const data: array of const);
+var
+  LResult: TConstArray;
+begin
+  LResult := CreateConstArray(data);
+end;
+
+procedure TSomeJSONRPC.send_data1(const data: array of const);
+begin
+end;
+
+procedure TSomeJSONRPC.send_data2(var data: array of const);
+begin
+end;
+
+procedure TSomeJSONRPC.send_data3(data: array of const);
+begin
+end;
+
+function TSomeJSONRPC.send_integers(const data: array of Integer): TArray<Integer>;
+begin
+  SetLength(Result, Length(data));
+  for var I := Low(data) to High(data) do
+    Result[I] := data[I];
+end;
+
+function TSomeJSONRPC.send_integers1(
+  const data: array of Integer): TArray<Integer>;
+begin
+end;
+
+function TSomeJSONRPC.send_integers2(
+  var data: array of Integer): TArray<Integer>;
+begin
+end;
+
+function TSomeJSONRPC.send_integers3(data: array of Integer): TArray<Integer>;
 begin
 end;
 

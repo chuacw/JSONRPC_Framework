@@ -1,3 +1,12 @@
+{---------------------------------------------------------------------------}
+{                                                                           }
+{ File:      JSONRPC.User.SomeTypes.pas                                     }
+{ Function:  Example client implementation of getting JSON RPC interface    }
+{                                                                           }
+{ Language:   Delphi version XE11 or later                                  }
+{ Author:     Chee-Wee Chua                                                 }
+{ Copyright:  (c) 2023,2024 Chee-Wee Chua                                   }
+{---------------------------------------------------------------------------}
 unit JSONRPC.User.SomeTypes.Impl;
 
 {$ALIGN 16}

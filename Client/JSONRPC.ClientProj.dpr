@@ -1,3 +1,12 @@
+{---------------------------------------------------------------------------}
+{                                                                           }
+{ File:       JSONRPC.ClientProj.dpr                                        }
+{ Function:   An implementation of a JSON RPC client                        }
+{                                                                           }
+{ Language:   Delphi version XE11 or later                                  }
+{ Author:     Chee-Wee Chua                                                 }
+{ Copyright:  (c) 2023,2024 Chee-Wee Chua                                   }
+{---------------------------------------------------------------------------}
 program JSONRPC.ClientProj;
 
 {$APPTYPE CONSOLE}
@@ -27,6 +36,28 @@ uses
   JSONRPC.User.SomeTypes.Impl in 'JSONRPC.User.SomeTypes.Impl.pas',
   JSONRPC.Common.RecordHandlers in '..\Common\JSONRPC.Common.RecordHandlers.pas';
 
+procedure test(const data: array of Integer);
+var
+  addr: Pointer;
+  Len: Integer;
+begin
+  addr := @data;
+  WriteLn(Format('%p', [addr]));
+  Len := Length(data);
+  WriteLn(Len);
+end;
+
+procedure test2(const data);
+type
+  TDynArray = array of Integer;
+  PDynArray = ^TDynArray;
+var
+  addr: Pointer;
+begin
+  addr := Pointer(data);
+  WriteLn(Length(TDynArray(data)));
+end;
+
 procedure Main;
 begin
   var LJSONRPC := GetSomeJSONRPC('http://localhost:8083',
@@ -44,6 +75,18 @@ begin
     end
   );
   try
+//    var LIntegers := LJSONRPC.SendIntegers([1, 2, 3, 4, 5]);
+    var LIntegers: TArray<Integer> := [1, 2, 3];
+    LIntegers := LJSONRPC.send_integers1([1, 2, 3]);
+    LIntegers := [1, 2, 3, 4, 5];
+    LIntegers := LJSONRPC.send_integers1(LIntegers);
+    LIntegers := LJSONRPC.send_integers2(LIntegers);
+    LIntegers := LJSONRPC.send_integers3(LIntegers);
+    LJSONRPC.send_data1(['hello', 5, 4.0, True]);
+    var LEnumResult := LJSONRPC.SendEnum(TEnum.enumA);
+    LEnumResult := LJSONRPC.SendEnum(TEnum.enumB);
+    LEnumResult := LJSONRPC.SendEnum(TEnum.enumC);
+    WriteLn(LJSONRPC.sum([1, 2, 3, 4]));
     LJSONRPC.update(1, 2, 3, 4, 5);
     Write('Press enter to see the value, press enter again to continue...');
     var LEnum := LJSONRPC.GetEnum(enumB);
@@ -129,8 +172,7 @@ begin
     LResult := LJSONRPC.SendData([[5], [6]]);
     LResult := LJSONRPC.SendData([['A'], ['B']]);
 
-    var LIntegers := LJSONRPC.SendIntegers([1, 2, 3, 4, 5]);
-
+    LIntegers := LJSONRPC.SendIntegers([1, 2, 3, 4, 5]);
     var LFixedInt: TFixedIntegers;
     LFixedInt[0] := 1; LFixedInt[1] := 1; LFixedInt[2] := 2; LFixedInt[3] := 3;
     var LFixedIntegers := LJSONRPC.SendFixedIntegers(LFixedInt);

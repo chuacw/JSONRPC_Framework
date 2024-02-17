@@ -23,12 +23,31 @@ uses
 
 type
 
+  TConstArray     = array of TVarRec;
+
+/// <summary> Copies a TVarRec and its contents. If the content is referenced
+/// the value will be copied to a new location and the reference
+/// updated. </summary>
+function CopyVarRec(const Item: TVarRec): TVarRec;
+
+/// <summary> This copies the given array of const to the result
+/// </summary>
+function CreateConstArray(const Elements: array of const): TConstArray;
+
+/// <summary> This function finalizes TVarRecs </summary>
+procedure FinalizeVarRec(var Item: TVarRec);
+
+/// <summary> A TConstArray contains TVarRecs that must be finalized. This function
+/// does that for all items in the array. </summary>
+procedure FinalizeVarRecArray(var Arr: TConstArray);
+
+type
   TLogFormat = (tlfNative, tlfEncoded, tlfDecoded);
 
   TOnAuthentication = reference to function(var VUserName, VPassword: string): Boolean;
 
-  TBeforeExecuteEvent = procedure(const MethodName: string; ARequest: TStream) of object;
-  TAfterExecuteEvent  = procedure(const MethodName: string; AResponse: TStream) of object;
+  TBeforeExecuteEvent = reference to procedure(const MethodName: string; ARequest: TStream);
+  TAfterExecuteEvent  = reference to procedure(const MethodName: string; AResponse: TStream);
 
   THttpMethodTypeEnum = (hConnect, hDelete, hGet, hHead, hMerge, hOptions,
     hPatch, hPost, hPut, hTrace);
@@ -134,18 +153,22 @@ type
   /// </summary>
   IJSONRPCMethods = interface(IInvokable)
     ['{77E7ACCD-3C1E-45CF-8DA9-171444F5338F}']
-//    procedure SendJSON(const AJSON: string);
+
+//    procedure FakeCall;
+//    procedure SendJSON(const AJSON: string; const AProc: TProc);
   end;
   {$METHODINFO OFF}
   {$TYPEINFO OFF}
 
   IJSONRPCDispatch = interface
     ['{9E733EDC-7639-4DAF-96FF-BCF141F7D8F2}']
+
     procedure DispatchJSONRPC(const ARequest, AResponse: TStream);
   end;
 
   IJSONRPCDispatchEvents = interface
     ['{85A741DE-6B8C-4481-A001-9A62D76D027A}']
+
     procedure DoDispatchedJSONRPC(const AJSONRequest: string);
     procedure DoLogIncomingRequest(const ARequest: string);
     procedure DoLogOutgoingResponse(const AResponse: string);
@@ -191,6 +214,7 @@ type
   /// </summary>
   IJSONRPCServerLog = interface
     ['{3CD1A72D-3A00-4A07-8295-E0EDDBB32F20}']
+
     function GetOnLogIncomingJSONRequest: TOnLogIncomingJSONRequest;
     procedure SetOnLogIncomingJSONRequest(const AProc: TOnLogIncomingJSONRequest);
 
@@ -222,11 +246,11 @@ type
 
     property OnDispatchedJSONRPC: TOnDispatchedJSONRPC read GetOnDispatchedJSONRPC
       write SetOnDispatchedJSONRPC;
-
   end;
 
   IPassParamsByPosition = interface
     ['{CDD074A3-510A-4A6B-902D-F0E76C14087F}']
+
     function GetPassParamsByPosition: Boolean;
     procedure SetPassParamsByPosition(const AValue: Boolean);
 
@@ -236,6 +260,7 @@ type
 
   IPassParamsByName = interface
     ['{5CF0594A-5ADB-40F1-AF84-AC829C0DB284}']
+
     function GetPassParamsByName: Boolean;
     procedure SetPassParamsByName(const AValue: Boolean);
 
@@ -254,7 +279,6 @@ type
 
   IJSONRPCInvocationSettings = interface
     ['{F5412FA7-D6A5-4BF7-8A40-E556ABF6432E}']
-
 
     {$IF RTLVersion >= TRTLVersion.Delphi120 }
     function GetConnectionTimeout: Integer;
@@ -295,7 +319,7 @@ type
 
   /// <summary> An exception class that contains the JSON RPC Code
   /// </summary>
-  EJSONRPCException = class(Exception)
+  EJSONRPCException = class(EJSONException)
   protected
     FCode: Integer;
   public
@@ -305,6 +329,8 @@ type
   end;
 
   EJSONRPCExceptionClass = class of EJSONRPCException;
+
+  EJSONRPCInvalidRequestException = class(EJSONRPCException);
 
   /// <summary> An exception class that contains the Method Name.
   /// </summary>
@@ -335,8 +361,7 @@ type
     property ParamName: string read FParamName;
   end;
 
-  EJSONRPCMethodMissingException = class(EJSONRPCException)
-  end;
+  EJSONRPCMethodMissingException = class(EJSONRPCException);
 
   TTransportWrapperType = (twtHTTP, twtTCP);
 
@@ -441,6 +466,17 @@ type
     procedure AfterConstruction; override;
   end;
 
+  TJSONStringHelper = class helper for TJSONAncestor
+  public
+    function IsBoolean: Boolean; inline;
+
+    function IsJsonBool: Boolean; inline;
+    function IsJsonString: Boolean; inline;
+
+    function IsName: Boolean; inline;
+    function IsString: Boolean; inline;
+  end;
+
   function FindExceptionClass(const AClassName: string): EJSONRPCExceptionClass;
 
 var
@@ -459,6 +495,7 @@ uses
   // Comment out the two following units to remove support for
   // BigDecimals and BigIntegers
   Velthuis.BigDecimals, Velthuis.BigIntegers,
+  System.AnsiStrings,
   JSONRPC.JsonUtils;
 
 { TJSONRPCBoolean }
@@ -675,6 +712,160 @@ begin
   inherited MethodNameCreate(AMethodName);
   Message := SParseError;
   FParamName := AParamName;
+end;
+
+function CopyVarRec(const Item: TVarRec): TVarRec;
+var
+  W: WideString;
+begin
+  // Copy entire TVarRec first
+  Result := Item;
+  // Now handle special cases
+  case Item.VType of
+    vtInteger:
+      begin
+        Result.VPointer := nil;
+        Result.VInteger := Item.VInteger;
+      end;
+    vtExtended:
+      begin
+        New(Result.VExtended);
+        Result.VExtended^ := Item.VExtended^;
+      end;
+    vtString:
+      begin
+        GetMem(Result.VString, Length(Item.VString^) + 1);
+        Result.VString^ := Item.VString^;
+      end;
+    vtPChar:
+      Result.VPChar := System.AnsiStrings.StrNew(Item.VPChar);
+    // There is no StrNew for PWideChar
+    vtPWideChar:
+      begin
+        W := Item.VPWideChar;
+        GetMem(Result.VPWideChar,
+               (Length(W) + 1) * SizeOf(WideChar));
+        Move(PWideChar(W)^, Result.VPWideChar^,
+             (Length(W) + 1) * SizeOf(WideChar));
+      end;
+    // A little trickier: casting to AnsiString will ensure
+    // reference counting is done properly.
+    vtAnsiString:
+      begin
+        // nil out first, so no attempt to decrement reference count.
+        Result.VAnsiString := nil;
+        AnsiString(Result.VAnsiString) := AnsiString(Item.VAnsiString);
+      end;
+    vtCurrency:
+      begin
+        New(Result.VCurrency);
+        Result.VCurrency^ := Item.VCurrency^;
+      end;
+    vtVariant:
+      begin
+        New(Result.VVariant);
+        Result.VVariant^ := Item.VVariant^;
+      end;
+    // Casting ensures proper reference counting.
+    vtInterface:
+      begin
+        Result.VInterface := nil;
+        IInterface(Result.VInterface) := IInterface(Item.VInterface);
+      end;
+    // Casting ensures a proper copy is created.
+    vtWideString:
+      begin
+        Result.VWideString := nil;
+        WideString(Result.VWideString) := WideString(Item.VWideString);
+      end;
+    vtInt64:
+      begin
+        New(Result.VInt64);
+        Result.VInt64^ := Item.VInt64^;
+      end;
+    vtUnicodeString:
+      begin
+        // Similar to AnsiString.
+        Result.VUnicodeString := nil;
+        UnicodeString(Result.VUnicodeString) := UnicodeString(Item.VUnicodeString);
+      end;
+    // VPointer and VObject don't have proper copy semantics so it
+    // is impossible to write generic code that copies the contents
+  end;
+end;
+
+function CreateConstArray(const Elements: array of const): TConstArray;
+var
+  I: Integer;
+begin
+  SetLength(Result, Length(Elements));
+  for I := Low(Elements) to High(Elements) do
+    Result[I] := CopyVarRec(Elements[I]);
+end;
+
+procedure FinalizeVarRec(var Item: TVarRec);
+begin
+  case Item.VType of
+    vtExtended:
+      Dispose(Item.VExtended);
+    vtString:
+      Dispose(Item.VString);
+    vtPChar:
+      System.AnsiStrings.StrDispose(Item.VPChar);
+    vtPWideChar:
+      FreeMem(Item.VPWideChar);
+    vtAnsiString:
+      AnsiString(Item.VAnsiString) := '';
+    vtCurrency:
+      Dispose(Item.VCurrency);
+    vtVariant:
+      Dispose(Item.VVariant);
+    vtInterface:
+      IInterface(Item.VInterface) := nil;
+    vtWideString:
+      WideString(Item.VWideString) := '';
+    vtInt64:
+      Dispose(Item.VInt64);
+    vtUnicodeString:
+      UnicodeString(Item.VUnicodeString) := '';
+  end;
+  Item.VInteger := 0;
+end;
+
+procedure FinalizeVarRecArray(var Arr: TConstArray);
+var
+  I: Integer;
+begin
+  for I := Low(Arr) to High(Arr) do
+    FinalizeVarRec(Arr[I]);
+  Arr := nil;
+end;
+
+{ TJSONStringHelper }
+
+function TJSONStringHelper.IsName: Boolean;
+begin
+  Result := (Self is TJSONString) and not (Self is TJSONNumber);
+end;
+
+function TJSONStringHelper.IsBoolean: Boolean;
+begin
+  Result := Self is TJSONBool;
+end;
+
+function TJSONStringHelper.IsJsonBool: Boolean;
+begin
+  Result := Self is TJSONBool;
+end;
+
+function TJSONStringHelper.IsJsonString: Boolean;
+begin
+  Result := IsName;
+end;
+
+function TJSONStringHelper.IsString: Boolean;
+begin
+  Result := IsName;
 end;
 
 initialization

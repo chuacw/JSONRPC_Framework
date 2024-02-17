@@ -149,6 +149,40 @@ type
     [ParamsByPos]
     procedure notify_hello(const a: Integer);
 
+    [ParamsByPos]
+    function sum(const a, b, c: Integer): Integer; overload;
+
+    [ParamsByPos]
+    function sum(const values: TArray<Integer>): Integer; overload;
+
+    [ParamsByPos]
+    function sum2_1(const values: array of Integer): Integer; overload;
+
+    [ParamsByPos]
+    function sum2_2(var values: array of Integer): Integer; overload;
+
+    [ParamsByPos]
+    function sum2_3(values: array of Integer): Integer; overload;
+
+    [ParamsByPos]
+    function sum3(const values: array of const): Integer; overload;
+
+    [ParamsByPos]
+    function get_data: TConstArray;
+
+    [ParamsByPos]
+    function get_data2: TArray<TVarRec>;
+
+    [ParamsByPos]
+    procedure send_data1(const data: array of const);
+    [ParamsByPos]
+    procedure send_data2(var data: array of const);
+    [ParamsByPos]
+    procedure send_data3(data: array of const);
+
+    function send_integers1(const data: array of Integer): TArray<Integer>;
+    function send_integers2(var data: array of Integer): TArray<Integer>;
+    function send_integers3(data: array of Integer): TArray<Integer>;
   end;
 
   ISomeExtendedJSONRPC = interface(ISomeJSONRPC)

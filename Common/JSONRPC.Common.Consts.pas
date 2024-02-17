@@ -16,6 +16,8 @@ interface
 
 const
 
+  STrue: string    = 'True';
+
   SJSONRPC: string = 'jsonrpc';
   SID: string      = 'id';
   SRESULT: string  = 'result';
@@ -26,23 +28,23 @@ const
   SERROR: string       = 'error';
   SCODE: string        = 'code';
   SMESSAGE: string     = 'message';
-  SMETHODNAME: string  = 'method';
+//  SMETHODNAME: string  = 'method';
   SPARAM: string       = 'parameter';
 
   SCLASSNAME: string = 'class';
 
-  SMethodNotFound: string   = 'Method not found';
-  SMDAIndexNotFound: string = 'MDA Index not found';
-  SParseError: string       = 'Parse error';
-  SInvalidRequest: string   = 'Invalid Request';
+  SMethodNotFound: string      = 'Method not found';
+  SMDAIndexNotFound: string    = 'MDA Index not found';
+  SParseError: string          = 'Parse error';
+  SInvalidRequest: string      = 'Invalid Request';
+  SInternalServerError: string = 'Internal server error';
 
+  SApplicationJson: string     = 'application/json';
+  SApplicationJsonRPC: string  = 'application/json-rpc';
+  SHeadersAccept: string       = 'accept';
+  SHeadersContentType: string  = 'content-type';
   CHeadersContentLength: string  = 'Content-Length';
-
-  SApplicationJson: string    = 'application/json';
-  SApplicationJsonRPC: string = 'application/json-rpc';
-  SHeadersAccept: string      = 'accept';
-  SHeadersContentType: string = 'Content-Type';
-
+  
   CParseErrorInvalidCharacter    = -32702;
   CParseErrorUnsupportedEncoding = -32701;
   CParseErrorNotWellFormed       = -32700;

@@ -1,3 +1,12 @@
+{---------------------------------------------------------------------------}
+{                                                                           }
+{ File:      JSONRPC.AppWizard.dpr                                          }
+{ Function:  JSON RPC wizard                                                }
+{                                                                           }
+{ Language:   Delphi version XE11 or later                                  }
+{ Author:     Chee-Wee Chua                                                 }
+{ Copyright:  (c) 2023,2024 Chee-Wee Chua                                   }
+{---------------------------------------------------------------------------}
 program JSONRPC.AppWizard;
 
 uses
