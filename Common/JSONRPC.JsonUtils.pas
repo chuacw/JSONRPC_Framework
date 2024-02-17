@@ -427,13 +427,7 @@ begin
       VValue := TValue.Empty;
       Exit;
     end;
-  if ATypeInfo = TypeInfo(TConstArray) then
-    begin
-
-    end else
-    begin
-      LJsonValue := AJsonValue;
-    end;
+  LJsonValue := AJsonValue;
   LObjReader := TJsonObjectReader.Create(LJsonValue);
 {$IF DEFINED(UseRTL35) OR (RTLVersion < 36.0)}
   LSerializer := TJsonSerializerHelper.Create;
