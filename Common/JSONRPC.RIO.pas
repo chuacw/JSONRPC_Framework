@@ -1043,7 +1043,7 @@ function TJSONRPCWrapper.GetMethodName(const AMethMD: TIntfMethEntry): string;
 var
   LJSONMethodName: string;
 begin
-  if Length(FMethodNames) < AMethMD.Pos then
+  if High(FMethodNames) < AMethMD.Pos then
     SetLength(FMethodNames, AMethMD.Pos+1);
   if FMethodNames[AMethMD.Pos] <> '' then
     Exit(FMethodNames[AMethMD.Pos]);

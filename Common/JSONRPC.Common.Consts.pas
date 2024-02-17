@@ -39,10 +39,10 @@ const
   SInvalidRequest: string      = 'Invalid Request';
   SInternalServerError: string = 'Internal server error';
 
-  SApplicationJson: string    = 'application/json';
-  SApplicationJsonRPC: string = 'application/json-rpc';
-  SAccept: string             = 'accept';
-  SContentType: string        = 'content-type';
+  SApplicationJson: string     = 'application/json';
+  SApplicationJsonRPC: string  = 'application/json-rpc';
+  SAccept: string              = 'accept';
+  SHeadersContentType: string  = 'content-type';
 
   CParseErrorInvalidCharacter    = -32702;
   CParseErrorUnsupportedEncoding = -32701;

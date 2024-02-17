@@ -429,7 +429,7 @@ begin
     end;
   if ATypeInfo = TypeInfo(TConstArray) then
     begin
-
+      raise EJSONException.Create('Untested code area');
     end else
     begin
       LJsonValue := AJsonValue;
