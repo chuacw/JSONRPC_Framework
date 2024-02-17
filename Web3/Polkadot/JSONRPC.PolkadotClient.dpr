@@ -6,8 +6,6 @@
 
 uses
   System.SysUtils,
-//  JSONRPC.Web3.Polkadot.Types in 'JSONRPC.Web3.Polkadot.Types.pas',
-//  JSONRPC.Web3.PolkadotAPI in 'JSONRPC.Web3.PolkadotAPI.pas',
   JSONRPC.RIO in '..\..\Common\JSONRPC.RIO.pas',
   JSONRPC.Common.Types in '..\..\Common\JSONRPC.Common.Types.pas',
   JSONRPC.InvokeRegistry in '..\..\Common\JSONRPC.InvokeRegistry.pas',
@@ -15,7 +13,9 @@ uses
   JSONRPC.JsonUtils in '..\..\Common\JSONRPC.JsonUtils.pas',
   JSONRPC.Common.RecordHandlers in '..\..\Common\JSONRPC.Common.RecordHandlers.pas',
   JSONRPC.Web3.Common.Types in '..\JSONRPC.Web3.Common.Types.pas',
-  JSONRPC.TransportWrapper.HTTP in '..\..\Common\JSONRPC.TransportWrapper.HTTP.pas';
+  JSONRPC.TransportWrapper.HTTP in '..\..\Common\JSONRPC.TransportWrapper.HTTP.pas',
+  JSONRPC.Web3.Polkadot.Types in 'JSONRPC.Web3.Polkadot.Types.pas',
+  JSONRPC.Web3.PolkadotAPI in 'JSONRPC.Web3.PolkadotAPI.pas';
 
 function GetPolkadotClient: IPolkadotJSONRPC;
 begin

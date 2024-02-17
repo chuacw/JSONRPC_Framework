@@ -212,6 +212,8 @@
         <DCCReference Include="..\..\Common\JSONRPC.Common.RecordHandlers.pas"/>
         <DCCReference Include="..\JSONRPC.Web3.Common.Types.pas"/>
         <DCCReference Include="..\..\Common\JSONRPC.TransportWrapper.HTTP.pas"/>
+        <DCCReference Include="JSONRPC.Web3.Polkadot.Types.pas"/>
+        <DCCReference Include="JSONRPC.Web3.PolkadotAPI.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
