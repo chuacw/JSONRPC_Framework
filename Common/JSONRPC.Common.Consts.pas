@@ -41,11 +41,10 @@ const
 
   SApplicationJson: string     = 'application/json';
   SApplicationJsonRPC: string  = 'application/json-rpc';
-  SAccept: string              = 'accept';
-  SContentType: string         = 'content-type';
   SHeadersAccept: string       = 'accept';
   SHeadersContentType: string  = 'content-type';
-
+  CHeadersContentLength: string  = 'Content-Length';
+  
   CParseErrorInvalidCharacter    = -32702;
   CParseErrorUnsupportedEncoding = -32701;
   CParseErrorNotWellFormed       = -32700;

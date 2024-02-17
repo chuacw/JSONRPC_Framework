@@ -1,4 +1,4 @@
-﻿unit JSONRPC.Web3.PolkadotAPI;
+unit JSONRPC.Web3.PolkadotAPI;
 
 interface
 
