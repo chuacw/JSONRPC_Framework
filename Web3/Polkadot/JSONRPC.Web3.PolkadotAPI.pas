@@ -19,6 +19,13 @@ type
     methods: TArray<string>;
   end;
 
+// {"startingBlock":19480132,"currentBlock":19523851,"highestBlock":19523851},"id":6}
+  TSyncState = record
+    startingBlock: Integer;
+    currentBlock: Integer;
+    highestBlock: Integer;
+  end;
+
   IPolkadotJSONRPC = interface(IJSONRPCMethods)
     ['{B21C77FA-2E80-43CC-8689-F7A6A94FB918}']
 
@@ -31,10 +38,24 @@ type
     function chain_getBlockHash(blockNumber: Integer): TBlockHash; safecall;
     function getFinalizedHead: TBlockHash; safecall;
     /// <summary> List supported methods </summary>
+    /// <returns> A record with the field methods containing an array
+    /// of method names </returns>
     function rpc_methods: TMethods; safecall;
 
     function state_getStorage(const key: StorageKey; const at: TBlockHash): TBlockHash; safecall;
+
+    // <summary> Gets the sync state of the node </summary>
+    function system_syncState: TSyncState; safecall;
+
+    /// <summary> Retrieves version of the node </summary>
+    function system_version: string; safecall;
+
+    function system_reservedPeers: TArray<string>; safecall;
+    function system_localPeerId: string; safecall;
+    /// <summary> Retrieves the node name </summary>
+    function system_name: string; safecall;
   end;
+
 (*
 {
   "jsonrpc": "2.0",

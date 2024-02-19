@@ -74,6 +74,14 @@ begin
   var LAt: TBlockHash := '0x841a21ab1aa402aca5185e1b9d72f85e181de28e8f68e279c4f7a25f06e63d23';
 
   LBlockHash := LPolkadotClient.state_getStorage(LKey, LAt);
+
+  var LVersion := LPolkadotClient.system_version;
+  WriteLn(LVersion);
+
+  var lSyncState := LPolkadotClient.system_syncState;
+  var lReservedPeers := LPolkadotClient.system_reservedPeers;
+  var lLocalPeerId := LPolkadotClient.system_localPeerId;
+  var lNodeName := LPolkadotClient.system_name;
 end;
 
 begin
