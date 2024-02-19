@@ -840,7 +840,7 @@ begin
     Result := AFalse;
 end;
 
-function MakeTypeInfo(ATypeKind: TTypeKind): PTypeInfo;
+function MakeTypeInfo(ATypeKind: TTypeKind): PTypeInfo; experimental;
 begin
 end;
 

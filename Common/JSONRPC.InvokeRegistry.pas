@@ -61,8 +61,6 @@ type
     function SafeCallException(ExceptObject: TObject;
       ExceptAddr: Pointer): HResult; override;
 
-    { IJSONRPCMethods }
-
 //    /// <summary>
 //    /// Directly sends a JSON to the server.
 //    /// <example>

@@ -21,6 +21,7 @@ Contents
 * [Extensibility](#extensibility)
 * [Examples](#examples)
 * [Bugs / Feature Requests](#bugs--feature-requests)
+* [Discussions](#discussions)
 
 Introduction
 ---
@@ -37,7 +38,7 @@ may be, as long as you create a class that descends from TJSONRPCTransportWrappe
 Creating an interface
 ---
 You create an interface that mirrors what the server offers.
-In the example below, the interface is called ISomeJSONRPC.
+In the rest of this document, we'll refer to the example of an interface called ISomeJSONRPC.
 
 ```
 ISomeJSONRPC = interface(IJSONRPCMethods)
@@ -75,7 +76,8 @@ The passing of most parameters are supported with the exception of the following
 
 Obtaining an ISomeJSONRPC interface
 ---
-Create a function that returns an ISomeJSONRPC interface.
+Create a function that returns an ISomeJSONRPC interface. This will always
+be the type of TJSONRPCWrapper, which you'll cast to ISomeJSONRPC.
 
 The most simple function to return an ISomeJSONRPC interface is as follows:
 ```
@@ -84,10 +86,10 @@ begin
   RegisterJSONRPCWrapper(TypeInfo(ISomeJSONRPC));
   var LJSONRPCWrapper := TJSONRPCWrapper.Create(nil);
   LJSONRPCWrapper.ServerURL := ServerURL;
-  
+
   // declare a GUID on your interface, or the compiler will complain "E2015
   Operator not applicable to this operand type" on the line below.
-  Result := LJSONRPCWrapper as ISomeJSONRPC; 
+  Result := LJSONRPCWrapper as ISomeJSONRPC;
 end;
 ```
 
@@ -97,6 +99,8 @@ You can choose to only implement the client, while the server is implemented by
 some other entity.
 
 Alternatively, you can choose to implement only the server, handling calls from clients.
+
+You can also implement both the client and the server if you so desire.
 
 Making JSON RPC calls in the client
 ---
@@ -290,7 +294,10 @@ and Windows.
 
 Bugs / Feature Requests
 ---
-If you find any bugs or have any feature requests, please [file an issue on the
+If you find any bugs, please [file an issue on the
 repository](https://github.com/chuacw/JSONRPC_Framework/issues/new).
 
 
+Discussions
+---
+For discussions of any new features, please visit [JSON RPC Framework discussions](https://github.com/chuacw/JSONRPC_Framework/discussions).

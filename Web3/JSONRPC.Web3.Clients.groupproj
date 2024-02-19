@@ -15,6 +15,9 @@
         <Projects Include="Ethereum\JSONRPC.EthereumClient.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="Polkadot\JSONRPC.PolkadotClient.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -59,14 +62,23 @@
     <Target Name="JSONRPC_EthereumClient:Make">
         <MSBuild Projects="Ethereum\JSONRPC.EthereumClient.dproj" Targets="Make"/>
     </Target>
+    <Target Name="JSONRPC_PolkadotClient">
+        <MSBuild Projects="Polkadot\JSONRPC.PolkadotClient.dproj"/>
+    </Target>
+    <Target Name="JSONRPC_PolkadotClient:Clean">
+        <MSBuild Projects="Polkadot\JSONRPC.PolkadotClient.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="JSONRPC_PolkadotClient:Make">
+        <MSBuild Projects="Polkadot\JSONRPC.PolkadotClient.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="JSONRPC_AptosClient;JSONRPC_BitcoinClient;JSONRPC_SolanaClient;JSONRPC_EthereumClient"/>
+        <CallTarget Targets="JSONRPC_AptosClient;JSONRPC_BitcoinClient;JSONRPC_SolanaClient;JSONRPC_EthereumClient;JSONRPC_PolkadotClient"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="JSONRPC_AptosClient:Clean;JSONRPC_BitcoinClient:Clean;JSONRPC_SolanaClient:Clean;JSONRPC_EthereumClient:Clean"/>
+        <CallTarget Targets="JSONRPC_AptosClient:Clean;JSONRPC_BitcoinClient:Clean;JSONRPC_SolanaClient:Clean;JSONRPC_EthereumClient:Clean;JSONRPC_PolkadotClient:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="JSONRPC_AptosClient:Make;JSONRPC_BitcoinClient:Make;JSONRPC_SolanaClient:Make;JSONRPC_EthereumClient:Make"/>
+        <CallTarget Targets="JSONRPC_AptosClient:Make;JSONRPC_BitcoinClient:Make;JSONRPC_SolanaClient:Make;JSONRPC_EthereumClient:Make;JSONRPC_PolkadotClient:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>
