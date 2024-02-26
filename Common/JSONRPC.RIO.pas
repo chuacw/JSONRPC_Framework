@@ -533,10 +533,10 @@ type
     /// <remarks> server side handler </remarks>
     procedure DispatchJSONRPC(const ARequest, AResponse: TStream); overload;
 
-    /// <summary> This is te old DispatchJSONRPC. Once the new DispatchJSONRPC
+    /// <summary> This is the old DispatchJSONRPC. Once the new DispatchJSONRPC
     /// method has been confirmed to be stable, this can be removed.
     /// </summary>
-    procedure OldDispatchJSONRPC(const ARequest, AResponse: TStream);
+    procedure OldDispatchJSONRPC(const ARequest, AResponse: TStream); deprecated 'Use DispatchJSONRPC';
 
     /// <summary> Response to client
     /// </summary>
@@ -1016,12 +1016,12 @@ var
   LType: TRttiType;
   DeclaredMethods: TArray<TRttiMethod>;
   LMethod: TRttiMethod;
-  LJSONMethodNameAttr: JSONMethodNameAttribute;
+  LJSONMethodNameAttr: MethodNameAttribute;
 begin
   LType := ARttiContext.GetType(Self.MethodInfo); // TRttiInterfaceType
   DeclaredMethods := LType.GetDeclaredMethods;
   LMethod := DeclaredMethods[Self.Pos-3-IJSONRPCMethods_Length(ARttiContext)]; // 3 is number of methods in IInterface
-  LJSONMethodNameAttr := LMethod.GetAttribute<JSONMethodNameAttribute>;
+  LJSONMethodNameAttr := LMethod.GetAttribute<MethodNameAttribute>;
   if Assigned(LJSONMethodNameAttr) then
     Result := LJSONMethodNameAttr.Name;
 end;
@@ -1397,7 +1397,7 @@ begin
     var LMethodType := LIntfType;
 //    var LJSONNotify := LMethodType.GetAttribute<JSONNotifyAttribute>;
 //    var LIsNotification := LJSONNotify <> nil;
-    var LIsNotification := LMethodType.HasAttribute<JSONNotifyAttribute>;
+    var LIsNotification := LMethodType.HasAttribute<JSONRPCNotifyAttribute>;
     var LMethodID := -1;
     if not LIsNotification then
       begin

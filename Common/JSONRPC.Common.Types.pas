@@ -94,26 +94,36 @@ type
   /// <summary> An attribute to apply on a method to tell the JSON RPC wrapper
   /// to prevent it from sending an ID for the JSON RPC call.
   /// </summary>
-  JSONNotificationAttribute = class(TCustomAttribute);
+  JSONRPCNotificationAttribute = class(TCustomAttribute);
+
+  BaseJSONRPCAttribute = class(TCustomAttribute)
+  protected
+    FName: string;
+  end;
 
   /// <summary> An attribute to override the method name used to call the JSON RPC server.
   /// </summary>
-  JSONMethodNameAttribute = class(TCustomAttribute)
-  protected
-    FMethodName: string;
+  MethodNameAttribute = class(BaseJSONRPCAttribute)
   public
-    constructor Create(const AMethodName: string);
 {.$WARN HIDING_MEMBER OFF}
-    property Name: string read FMethodName;
+    property Name: string read FName;
 {.$WARN HIDING_MEMBER ON}
   end;
 
-  JSONHttpMethodAttribute = class(TCustomAttribute)
-  protected
-    FHttpMethod: string;
+  /// <summary> An attribute to override the method name used to call the JSON RPC server,
+  /// by adding a prefix to the name
+  /// </summary>
+  /// <remarks>
+  /// Used for Polkadot
+  /// </remarks>
+  MethodNamePrefixAttribute = class(BaseJSONRPCAttribute)
   public
-    constructor Create(const AHttpMethod: string);
-    property HttpMethod: string read FHttpMethod;
+    property NamePrefix: string read FName;
+  end;
+
+  JSONHttpMethodAttribute = class(BaseJSONRPCAttribute)
+  public
+    property HttpMethod: string read FName;
   end;
 
   /// <summary> Allows enums to be marshalled as numbers instead of strings
@@ -123,7 +133,7 @@ type
   /// <summary> An attribute to apply on a method to tell the JSON RPC wrapper
   /// to prevent it from sending an ID for the JSON RPC call.
   /// </summary>
-  JSONNotifyAttribute = JSONNotificationAttribute;
+  JSONRPCNotifyAttribute = JSONRPCNotificationAttribute;
 
   /// <summary> When placed on a method, tells the runtime to dispatch
   /// parameters by position (in an array, with no parameter names).
@@ -179,6 +189,7 @@ type
   /// </summary>
   ISafeCallException = interface
     ['{4CBE5D30-42FD-473A-B784-1B36A7129D6D}']
+
     function GetOnSafeCallException: TOnSafeCallException;
     procedure SetOnSafeCallException(const AProc: TOnSafeCallException);
 
@@ -270,6 +281,7 @@ type
 
   IPassEnumByName = interface
     ['{DE15C664-6A08-45BA-9052-040CB2871661}']
+
     function GetPassEnumByName: Boolean;
     procedure SetPassEnumByName(const AValue: Boolean);
 
@@ -311,6 +323,7 @@ type
 
   IJSONRPCMethodException = interface(IJSONRPCException)
     ['{292C126A-5F91-48EB-AFDB-188B1F3D3D47}']
+
     function GetMethodName: string;
     procedure SetMethodName(const AMethodName: string);
 
@@ -319,7 +332,7 @@ type
 
   /// <summary> An exception class that contains the JSON RPC Code
   /// </summary>
-  EJSONRPCException = class(EJSONException)
+  EJSONRPCException = class(Exception)
   protected
     FCode: Integer;
   public
@@ -590,26 +603,11 @@ begin
   inherited;
 end;
 
-{ JSONMethodNameAttribute }
-
-constructor JSONMethodNameAttribute.Create(const AMethodName: string);
-begin
-  FMethodName := AMethodName;
-end;
-
 { UrlSuffixAttribute }
 
 constructor UrlSuffixAttribute.Create(const AUrlSuffix: string);
 begin
   FUrlSuffix := AUrlSuffix;
-end;
-
-{ JSONHttpMethodAttribute }
-
-constructor JSONHttpMethodAttribute.Create(const AHttpMethod: string);
-begin
-  inherited Create;
-  FHttpMethod := AHttpMethod;
 end;
 
 { TJsonHexConverter }

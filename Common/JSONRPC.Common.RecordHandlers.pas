@@ -61,9 +61,9 @@ type
 
 /// <summary>
 /// Looks up record handlers for a record with a specific TypeInfo
-/// </summary>
 /// <param name="ATypeInfo">The TypeInfo for the native record</param>
 /// <param name="OHandlers">A variable of the type <see cref="TRecordHandlers"></param>
+/// </summary>
 function LookupRecordHandlers(ATypeInfo: PTypeInfo; out OHandlers: TRecordHandlers): Boolean;
 
 /// <summary>
