@@ -198,8 +198,12 @@ procedure RegisterRecordHandler(
   const ATValueToJSON: TTValueToJSON;
   const AJSONToTValue: TJSONToTValue
 );
+var
+  LRecordHandlers: TRecordHandlers;
 begin
   InitHandlers;
+  if Handlers.TryGetValue(ATypeInfo, LRecordHandlers) then
+    Exit;
   Handlers.Add(ATypeInfo, TRecordHandlers.Create(
     ANativeToJSON, AJSONToNative, ATValueToJSON, AJSONToTValue)
   );

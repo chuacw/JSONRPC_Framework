@@ -6,7 +6,9 @@ interface
 uses
   JSONRPC.RIO, JSONRPC.Web3.Common.Types, JSONRPC.Common.Types,
   System.SysUtils, System.JSON, Velthuis.BigIntegers,
-  JSONRPC.Web3.Polkadot.Types;
+  // for TBigIntegerConverter
+  System.Rtti, System.TypInfo, System.JSON.Readers,
+  JSONRPC.Web3.Polkadot.Types, System.JSON.Serializers;
 
 type
 
@@ -26,6 +28,35 @@ type
     highestBlock: Integer;
   end;
 
+  // https://spec.polkadot.network/chap-runtime-api
+  TStateCallType = (
+    NominationPoolsApi_pending_rewards, // args = account id
+    NominationPoolsApi_points_to_balance,
+    NominationPoolsApi_balance_to_points
+  );
+
+  TBigIntegerConverter = class(TJsonConverter)
+  public
+    function CanConvert(ATypeInfo: PTypeInfo): Boolean; override;
+    function CanRead: Boolean; override;
+    function ReadJson(const AReader: TJsonReader; ATypeInfo: PTypeInfo; const AExistingValue: TValue;
+      const ASerializer: TJsonSerializer): TValue; override;
+  end;
+
+  TAPIs = TArray<TArray<BigInteger>>;
+
+  TRuntimeVersion = record
+    specName: string;
+    implName: string;
+    authoringVersion: Integer;
+    specVersion: Integer;
+    implVersion: Integer;
+    [JsonConverter(TBigIntegerConverter)]
+    apis: TAPIs;
+    transactionVersion: Integer;
+    stateVersion: Integer;
+  end;
+
   IPolkadotJSONRPC = interface(IJSONRPCMethods)
     ['{B21C77FA-2E80-43CC-8689-F7A6A94FB918}']
 
@@ -37,12 +68,22 @@ type
     /// </summary>
     function chain_getBlockHash(blockNumber: Integer): TBlockHash; safecall;
     function getFinalizedHead: TBlockHash; safecall;
+
+    function author_pendingExtrinsics: TArray<string>; // tested
+
+    function author_removeExtrinsic(const bytesOrHash: TArray<THash>): TArray<THash>; deprecated 'unsafe to call externally';
+    function author_hasSessionKeys(const sessionKeys: THash): Boolean; // tested without session key
+
     /// <summary> List supported methods </summary>
     /// <returns> A record with the field methods containing an array
     /// of method names </returns>
-    function rpc_methods: TMethods; safecall;
+    function rpc_methods: TMethods; safecall; // tested
 
     function state_getStorage(const key: StorageKey; const at: TBlockHash): TBlockHash; safecall;
+
+    function state_getRuntimeVersion: TRuntimeVersion;
+
+    function state_getMetadata: BigInteger;
 
     // <summary> Gets the sync state of the node </summary>
     function system_syncState: TSyncState; safecall;
@@ -54,6 +95,19 @@ type
     function system_localPeerId: string; safecall;
     /// <summary> Retrieves the node name </summary>
     function system_name: string; safecall;
+
+    // {"id":64,"jsonrpc":"2.0","method":"state_unsubscribeStorage","params":["dODgWqzCtM17x25r"]}
+    function state_unsubscribeStorage(const AStorageKey: StorageKey): Boolean;
+
+    // {"id":261,"jsonrpc":"2.0","method":"state_subscribeStorage",
+    //  "params":[["0x7a6d38deaa01cb6e76ee69889f1696271f7c4e57dc49e4d6d003b730a7894f32858f760905c8df5ddc000000","0x7a6d38deaa01cb6e76ee69889f169627fa0883f96ad25255581bef5ba72b8750858f760905c8df5ddc000000","0x26aa394eea5630e07c48ae0c9558cef7b99d880ec681799c0cf30e8886371da9e7f05a1c3ad501c866254c88a1957b596d6f646c70792f6e6f706c7301dc000000000000000000000000000000000000","0x5f3e4907f716ac89b6347d15ececedca9c6a637f62ae2af1c7e31eed7e96be04772b99779fb18abb6d6f646c70792f6e6f706c7300dc000000000000000000000000000000000000"]]}
+    function state_subscribeStorage(const AStorageKeys: TArray<StorageKey>): StorageKey;
+
+    // {"id":266,"jsonrpc":"2.0","method":"state_call",
+    // "params":["NominationPoolsApi_pending_rewards","0x5626fb92ce5aacc7ac4dd042dd55308832ba8dde38c557b140ae8740948fe76c"]}
+    // {"id":108,"jsonrpc":"2.0","method":"state_call","params":["NominationPoolsApi_points_to_balance","0xdc000000b9b48ac2020000000000000000000000"]}
+    function state_call(const ACallType: TStateCallType; const ABlockHash: TBlockHash): THash;
+
   end;
 
 (*
@@ -197,7 +251,7 @@ function GetPolkadotJSONRPC(const AServerURL: string = '';
 implementation
 
 uses
-  JSONRPC.InvokeRegistry, JSONRPC.Common.Consts;
+  JSONRPC.InvokeRegistry, JSONRPC.Common.Consts, System.JSON.Types;
 
 function GetPolkadotJSONRPC(const AServerURL: string = '';
   const AOnLoggingOutgoingJSONRequest: TOnLogOutgoingJSONRequest = nil;
@@ -213,8 +267,74 @@ begin
   LJSONRPCWrapper.OnLogOutgoingJSONRequest := AOnLoggingOutgoingJSONRequest;
   LJSONRPCWrapper.OnLogIncomingJSONResponse := AOnLoggingIncomingJSONResponse;
   LJSONRPCWrapper.PassParamsByPos := True;
+  LJSONRPCWrapper.PassEnumByName := True;
   LJSONRPCWrapper.ServerURL := AServerURL;
   Result := LJSONRPCWrapper as IPolkadotJSONRPC;
+end;
+
+{ TBigIntegerConverter }
+
+function TBigIntegerConverter.CanConvert(ATypeInfo: PTypeInfo): Boolean;
+begin
+  Result := ATypeInfo = TypeInfo(TAPIs);
+end;
+
+function TBigIntegerConverter.CanRead: Boolean;
+begin
+  Result := True;
+end;
+
+function TBigIntegerConverter.ReadJson(const AReader: TJsonReader;
+  ATypeInfo: PTypeInfo; const AExistingValue: TValue;
+  const ASerializer: TJsonSerializer): TValue;
+type
+  TMember = TArray<BigInteger>;
+  TContainer = TArray<TMember>;
+var
+  V1: BigInteger;
+  V2: BigInteger;
+  LArray: TContainer;
+  LMember: TMember;
+  InArray: Integer;
+begin
+  Assert(AReader.CurrentState = TJsonReader.TState.ArrayStart, '');
+  InArray := 0;
+  // AReader.TokenType = StartArray
+  while AReader.TokenType in [TJsonToken.StartArray, TJsonToken.EndArray,
+    TJsonToken.String, TJsonToken.Float] do
+    begin
+      AReader.Read;
+      case AReader.TokenType of
+        TJsonToken.StartArray: Inc(InArray);
+        TJsonToken.EndArray: begin
+          if InArray = 0 then
+            begin
+              Result := TValue.From(LArray);
+              Break;
+            end else Dec(InArray);
+        end;
+        TJsonToken.String: V1 := BigInteger.Create(AReader.Value.AsString);
+        TJsonToken.Float: begin
+          V2 := BigInteger.Create(AReader.Value.AsExtended);
+          LMember := [V1, V2];
+          LArray := LArray + [LMember];
+        end;
+      end;
+    end;
+
+//  LState := AReader.CurrentState; // ArrayStart
+//  AReader.Read;
+//
+//  V1 := AReader.Value.AsString; // AReader.TokenType = String
+//  LState := AReader.CurrentState; // PostValue
+//  AReader.Read;
+//  V2 := AReader.Value.AsExtended; // AReader.TokenType = Float
+//
+//  LState := AReader.CurrentState; // PostValue
+//  AReader.Read;
+//  LState := AReader.CurrentState; // AReader.TokenType = EndArray
+//  AReader.Read;
+//  LState := AReader.CurrentState;
 end;
 
 initialization
