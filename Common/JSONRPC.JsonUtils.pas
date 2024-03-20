@@ -17,6 +17,7 @@ interface
 uses
   System.SysUtils, System.Rtti, System.Classes, System.TypInfo,
   System.JSON.Readers, System.JSON.Serializers,
+  Velthuis.BigIntegers, Velthuis.BigDecimals,
   System.JSON, System.Generics.Collections;
 
 /// <summary>
@@ -192,8 +193,241 @@ uses
     Winapi.Windows,
   {$ENDIF}
 {$ENDIF}
+{$IF DECLARED(BigInteger) OR DECLARED(BigDecimal)}
+  System.JSON.Types,
+{$ENDIF}
   JSONRPC.Common.Types,
   System.JSON.Writers;
+
+{$IF DECLARED(BigInteger) OR DECLARED(BigDecimal)}
+type
+  TBigNumberJsonSerializer = class(TJsonSerializer)
+  public
+    constructor Create;
+  end;
+
+  TBigNumberContractResolver = class(TJsonDynamicContractResolver, IJsonContractResolver);
+
+  TBigNumberJsonContract = class(TJsonConverterContract)
+  public
+    constructor Create(ATypeInf: PTypeInfo);
+  end;
+
+  TBigNumberJsonConverter = class(TJsonConverter)
+  public
+    function CanConvert(ATypeInfo: PTypeInfo): Boolean; override;
+    function CanRead: Boolean; override;
+    procedure WriteJson(const AWriter: TJsonWriter; const AValue: TValue;
+      const ASerializer: TJsonSerializer); override;
+  end;
+
+  TArrayBigIntegerConverter = class(TBigNumberJsonConverter)
+  public
+    function ReadJson(const AReader: TJsonReader; ATypeInfo: PTypeInfo; const AExistingValue: TValue;
+      const ASerializer: TJsonSerializer): TValue; override;
+  end;
+
+  TArrayArrayBigIntegerConverter = class(TBigNumberJsonConverter)
+  public
+    function ReadJson(const AReader: TJsonReader; ATypeInfo: PTypeInfo; const AExistingValue: TValue;
+      const ASerializer: TJsonSerializer): TValue; override;
+  end;
+
+  TBigIntegerConverter = class(TBigNumberJsonConverter)
+  public
+    function ReadJson(const AReader: TJsonReader; ATypeInfo: PTypeInfo;
+      const AExistingValue: TValue; const ASerializer: TJsonSerializer): TValue; override;
+  end;
+
+  TBigDecimalConverter = class(TBigNumberJsonConverter)
+  public
+    function ReadJson(const AReader: TJsonReader; ATypeInfo: PTypeInfo;
+      const AExistingValue: TValue; const ASerializer: TJsonSerializer): TValue; override;
+  end;
+
+  TBigNumberAttributeProvider = class(TInterfacedObject, IJsonAttributeProvider)
+  protected
+    FRttiObject: TRttiObject;
+  public
+    constructor Create(const ARttiObject: TRttiObject);
+    function GetAttribute(const AAttributeClass: TCustomAttributeClass; AInherit: Boolean = False): TCustomAttribute;
+  end;
+
+constructor TBigNumberJsonSerializer.Create;
+var
+  LContractResolver: TJsonDynamicContractResolver;
+begin
+  inherited;
+  {$IF DECLARED(BigInteger) OR DECLARED(BigDecimal)}
+  LContractResolver := TBigNumberContractResolver.Create;
+  {$ENDIF}
+  {$IF DECLARED(BigInteger)}
+  LContractResolver.SetTypeConverter(TypeInfo(BigInteger), TBigIntegerConverter);
+  LContractResolver.SetTypeConverter(TypeInfo(TArray<BigInteger>), TArrayBigIntegerConverter);
+  {$ENDIF}
+  {$IF DECLARED(BigDecimal)}
+  LContractResolver.SetTypeConverter(TypeInfo(BigDecimal), TBigDecimalConverter);
+//  LContractResolver.SetTypeConverter(TypeInfo(TArray<BigDecimal>), TArrayBigDecimalConverter);
+  {$ENDIF}
+  {$IF DECLARED(BigInteger) OR DECLARED(BigDecimal)}
+  ContractResolver := LContractResolver;
+  {$ENDIF}
+end;
+
+constructor TBigNumberJsonContract.Create(ATypeInf: PTypeInfo);
+begin
+  inherited;
+  {$IF DECLARED(BigInteger)}
+  if ATypeInf = TypeInfo(BigInteger) then
+    Converter := TBigIntegerConverter.Create;
+  {$ENDIF}
+  {$IF DECLARED(BigDecimal)}
+  if ATypeInf = TypeInfo(BigDecimal) then
+    Converter := TBigDecimalConverter.Create;
+  {$ENDIF}
+end;
+
+{ TArrayBigIntegerConverter }
+
+function TArrayBigIntegerConverter.ReadJson(const AReader: TJsonReader;
+  ATypeInfo: PTypeInfo; const AExistingValue: TValue;
+  const ASerializer: TJsonSerializer): TValue;
+var
+  V1, V2: BigInteger;
+  LArray: TArray<BigInteger>;
+  InArray: Integer;
+begin
+  InArray := 0;
+  while AReader.TokenType in [
+    TJsonToken.StartArray, TJsonToken.String, TJsonToken.Float, TJsonToken.EndArray] do
+    begin
+      AReader.Read;
+      case AReader.TokenType of
+        TJsonToken.StartArray: Inc(InArray);
+        TJsonToken.EndArray: begin
+          if InArray = 0 then
+            begin
+              Result := TValue.From(LArray);
+              Break;
+            end else Dec(InArray);
+        end;
+        TJsonToken.String: begin
+          LArray := LArray + [BigInteger.Create(AReader.Value.AsString)];
+        end;
+        TJsonToken.Float: begin
+          LArray := LArray + [BigInteger.Create(AReader.Value.AsExtended)];
+        end;
+      end;
+    end;
+end;
+
+{ TArrayArrayBigIntegerConverter }
+
+function TArrayArrayBigIntegerConverter.ReadJson(const AReader: TJsonReader;
+  ATypeInfo: PTypeInfo; const AExistingValue: TValue;
+  const ASerializer: TJsonSerializer): TValue;
+type
+  TMember = TArray<BigInteger>;
+  TContainer = TArray<TMember>;
+var
+  V1: BigInteger;
+  V2: BigInteger;
+  LArray: TContainer;
+  LMember: TMember;
+  InArray: Integer;
+begin
+  Assert(AReader.CurrentState = TJsonReader.TState.ArrayStart);
+  InArray := 0;
+  // AReader.TokenType = StartArray
+  while AReader.TokenType in [TJsonToken.StartArray, TJsonToken.EndArray,
+    TJsonToken.String, TJsonToken.Float] do
+    begin
+      AReader.Read;
+      case AReader.TokenType of
+        TJsonToken.StartArray: Inc(InArray);
+        TJsonToken.EndArray: begin
+          if InArray = 0 then
+            begin
+              Result := TValue.From(LArray);
+              Break;
+            end else Dec(InArray);
+        end;
+        TJsonToken.String: V1 := BigInteger.Create(AReader.Value.AsString);
+        TJsonToken.Float: begin
+          V2 := BigInteger.Create(AReader.Value.AsExtended);
+          LMember := [V1, V2];
+          LArray := LArray + [LMember];
+        end;
+      end;
+    end;
+end;
+
+{ TBigNumberJsonConverter }
+function TBigNumberJsonConverter.CanConvert(ATypeInfo: PTypeInfo): Boolean;
+begin
+  Result := True;
+end;
+
+function TBigNumberJsonConverter.CanRead: Boolean;
+begin
+  Result := True;
+end;
+
+procedure TBigNumberJsonConverter.WriteJson(const AWriter: TJsonWriter;
+  const AValue: TValue; const ASerializer: TJsonSerializer);
+begin
+  Assert(False, 'Not implemented yet');
+end;
+
+{ TBigIntegerConverter }
+
+function TBigIntegerConverter.ReadJson(const AReader: TJsonReader;
+  ATypeInfo: PTypeInfo; const AExistingValue: TValue;
+  const ASerializer: TJsonSerializer): TValue;
+begin
+  Assert((AReader.TokenType = TJsonToken.String) or (AReader.TokenType = TJsonToken.Float));
+  case AReader.TokenType of
+    TJsonToken.String: Result := TValue.From(BigInteger.Create(AReader.Value.AsString));
+    TJsonToken.Float: Result := TValue.From(BigDecimal.Create(AReader.Value.AsExtended));
+  end;
+end;
+
+{ TBigDecimalConverter }
+
+function TBigDecimalConverter.ReadJson(const AReader: TJsonReader;
+  ATypeInfo: PTypeInfo; const AExistingValue: TValue;
+  const ASerializer: TJsonSerializer): TValue;
+begin
+  Assert(AReader.TokenType = TJsonToken.String);
+  Result := TValue.From(BigDecimal.Create(AReader.Value.AsString));
+end;
+
+{ TBigNumberAttributeProvider }
+constructor TBigNumberAttributeProvider.Create(const ARttiObject: TRttiObject);
+begin
+  inherited Create;
+  FRttiObject := ARttiObject;
+end;
+
+function TBigNumberAttributeProvider.GetAttribute(const AAttributeClass: TCustomAttributeClass; AInherit: Boolean = False): TCustomAttribute;
+var
+  LTypeInfo: PTypeInfo;
+begin
+  if AAttributeClass = JsonIgnoreAttribute then
+    Exit(nil);
+  if AAttributeClass = JsonConverterAttribute then
+    begin
+      LTypeInfo := PTypeInfo(FRttiObject.Handle);
+      if LTypeInfo = TypeInfo(BigInteger) then
+        Exit(nil);
+      if LTypeInfo = TypeInfo(BigDecimal) then
+        Exit(nil);
+//      if LTypeInfo = TypeInfo(
+    end;
+end;
+
+{$ENDIF}
+
 
 procedure OutputDebugString(const AMsg: string);
 begin
@@ -432,7 +666,11 @@ begin
 {$IF DEFINED(UseRTL35) OR (RTLVersion < 36.0)}
   LSerializer := TJsonSerializerHelper.Create;
 {$ELSEIF RTLVersion >= 36.0 }
-  LSerializer := TJsonSerializer.Create;
+  {$IF DECLARED(BigInteger) OR DECLARED(BigDecimal)}
+    LSerializer := TBigNumberJsonSerializer.Create;
+  {$ELSE}
+    LSerializer := TJsonSerializer.Create;
+  {$ENDIF}
 {$ENDIF}
   try
 {$IF DEFINED(UseRTL35) OR (RTLVersion < 36.0)}
@@ -510,7 +748,11 @@ var
   ASerializer: TJsonSerializer;
   AJsonObjWriter: TJsonObjectWriter;
 begin
-  ASerializer := TJsonSerializer.Create;
+  {$IF DECLARED(BigInteger) OR DECLARED(BigDecimal)}
+    ASerializer := TBigNumberJsonSerializer.Create;
+  {$ELSE}
+    ASerializer := TJsonSerializer.Create;
+  {$ENDIF}
   AJsonObjWriter := TJsonObjectWriter.Create;
   try
     ASerializer.Serialize(AJsonObjWriter, AValue);
@@ -619,7 +861,13 @@ end;
 
 procedure SerializeValue(const AValue: TValue; ATypeInfo: PTypeInfo; out VJSONValue: TJSONValue);
 begin
-  var ASerializer := TJsonSerializer.Create;
+  var ASerializer :=
+  {$IF DECLARED(BigInteger) OR DECLARED(BigDecimal)}
+    TBigNumberJsonSerializer.Create
+  {$ELSE}
+    TJsonSerializer.Create
+  {$ENDIF}
+    ;
   var AJsonObjWriter := TJsonObjectWriter.Create;
   try
     ASerializer.Serialize(AJsonObjWriter, AValue);

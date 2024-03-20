@@ -66,12 +66,24 @@ begin
   try
     var LPolkadotClient := GetPolkadotClient;
 
-    var lPendingExtrinsics := LPolkadotClient.author_pendingExtrinsics;
-    // var LRemoveExtrinsicResult := LPolkadotClient.author_removeExtrinsic([]);
+//    var lPendingExtrinsics := LPolkadotClient.author_pendingExtrinsics;
+//    // var LRemoveExtrinsicResult := LPolkadotClient.author_removeExtrinsic([]);
+//
+//    var LGrandpaRoundState := LPolkadotClient.grandpa_roundState;
+    var LBlockNumber := LPolkadotClient.chain_getBlock;
+    var LGrandpaProveFinality := LPolkadotClient.grandpa_proveFinality(
+      (LBlockNumber.block.header.number-10).AsInteger
+    );
 
     var LMetadata := LPolkadotClient.state_getMetadata;
-    var lFinalizedHead := LPolkadotClient.getFinalizedHead; // not available?
+    // var lFinalizedHead := LPolkadotClient.getFinalizedHead; // not available?
 
+    var LAccountNonce := LPolkadotClient.system_accountNextIndex('FJaSzBUAJ1Nwa1u5TbKAFZG5MBtcUouTixdP7hAkmce2SDS');
+    var LSystemChain := LPolkadotClient.system_chain;
+    var LSystemChainType := LPolkadotClient.system_chainType;
+    var LAddresses := LPolkadotClient.system_localListenAddresses;
+    var LNodeRoles := LPolkadotClient.system_nodeRoles;
+    var LSystemProperties := LPolkadotClient.system_properties;
     var LSystemHealth := LPolkadotClient.system_health;
     var LBlockHash := LPolkadotClient.chain_getBlockHash(19518865);
     Assert(LBlockHash = '0x66722d90a8fec09cb410fed0292b397d5d3cbd1bca376b1fd0c1bb8caee3e6d4');

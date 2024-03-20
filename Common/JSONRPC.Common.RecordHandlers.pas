@@ -147,6 +147,8 @@ var
   LJSONToTValue: TJSONToTValue;
 begin
   Result := Handlers.TryGetValue(ATypeInfo, OHandlers);
+  if not Result then
+    Exit;
   LNativeToJSON := OHandlers.NativeToJSON;
   LJSONToNative := OHandlers.JSONToNative;
   LTValueToJSON := OHandlers.TValueToJSON;
