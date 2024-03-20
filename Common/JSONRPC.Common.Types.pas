@@ -984,8 +984,10 @@ initialization
     var
       LJSON: TJSONString;
     begin
+      // This serializes the BigInteger from a record to a string
+      // but it's always in capital..., so added ToLower
       BigInteger.Hex;
-      LJSON := TJSONString.Create('0x'+BigInteger(AParamValuePtr^).ToString(16));
+      LJSON := TJSONString.Create('0x'+BigInteger(AParamValuePtr^).ToString(16).ToLower);
       case APassParamByPosOrName of
         tppByName: AParamsObj.AddPair(AParamName, LJSON);
         tppByPos:  AParamsArray.AddElement(LJSON);

@@ -66,7 +66,7 @@ begin
   try
     var LPolkadotClient := GetPolkadotClient;
 
-//    var lPendingExtrinsics := LPolkadotClient.author_pendingExtrinsics;
+    var lPendingExtrinsics := LPolkadotClient.author_pendingExtrinsics;
 //    // var LRemoveExtrinsicResult := LPolkadotClient.author_removeExtrinsic([]);
 //
 //    var LGrandpaRoundState := LPolkadotClient.grandpa_roundState;
@@ -87,7 +87,7 @@ begin
     var LSystemHealth := LPolkadotClient.system_health;
     var LBlockHash := LPolkadotClient.chain_getBlockHash(19518865);
     Assert(LBlockHash = '0x66722d90a8fec09cb410fed0292b397d5d3cbd1bca376b1fd0c1bb8caee3e6d4');
-    WriteLn(LBlockHash);
+    WriteLn(LBlockHash.ToString);
 
     var LMethods := LPolkadotClient.rpc_methods;
     var LKey: StorageKey := '0x26aa394eea5630e07c48ae0c9558cef7f9cce9c888469bb1a0dceaa129672ef8';

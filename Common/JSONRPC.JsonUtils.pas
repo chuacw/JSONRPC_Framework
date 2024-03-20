@@ -200,13 +200,24 @@ uses
   System.JSON.Writers;
 
 {$IF DECLARED(BigInteger) OR DECLARED(BigDecimal)}
+
 type
+  /// <summary> This JsonSerializer causes all fields of type BigInteger
+  /// and TArray<BigInteger> to be read automatically, without declaring
+  /// the JsonConverterAttribute on those types.
+  /// Without using this, you'll have to annotate any field with
+  /// [JsonConverter(TBigIntegerConverter)]
+  /// </summary>
   TBigNumberJsonSerializer = class(TJsonSerializer)
   public
     constructor Create;
   end;
 
-  TBigNumberContractResolver = class(TJsonDynamicContractResolver, IJsonContractResolver);
+  /// <summary> This contract resolver allows us to set
+  /// all BigIntegers types to be handled by one of the converters in this
+  /// section automatically, so that annotating fields with JsonConverter is no longer required.
+  /// </summary>
+  TBigNumberContractResolver = TJsonDynamicContractResolver;
 
   TBigNumberJsonContract = class(TJsonConverterContract)
   public
@@ -217,12 +228,25 @@ type
   public
     function CanConvert(ATypeInfo: PTypeInfo): Boolean; override;
     function CanRead: Boolean; override;
+
+    /// <summary> WriteJson is never used in the JSON RPC Framework
+    /// due to JSON RPC Framework using RecordHandlers to convert BigNumbers
+    /// to strings, so see
+    /// RegisterRecordHandler(TypeInfo(BigInteger) in JSONRPC.Common.Types
+    /// This override is due to the ancestor method being abstract.
+    /// </summary>
     procedure WriteJson(const AWriter: TJsonWriter; const AValue: TValue;
       const ASerializer: TJsonSerializer); override;
   end;
 
+  /// <summary>
+  /// This converter handles TArray<BigInteger> when it is encountered in types.
+  /// </summary>
   TArrayBigIntegerConverter = class(TBigNumberJsonConverter)
   public
+    /// <summary> This function reads "[string, number...]" in any order
+    /// where string may be in the format of '0x1234567890', eg, a hex number
+    /// </summary>
     function ReadJson(const AReader: TJsonReader; ATypeInfo: PTypeInfo; const AExistingValue: TValue;
       const ASerializer: TJsonSerializer): TValue; override;
   end;
@@ -233,25 +257,31 @@ type
       const ASerializer: TJsonSerializer): TValue; override;
   end;
 
+  /// <summary> This converts a BigInteger from a string of the format '0x...'
+  /// </summary>
   TBigIntegerConverter = class(TBigNumberJsonConverter)
   public
     function ReadJson(const AReader: TJsonReader; ATypeInfo: PTypeInfo;
       const AExistingValue: TValue; const ASerializer: TJsonSerializer): TValue; override;
   end;
 
+  /// <summary> This converts a BigDecimal from a string
+  /// </summary>
   TBigDecimalConverter = class(TBigNumberJsonConverter)
   public
     function ReadJson(const AReader: TJsonReader; ATypeInfo: PTypeInfo;
       const AExistingValue: TValue; const ASerializer: TJsonSerializer): TValue; override;
   end;
 
+  /// <summary> This is no longer used
+  /// </summary>
   TBigNumberAttributeProvider = class(TInterfacedObject, IJsonAttributeProvider)
   protected
     FRttiObject: TRttiObject;
   public
     constructor Create(const ARttiObject: TRttiObject);
     function GetAttribute(const AAttributeClass: TCustomAttributeClass; AInherit: Boolean = False): TCustomAttribute;
-  end;
+  end deprecated 'No longer used';
 
 constructor TBigNumberJsonSerializer.Create;
 var
@@ -293,7 +323,6 @@ function TArrayBigIntegerConverter.ReadJson(const AReader: TJsonReader;
   ATypeInfo: PTypeInfo; const AExistingValue: TValue;
   const ASerializer: TJsonSerializer): TValue;
 var
-  V1, V2: BigInteger;
   LArray: TArray<BigInteger>;
   InArray: Integer;
 begin
@@ -392,6 +421,7 @@ begin
   end;
 end;
 
+{$REGION 'TBigDecimalConverter'}
 { TBigDecimalConverter }
 
 function TBigDecimalConverter.ReadJson(const AReader: TJsonReader;
@@ -401,6 +431,7 @@ begin
   Assert(AReader.TokenType = TJsonToken.String);
   Result := TValue.From(BigDecimal.Create(AReader.Value.AsString));
 end;
+{$ENDREGION}
 
 { TBigNumberAttributeProvider }
 constructor TBigNumberAttributeProvider.Create(const ARttiObject: TRttiObject);
@@ -422,8 +453,8 @@ begin
         Exit(nil);
       if LTypeInfo = TypeInfo(BigDecimal) then
         Exit(nil);
-//      if LTypeInfo = TypeInfo(
     end;
+  Result := nil; // suppress the warning
 end;
 
 {$ENDIF}
@@ -1090,6 +1121,7 @@ end;
 
 function MakeTypeInfo(ATypeKind: TTypeKind): PTypeInfo; experimental;
 begin
+  Result := nil; // This is not used anywhere
 end;
 
 { TSaveRestore<T> }

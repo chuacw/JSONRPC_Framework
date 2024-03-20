@@ -16,10 +16,10 @@ const
 type
 
   HexBytes = BigInteger;
-  TBlockHash = string;
+  TBlockHash = BigInteger;
   THash = string;
   THex = string;
-  StorageKey = string;
+  StorageKey = BigInteger;
   TAccountNonce = UInt64;
 
   TMethods = record
@@ -125,7 +125,7 @@ type
 
     // -------- AUTHOR ----------------------------------
 
-    function author_pendingExtrinsics: TArray<string>; // tested
+    function author_pendingExtrinsics: TArray<BigInteger>; // tested
     function author_removeExtrinsic(const bytesOrHash: TArray<THash>): TArray<THash>; deprecated 'RPC call is unsafe to be called externally';
     function author_hasSessionKeys(const sessionKeys: THash): Boolean; // tested without session key
 
