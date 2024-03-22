@@ -133,7 +133,7 @@ procedure RemoveJSONResult(const AJSONObj: TJSONObject);
 function SameJSON(const AJSON1, AJSON2: TJSONArray): Boolean; overload;
 function SameJSON(const AJSON1, AJSON2: TJSONValue): Boolean; overload;
 function SameJSON(const AJSONObj1, AJSONObj2: TJSONObject): Boolean; overload;
-function SameJson(const AJSONStr1, AJSONStr2: string): Boolean; overload;
+function SameJSON(const AJSONStr1, AJSONStr2: string): Boolean; overload;
 
 procedure OutputDebugString(const AMsg: string); inline;
 
@@ -199,6 +199,29 @@ uses
   JSONRPC.Common.Types,
   System.JSON.Writers;
 
+type
+  TBaseJsonConverter = class(TJsonConverter)
+  public
+    function CanConvert(ATypeInfo: PTypeInfo): Boolean; override;
+    function CanRead: Boolean; override;
+  end;
+
+  TArrayVariantConverter = class(TBaseJsonConverter)
+  public
+    function ReadJson(const AReader: TJsonReader; ATypeInfo: PTypeInfo; const AExistingValue: TValue;
+      const ASerializer: TJsonSerializer): TValue; override;
+  end;
+
+  TDictBigIntBigIntConverter = class(TBaseJsonConverter)
+    function ReadJson(const AReader: TJsonReader; ATypeInfo: PTypeInfo; const AExistingValue: TValue;
+      const ASerializer: TJsonSerializer): TValue; override;
+  end;
+
+  TDictBigIntStringConverter = class(TBaseJsonConverter)
+    function ReadJson(const AReader: TJsonReader; ATypeInfo: PTypeInfo; const AExistingValue: TValue;
+      const ASerializer: TJsonSerializer): TValue; override;
+  end;
+
 {$IF DECLARED(BigInteger) OR DECLARED(BigDecimal)}
 
 type
@@ -224,11 +247,8 @@ type
     constructor Create(ATypeInf: PTypeInfo);
   end;
 
-  TBigNumberJsonConverter = class(TJsonConverter)
+  TBigNumberJsonConverter = class(TBaseJsonConverter)
   public
-    function CanConvert(ATypeInfo: PTypeInfo): Boolean; override;
-    function CanRead: Boolean; override;
-
     /// <summary> WriteJson is never used in the JSON RPC Framework
     /// due to JSON RPC Framework using RecordHandlers to convert BigNumbers
     /// to strings, so see
@@ -291,6 +311,17 @@ begin
   {$IF DECLARED(BigInteger) OR DECLARED(BigDecimal)}
   LContractResolver := TBigNumberContractResolver.Create;
   {$ENDIF}
+
+  // Urgh!
+  LContractResolver.SetTypeConverter(TypeInfo(TArray<Variant>), TArrayVariantConverter);
+  LContractResolver.SetTypeConverter(
+    TypeInfo(TDictionary<BigInteger, BigInteger>), TDictBigIntBigIntConverter
+  );
+  LContractResolver.SetTypeConverter(
+    TypeInfo(TDictionary<BigInteger, string>), TDictBigIntStringConverter
+  );
+
+
   {$IF DECLARED(BigInteger)}
   LContractResolver.SetTypeConverter(TypeInfo(BigInteger), TBigIntegerConverter);
   LContractResolver.SetTypeConverter(TypeInfo(TArray<BigInteger>), TArrayBigIntegerConverter);
@@ -348,6 +379,7 @@ begin
         end;
       end;
     end;
+  Result := TValue.From(LArray);
 end;
 
 { TArrayArrayBigIntegerConverter }
@@ -389,23 +421,14 @@ begin
         end;
       end;
     end;
+  Result := TValue.From(LArray);
 end;
 
 { TBigNumberJsonConverter }
-function TBigNumberJsonConverter.CanConvert(ATypeInfo: PTypeInfo): Boolean;
-begin
-  Result := True;
-end;
-
-function TBigNumberJsonConverter.CanRead: Boolean;
-begin
-  Result := True;
-end;
-
 procedure TBigNumberJsonConverter.WriteJson(const AWriter: TJsonWriter;
   const AValue: TValue; const ASerializer: TJsonSerializer);
 begin
-  Assert(False, 'Not implemented yet');
+  Assert(False, 'This is not necessary to implement');
 end;
 
 { TBigIntegerConverter }
@@ -417,7 +440,7 @@ begin
   Assert((AReader.TokenType = TJsonToken.String) or (AReader.TokenType = TJsonToken.Float));
   case AReader.TokenType of
     TJsonToken.String: Result := TValue.From(BigInteger.Create(AReader.Value.AsString));
-    TJsonToken.Float: Result := TValue.From(BigDecimal.Create(AReader.Value.AsExtended));
+    TJsonToken.Float: Result := TValue.From(BigInteger.Create(AReader.Value.AsExtended));
   end;
 end;
 
@@ -459,11 +482,174 @@ end;
 
 {$ENDIF}
 
+{ TBaseJsonConverter }
+
+function TBaseJsonConverter.CanConvert(ATypeInfo: PTypeInfo): Boolean;
+begin
+  Result := True;
+end;
+
+function TBaseJsonConverter.CanRead: Boolean;
+begin
+  Result := True;
+end;
+
+function TArrayVariantConverter.ReadJson(const AReader: TJsonReader;
+  ATypeInfo: PTypeInfo; const AExistingValue: TValue;
+  const ASerializer: TJsonSerializer): TValue;
+var
+  LArray: TArray<Variant>;
+  InArray: Integer;
+begin
+  InArray := 0;
+
+  while AReader.TokenType in [
+    TJsonToken.StartArray,
+    TJsonToken.String, TJsonToken.Float, TJsonToken.Boolean,
+    TJsonToken.Integer, TJsonToken.EndArray] do
+    begin
+      AReader.Read;
+      case AReader.TokenType of
+        TJsonToken.StartArray: Inc(InArray);
+        TJsonToken.EndArray: begin
+          if InArray = 0 then
+            begin
+              Result := TValue.From(LArray);
+              Break;
+            end else Dec(InArray);
+        end;
+        TJsonToken.String: begin
+          LArray := LArray + [AReader.Value.AsString];
+        end;
+        TJsonToken.Boolean: begin
+          LArray := LArray + [AReader.Value.AsBoolean];
+        end;
+        TJsonToken.Integer: begin
+          LArray := LArray + [AReader.Value.AsInteger];
+        end;
+        TJsonToken.Float: begin
+          LArray := LArray + [AReader.Value.AsExtended];
+        end;
+      end;
+    end;
+  Result := TValue.From(LArray);
+end;
+
+function TDictBigIntBigIntConverter.ReadJson(const AReader: TJsonReader;
+  ATypeInfo: PTypeInfo; const AExistingValue: TValue;
+  const ASerializer: TJsonSerializer): TValue;
+var
+  LDict: TDictionary<BigInteger, BigInteger>;
+  LSPropertyName, LSPropertyValue: string;
+  LKey, LValue: BigInteger;
+  LTokenType: TJsonToken;
+begin
+  LDict := TDictionary<BigInteger, BigInteger>.Create;
+  repeat
+    LTokenType := AReader.TokenType;
+    case LTokenType of
+      TJsonToken.PropertyName: begin
+        case AReader.Value.Kind of
+          tkString, tkLString, tkWString,
+          tkUString: begin
+            LSPropertyName := AReader.Value.AsString;
+          end;
+          tkUnknown: ;
+          tkInteger: ;
+          tkChar: ;
+          tkEnumeration: ;
+          tkFloat: ;
+          tkSet: ;
+          tkClass: ;
+          tkMethod: ;
+          tkWChar: ;
+          tkVariant: ;
+          tkArray: ;
+          tkRecord: ;
+          tkInterface: ;
+          tkInt64: ;
+          tkDynArray: ;
+          tkClassRef: ;
+          tkPointer: ;
+          tkProcedure: ;
+          tkMRecord: ;
+        end;
+      end;
+      TJsonToken.String: begin
+        LSPropertyValue := AReader.Value.AsString;
+        LKey := BigInteger.Create(LSPropertyName);
+        LValue := BigInteger.Create(LSPropertyValue);
+        LDict.Add(LKey, LValue);
+        WriteLn('Dictionary count: ', LDict.Count);
+        if LDict.Count = 1630 then
+          WriteLn('Break here');
+      end;
+    end;
+    AReader.Read;
+    LTokenType := AReader.TokenType;
+  until AReader.TokenType = TJsonToken.EndObject;
+  Result := TValue.From(LDict);
+end;
+
+function TDictBigIntStringConverter.ReadJson(const AReader: TJsonReader;
+  ATypeInfo: PTypeInfo; const AExistingValue: TValue;
+  const ASerializer: TJsonSerializer): TValue;
+var
+  LDict: TDictionary<BigInteger, string>;
+  LSPropertyName: string;
+  LKey: BigInteger;
+  LValue: string;
+  LTokenType: TJsonToken;
+begin
+  LDict := TDictionary<BigInteger, string>.Create;
+  repeat
+    LTokenType := AReader.TokenType;
+    case LTokenType of
+      TJsonToken.PropertyName: begin
+        case AReader.Value.Kind of
+          tkString, tkLString, tkWString,
+          tkUString: begin
+            LSPropertyName := AReader.Value.AsString;
+          end;
+          tkUnknown: ;
+          tkInteger: ;
+          tkChar: ;
+          tkEnumeration: ;
+          tkFloat: ;
+          tkSet: ;
+          tkClass: ;
+          tkMethod: ;
+          tkWChar: ;
+          tkVariant: ;
+          tkArray: ;
+          tkRecord: ;
+          tkInterface: ;
+          tkInt64: ;
+          tkDynArray: ;
+          tkClassRef: ;
+          tkPointer: ;
+          tkProcedure: ;
+          tkMRecord: ;
+        end;
+      end;
+      TJsonToken.String: begin
+        LValue := AReader.Value.AsString;
+        LKey := BigInteger.Create(LSPropertyName);
+        LDict.Add(LKey, LValue);
+      end;
+    end;
+    AReader.Read;
+    LTokenType := AReader.TokenType;
+  until AReader.TokenType = TJsonToken.EndObject;
+  Result := TValue.From(LDict);
+end;
 
 procedure OutputDebugString(const AMsg: string);
 begin
-  {$IF DEFINED(MSWINDOWS) AND DEFINED(DEBUG)}
-  Winapi.Windows.OutputDebugString(PChar(AMsg));
+  {$IF DEFINED(DEBUG)}
+    {$IF DEFINED(MSWINDOWS)}
+       Winapi.Windows.OutputDebugString(PChar(AMsg));
+    {$ENDIF}
   {$ENDIF}
 end;
 

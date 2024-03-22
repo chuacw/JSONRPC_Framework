@@ -26,26 +26,6 @@ type
   InvString = UnicodeString;
   TDataContext = class;
 
-//  { TRemotable is the base class for remoting complex types - it introduces a virtual
-//    constructor (to allow the JSON RPC runtime to properly create the object and derived
-//    types) and it provides life-time management - via DataContext - so the JSON RPC
-//    runtime can properly disposed of complex types received by a Service }
-//{$M+}
-//  TRemotable = class
-//  private
-//    FDataContext: TDataContext;
-//    procedure SetDataContext(Value: TDataContext);
-//  public
-//    constructor Create; virtual;
-//    destructor  Destroy; override;
-//
-//    property   DataContext: TDataContext read FDataContext write SetDataContext;
-//  end;
-//{$M-}
-//
-//  PTRemotable = ^TRemotable;
-//  TRemotableClass = class of TRemotable;
-
   TInvokableClass = class(TInterfacedObject, IInterface,
     IJSONRPCMethodException, IJSONRPCMethods
   )
@@ -60,23 +40,6 @@ type
 
     function SafeCallException(ExceptObject: TObject;
       ExceptAddr: Pointer): HResult; override;
-
-//    /// <summary>
-//    /// Directly sends a JSON to the server.
-//    /// <example>
-//    /// This shows how to send a JSON.
-//    /// In this case, this is a broken JSON.
-//    /// <code>
-//    /// LJSONRPCWrapper.SendJSON('{"jsonrpc": "2.0", "method": "foobar, "params": "bar", "baz]');
-//    /// </code>
-//    /// </example>
-//    /// </summary>
-//    /// <exception cref="SomeException">when things go wrong.</exception>
-//    /// <c> some code </c>
-//    /// <param name="AJSON">The UTF8 message to be sent
-//    /// </param>
-//    procedure SendJSON(const AJSON: string; const AProc: TProc);
-//    procedure FakeCall;
 
     { IJSONRPCException }
     function GetCode: Integer;
@@ -250,9 +213,6 @@ type
     property ResultPointer: Pointer read GetResultPointer write SetResultPointer;
   end;
 
-//function  GetRemotableDataContext: Pointer;
-//procedure SetRemotableDataContext(Value: Pointer);
-
 function  InvRegistry:   TInvokableClassRegistry;
 
 implementation
@@ -266,19 +226,6 @@ uses
 
 var
   JSONRPCInvRegistryV: TInvokableClassRegistry;
-
-//threadvar
-//  RemotableDataContext: Pointer;
-//
-//function GetRemotableDataContext: Pointer;
-//begin
-//  Result := RemotableDataContext;
-//end;
-//
-//procedure SetRemotableDataContext(Value: Pointer);
-//begin
-//  RemotableDataContext := Value;
-//end;
 
 function TInvokableClassRegistry.GetInterfaceCount: Integer;
 begin
@@ -693,41 +640,6 @@ begin
   Result := FCode;
 end;
 
-//procedure TInvokableClass.FakeCall;
-//begin
-//end;
-//
-//procedure TInvokableClass.SendJSON(const AJSON: string;
-//  const AProc: TProc);
-//var
-//  LJSON: string;
-//  LOnBeforeExecute: TBeforeExecuteEvent;
-//begin
-//  LJSON := AJSON;
-//  var LIJSONRPCWrapper: IJSONRPCWrapper;
-//  var LJSONRPCWrapper: TJSONRPCWrapper;
-//  if Supports(Self, IJSONRPCWrapper, LIJSONRPCWrapper) then
-//    begin
-//      LJSONRPCWrapper := LIJSONRPCWrapper.JSONRPCWrapper;
-//      LOnBeforeExecute := LJSONRPCWrapper.OnBeforeExecute;
-//      LJSONRPCWrapper.OnBeforeExecute :=
-//      procedure(const MethodName: string; ARequest: TStream)
-//      begin
-//        var LJSONRequest := LJSON;
-//        var LJSONRequestBytes := TEncoding.UTF8.GetBytes(LJSONRequest);
-//        ARequest.Write(LJSONRequestBytes, Length(LJSONRequestBytes));
-//      end;
-//    end;
-//
-//  AProc;
-//
-//  if Supports(Self, IJSONRPCWrapper, LIJSONRPCWrapper) then
-//    begin
-//      LJSONRPCWrapper := LIJSONRPCWrapper.JSONRPCWrapper;
-//      LJSONRPCWrapper.OnBeforeExecute := LOnBeforeExecute;
-//    end;
-//end;
-
 procedure TInvokableClass.SetCode(ACode: Integer);
 begin
   FCode := ACode;
@@ -752,37 +664,6 @@ procedure TInvokableClass.SetMethodName(const AMethodName: string);
 begin
   FMethodName := AMethodName;
 end;
-
-//{ TRemotable }
-//
-//constructor TRemotable.Create;
-//begin
-//  inherited;
-//  if RemotableDataContext <> nil then
-//    begin
-//      TDataContext(RemotableDataContext).AddObjectToDestroy(Self);
-//      Self.DataContext := TDataContext(RemotableDataContext);
-//    end;
-//end;
-//
-//destructor TRemotable.Destroy;
-//begin
-//  if RemotableDataContext <> nil then
-//    begin
-//      TDataContext(RemotableDataContext).RemoveObjectToDestroy(Self);
-//      Self.DataContext := nil;
-//    end;
-//  inherited Destroy;
-//end;
-//
-//procedure TRemotable.SetDataContext(Value: TDataContext);
-//begin
-//  if (RemotableDataContext <> nil) and (RemotableDataContext = Self.DataContext) then
-//    begin
-//      TDataContext(RemotableDataContext).RemoveObjectToDestroy(Self);
-//    end;
-//  FDataContext := Value;
-//end;
 
 constructor TRemotableTypeRegistry.Create;
 begin

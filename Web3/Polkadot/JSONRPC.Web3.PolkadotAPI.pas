@@ -6,116 +6,13 @@ interface
 uses
   JSONRPC.RIO, JSONRPC.Web3.Common.Types, JSONRPC.Common.Types,
   System.SysUtils, System.JSON, Velthuis.BigIntegers,
-  // for TBigIntegerConverter
-  System.Rtti, System.TypInfo, System.JSON.Readers,
-  JSONRPC.Web3.Polkadot.Types, System.JSON.Serializers;
+  JSONRPC.Web3.Polkadot.Types;
 
 const
   UnsafeRPCCall = 'RPC call is unsafe to be called externally';
 
 type
 
-  HexBytes = BigInteger;
-  TBlockHash = BigInteger;
-  THash = string;
-  THex = string;
-  StorageKey = BigInteger;
-  TAccountNonce = UInt64;
-
-  TMethods = record
-    methods: TArray<string>;
-  end;
-
-// {"startingBlock":19480132,"currentBlock":19523851,"highestBlock":19523851},"id":6}
-  TSyncState = record
-    startingBlock: UInt32;
-    currentBlock: UInt32;
-    highestBlock: UInt32;
-  end;
-
-  // https://spec.polkadot.network/chap-runtime-api
-  TStateCallType = (
-    NominationPoolsApi_pending_rewards, // args = account id
-    NominationPoolsApi_points_to_balance,
-    NominationPoolsApi_balance_to_points
-  );
-
-  TSystemProperties = record
-    ss58Format: Integer;
-    tokenDecimals: Integer;
-    tokenSymbol: string;
-  end;
-
-  // <summary> base58 encoded PeerId </summary>
-  TPeerId = string;
-
-  TAPIs = TArray<TArray<BigInteger>>;
-
-  TRuntimeVersion = record
-    specName: string;
-    implName: string;
-    authoringVersion: Integer;
-    specVersion: Integer;
-    implVersion: Integer;
-    apis: TAPIs;
-    transactionVersion: Integer;
-    stateVersion: Integer;
-  end;
-
-  TAccountId = string;
-
-  TSystemPeerRoles = (NONE, FULL, LIGHT, AUTHORITY);
-  TSystemPeers = record
-    PeerId: string;
-    roles: TSystemPeerRoles;
-    protocolVersion: UInt32;
-    bestHash: THex;
-    bestNumber: UInt64;
-  end;
-
-  // Not completely defined
-  TBabeEpochAuthorship = record
-  end;
-
-  TVotes = record
-    currentWeight: UInt32;
-    missing: TArray<string>; // address of authority
-  end;
-
-  TRoundState = record
-    round: UInt32;
-    totalWeight: UInt32;
-    thresholdWeight: UInt32;
-    prevotes: TVotes;
-    precommits: TVotes;
-  end;
-  TGrandpaRoundState = record
-    setId: UInt32;
-    best: TRoundState;
-    background: TArray<TRoundState>;
-  end;
-
-  TDigest = record
-    logs: TArray<BigInteger>;
-  end;
-
-  TGetBlockHeader = record
-    number: BigInteger;
-    parentHash: BigInteger;
-    stateRoot: BigInteger;
-    extrinsicsRoot: BigInteger;
-    digest: TDigest;
-  end;
-
-  TBlock = record
-    header: TGetBlockHeader;
-    extrinsics: TArray<BigInteger>;
-  end;
-
-  TGetBlock = record
-    block: TBlock;
-    justifications: string;
-  end;
 
   // See also: https://github.com/w3f/PSPs/blob/master/PSPs/drafts/psp-6.md
 
@@ -135,11 +32,14 @@ type
     // -------- CHAIN ----------------------------------
 
     function chain_getBlock: TGetBlock; safecall;
+    function chain_getBlockHash: TGetBlockHash; safecall; overload;
     /// <summary>
     /// Gets the block hash for the given block number
     /// <param name="blockNumber">Block number to get hash for </param>
     /// </summary>
-    function chain_getBlockHash(blockNumber: Integer): TBlockHash; safecall;
+    function chain_getBlockHash(blockNumber: Integer): TBlockHash; safecall; overload;
+    function chain_getBlockHash(blockNumber: Integer; nth_Block: BigInteger; nth_Block2: UInt32): TBlockHash; safecall; overload;
+    function chain_getHeader: TGetHeader; safecall;
 
     // -------- GRANDPA ----------------------------------
     function grandpa_proveFinality(BlockNumber: UInt32): BigInteger; safecall;
@@ -173,16 +73,37 @@ type
     // {"id":64,"jsonrpc":"2.0","method":"state_unsubscribeStorage","params":["dODgWqzCtM17x25r"]}
     function state_unsubscribeStorage(const AStorageKey: StorageKey): Boolean;
 
+    // -------- SYNC ----------------------------------
+    /// <summary>
+    /// Returns the json-serialized chainspec running the node, with a sync state.
+    /// </summary>
+    function sync_state_genSyncSpec(Raw: Boolean = True): TSyncStateGenSyncSpec;
+
     // -------- SYSTEM ----------------------------------
 
-    function system_accountNextIndex(const accountId: TAccountId): TAccountNonce; // untested
+    /// <summary>
+    /// Retrieves the next accountIndex as available on the node
+    /// </summary>
+    function system_accountNextIndex(const accountId: TAccountId): TAccountNonce;
 
-    // <summary> Returns the chain name, eg, Polkadot </summary>
+    /// <summary> Returns the chain name, eg, Polkadot </summary>
     function system_chain: string; safecall;
+    /// <summary> Returns the chain type, eg, Live </summary>
     function system_chainType: string; safecall;
+    /// <summary> Return health status of the node </summary>
     function system_health: TSystemHealth; safecall;
-    // <summary> ('/ip4/10.148.12.7/tcp/30333/p2p/12D3KooWHa94spoLCRnKxdhfBcXB7V9ZekR4tS8WeRJhbhRXoKrt', '/ip4/127.0.0.1/tcp/30333/p2p/12D3KooWHa94spoLCRnKxdhfBcXB7V9ZekR4tS8WeRJhbhRXoKrt') </summary>
+    /// <summary>
+    /// The addresses include a trailing /p2p/ with the local PeerId, and are
+    /// thus suitable to be passed to addReservedPeer or as a bootnode address for example.
+    /// </summary>
+    /// <remarks>
+    /// ['/ip4/10.148.12.7/tcp/30333/p2p/12D3KooWHa94spoLCRnKxdhfBcXB7V9ZekR4tS8WeRJhbhRXoKrt',
+    /// '/ip4/127.0.0.1/tcp/30333/p2p/12D3KooWHa94spoLCRnKxdhfBcXB7V9ZekR4tS8WeRJhbhRXoKrt']
+    /// </remarks>
     function system_localListenAddresses: TArray<string>; safecall;
+    /// <summary>
+    ///  Returns the base58-encoded PeerId of the node
+    /// </summary>
     function system_localPeerId: string; safecall;
     /// <summary> Retrieves the node name </summary>
     function system_name: string; safecall;

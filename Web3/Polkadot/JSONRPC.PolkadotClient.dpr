@@ -5,7 +5,8 @@
 {$R *.res}
 
 uses
-  System.SysUtils,
+  System.SysUtils, System.Math,
+  Vcl.Clipbrd, Velthuis.BigIntegers,
   JSONRPC.RIO in '..\..\Common\JSONRPC.RIO.pas',
   JSONRPC.Common.Types in '..\..\Common\JSONRPC.Common.Types.pas',
   JSONRPC.InvokeRegistry in '..\..\Common\JSONRPC.InvokeRegistry.pas',
@@ -16,6 +17,47 @@ uses
   JSONRPC.TransportWrapper.HTTP in '..\..\Common\JSONRPC.TransportWrapper.HTTP.pas',
   JSONRPC.Web3.Polkadot.Types in 'JSONRPC.Web3.Polkadot.Types.pas',
   JSONRPC.Web3.PolkadotAPI in 'JSONRPC.Web3.PolkadotAPI.pas';
+
+const
+  Base58Alphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+
+function Base58Encode(const input: string): string; experimental
+var
+  dividend, remainder: UInt64;
+  quotient: Integer;
+  i: Integer;
+  res: string;
+begin
+  dividend := StrToInt64Def(input, 0);
+  res := '';
+  while dividend > 0 do
+  begin
+
+    quotient := dividend div 58;
+    remainder := dividend mod 58;
+    res := Base58Alphabet[remainder + 1] + res;
+    dividend := quotient;
+  end;
+  Result := res;
+end;
+
+function Base58Decode(const input: string): string; experimental
+var
+  i, j: Integer;
+  c: Char;
+  res: BigInteger;
+begin
+  res := 0;
+  for i := 1 to Length(input) do
+  begin
+    c := input[i];
+    j := Pos(c, Base58Alphabet) - 1;
+    if j = -1 then
+      Exit('');
+    res := res * 58 + UInt64(j);
+  end;
+  Result := res.ToString;
+end;
 
 function GetPolkadotClient: IPolkadotJSONRPC;
 begin
@@ -28,6 +70,7 @@ begin
     procedure(const AJSONRPCResponse: string)
     begin
       WriteLn('--- Incoming JSON response ---');
+      Clipboard.AsText := AJSONRPCResponse;
       WriteLn(AJSONRPCResponse);
       WriteLn;
     end
@@ -66,11 +109,18 @@ begin
   try
     var LPolkadotClient := GetPolkadotClient;
 
+    var lLocalPeerId := LPolkadotClient.system_localPeerId;
+    var base58Decoded := Base58Decode(lLocalPeerId);
+    var LSyncStateGenSpec := LPolkadotClient.sync_state_genSyncSpec;
+
     var lPendingExtrinsics := LPolkadotClient.author_pendingExtrinsics;
 //    // var LRemoveExtrinsicResult := LPolkadotClient.author_removeExtrinsic([]);
 //
 //    var LGrandpaRoundState := LPolkadotClient.grandpa_roundState;
     var LBlockNumber := LPolkadotClient.chain_getBlock;
+    var LHeader := LPolkadotClient.chain_getHeader;
+    var LBlockHash := LPolkadotClient.chain_getBlockHash(50, $64, 200);
+    LBlockHash := LPolkadotClient.chain_getBlockHash(19518865);
     var LGrandpaProveFinality := LPolkadotClient.grandpa_proveFinality(
       (LBlockNumber.block.header.number-10).AsInteger
     );
@@ -85,7 +135,6 @@ begin
     var LNodeRoles := LPolkadotClient.system_nodeRoles;
     var LSystemProperties := LPolkadotClient.system_properties;
     var LSystemHealth := LPolkadotClient.system_health;
-    var LBlockHash := LPolkadotClient.chain_getBlockHash(19518865);
     Assert(LBlockHash = '0x66722d90a8fec09cb410fed0292b397d5d3cbd1bca376b1fd0c1bb8caee3e6d4');
     WriteLn(LBlockHash.ToString);
 
@@ -100,7 +149,7 @@ begin
 
     var lSyncState := LPolkadotClient.system_syncState;
     var lReservedPeers := LPolkadotClient.system_reservedPeers;
-    var lLocalPeerId := LPolkadotClient.system_localPeerId;
+    lLocalPeerId := LPolkadotClient.system_localPeerId;
     var lNodeName := LPolkadotClient.system_name;
 
     var lStateRuntimeVersion := LPolkadotClient.state_getRuntimeVersion;

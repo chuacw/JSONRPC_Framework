@@ -270,13 +270,15 @@ type
     /// Called when there's no code that can parse the result.
     /// Return false in order not to cause an error
     /// </summary>
-    function DoParseUnhandledResult(AJSONResponseObj: TJSONValue; AResultP: Pointer): Boolean;
+    // TODO: Consider calling an event here?
+    function DoParseUnhandledResult(AJSONResponseObj: TJSONValue; AResultP: Pointer): Boolean; virtual;
 
     /// <summary>
     /// Called before the result is parsed.
     /// Return false to continue default parsing
     /// </summary>
-    function DoParseJSONResult(ATypeInfo: PTypeInfo; AJSONResponseObj: TJSONValue; AResultP: Pointer): Boolean;
+    // TODO: Consider calling an event here?
+    function DoParseJSONResult(ATypeInfo: PTypeInfo; AJSONResponseObj: TJSONValue; AResultP: Pointer): Boolean; virtual;
 
     /// <summary>
     /// Called when the final server URL has changed before a request is going to be submitted.
