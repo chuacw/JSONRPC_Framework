@@ -109,6 +109,10 @@ begin
   try
     var LPolkadotClient := GetPolkadotClient;
 
+    // https://t.me/substratedevs/10356
+    var lBlockHash := LPolkadotClient.chain_getBlockHash(0);
+    var lGetBlockHash := LPolkadotClient.chain_getBlock(lBlockHash);
+
     var lLocalPeerId := LPolkadotClient.system_localPeerId;
     var base58Decoded := Base58Decode(lLocalPeerId);
     var LSyncStateGenSpec := LPolkadotClient.sync_state_genSyncSpec;
@@ -119,7 +123,7 @@ begin
 //    var LGrandpaRoundState := LPolkadotClient.grandpa_roundState;
     var LBlockNumber := LPolkadotClient.chain_getBlock;
     var LHeader := LPolkadotClient.chain_getHeader;
-    var LBlockHash := LPolkadotClient.chain_getBlockHash(50, $64, 200);
+    LBlockHash := LPolkadotClient.chain_getBlockHash(50, $64, 200);
     LBlockHash := LPolkadotClient.chain_getBlockHash(19518865);
     var LGrandpaProveFinality := LPolkadotClient.grandpa_proveFinality(
       (LBlockNumber.block.header.number-10).AsInteger

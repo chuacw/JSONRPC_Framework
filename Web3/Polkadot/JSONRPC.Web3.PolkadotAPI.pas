@@ -31,14 +31,16 @@ type
 
     // -------- CHAIN ----------------------------------
 
-    function chain_getBlock: TGetBlock; safecall;
-    function chain_getBlockHash: TGetBlockHash; safecall; overload;
+    function chain_getBlock: TGetBlock; safecall; overload;
+    function chain_getBlock(const ABlockHash: TBlockHash): TGetBlock; safecall; overload;
+
     /// <summary>
     /// Gets the block hash for the given block number
     /// <param name="blockNumber">Block number to get hash for </param>
     /// </summary>
+    function chain_getBlockHash: TGetBlockHash; safecall; overload;
     function chain_getBlockHash(blockNumber: Integer): TBlockHash; safecall; overload;
-    function chain_getBlockHash(blockNumber: Integer; nth_Block: BigInteger; nth_Block2: UInt32): TBlockHash; safecall; overload;
+    function chain_getBlockHash(blockNumber: BigInteger; nth_Block: BigInteger; nth_Block2: UInt32): TBlockHash; safecall; overload;
     function chain_getHeader: TGetHeader; safecall;
 
     // -------- GRANDPA ----------------------------------
@@ -117,6 +119,80 @@ type
 
     /// <summary> Retrieves version of the node </summary>
     function system_version: string; safecall;
+
+  end;
+
+  TRewardSlashDataElem = record
+    era: BigInteger;
+    stash: string;
+    account: string;
+    validator_stash: string;
+    amount: Int64;
+    block_timestamp: UInt64;
+    event_index: string;
+    module_id: string;
+    event_id: string;
+    extrinsic_index: string;
+    invalid_era: Boolean;
+  end;
+
+  TRewardSlashData = record
+    count: Integer;
+    list: TArray<TRewardSlashDataElem>;
+  end;
+
+  TRewardSlash = record
+    code: Integer;
+    message: string;
+    generated_at: UInt64;
+    data: TRewardSlashData;
+  end;
+
+  TRewardsDataElemAccountJudgementElem = record
+    Index: Integer;
+    judgement: string;
+  end;
+
+  TRewardsDataElemAccount = record
+    address: string;
+    display: string;
+    judgements: TArray<TRewardsDataElemAccountJudgementElem>;
+    identity: Boolean;
+  end;
+
+  TRewardsDataElem = record
+    pool_id: Integer;
+    module_id: string;
+    event_id: string;
+    extrinsic_index: string;
+    event_index: string;
+    block_timestamp: Int64;
+    amount: Int64;
+    account_display: TRewardsDataElemAccount;
+  end;
+
+  TRewardsData = record
+    count: Integer;
+    list: TArray<TRewardsDataElem>;
+  end;
+
+  TRewards = record
+    code: Integer;
+    message: string;
+    generated_at: UInt64;
+    data: TRewardsData;
+  end;
+
+  IPolkadotJSON = interface(IJSONMethods)
+    ['{66EA6BE5-169C-4EFE-9768-BAC62DABB383}']
+
+    [UrlSuffix('api/v2/scan/account/reward_slash')]
+    function GetRewardSlash(const address: string; is_stash: Boolean;
+      page, row: Integer): TRewardSlash;
+
+    [UrlSuffix('api/scan/nomination_pool/rewards')]
+    function GetRewards(const address: string;
+      page, row: Integer): TRewards;
 
   end;
 
@@ -257,6 +333,11 @@ function GetPolkadotJSONRPC(const AServerURL: string = '';
   const AOnLoggingIncomingJSONResponse: TOnLogIncomingJSONResponse = nil
 ): IPolkadotJSONRPC;
 
+function GetPolkadotJSON(const AServerURL: string = '';
+  const APIKey: string = '';
+  const AOnLoggingOutgoingJSONRequest: TOnLogOutgoingJSONRequest = nil;
+  const AOnLoggingIncomingJSONResponse: TOnLogIncomingJSONResponse = nil
+): IPolkadotJSON;
 
 implementation
 
@@ -280,6 +361,37 @@ begin
   LJSONRPCWrapper.PassEnumByName := True;
   LJSONRPCWrapper.ServerURL := AServerURL;
   Result := LJSONRPCWrapper as IPolkadotJSONRPC;
+end;
+
+function GetPolkadotJSON(const AServerURL: string = '';
+  const APIKey: string = '';
+  const AOnLoggingOutgoingJSONRequest: TOnLogOutgoingJSONRequest = nil;
+  const AOnLoggingIncomingJSONResponse: TOnLogIncomingJSONResponse = nil
+): IPolkadotJSON;
+begin
+  RegisterJSONWrapper(TypeInfo(IPolkadotJSON));
+  var LJSONWrapper := TJSONWrapper.Create(nil);
+  LJSONWrapper.OnBeforeInitializeHeaders := procedure(var VNetHeaders: TNetHeaders)
+  begin
+    var LOriginHost := 'https://staking.polkadot.network';
+    VNetHeaders := VNetHeaders +
+      [TNameValuePair.Create(SHeadersContentType, SApplicationJson)] +
+      [TNameValuePair.Create(SHeadersOrigin, LOriginHost)] +
+      [TNameValuePair.Create(SHeadersHost,   LOriginHost)] +
+      [TNameValuePair.Create(SHeadersDNT, SHeadersOne)] +
+      [TNameValuePair.Create(SHeadersSecFetchDest, SHeadersEmpty)] +
+      [TNameValuePair.Create(SHeadersSecFetchMode, SHeadersCORS)] +
+      [TNameValuePair.Create(SHeadersSecFetchSite, SHeadersCrossSite)] +
+      [TNameValuePair.Create(SHeadersSecGPC, SHeadersOne)] +
+      [TNameValuePair.Create(SHeadersTE, SHeadersTETrailers)] +
+      [TNameValuePair.Create(SHeadersXAPIKey, APIKey)];
+  end;
+  LJSONWrapper.OnLogOutgoingJSONRequest := AOnLoggingOutgoingJSONRequest;
+  LJSONWrapper.OnLogIncomingJSONResponse := AOnLoggingIncomingJSONResponse;
+  LJSONWrapper.PassParamsByName := True;
+  LJSONWrapper.PassEnumByName := True;
+  LJSONWrapper.ServerURL := AServerURL;
+  Result := LJSONWrapper as IPolkadotJSON;
 end;
 
 initialization

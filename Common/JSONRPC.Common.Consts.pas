@@ -33,17 +33,55 @@ const
 
   SCLASSNAME: string = 'class';
 
-  SMethodNotFound: string      = 'Method not found';
-  SMDAIndexNotFound: string    = 'MDA Index not found';
-  SParseError: string          = 'Parse error';
-  SInvalidRequest: string      = 'Invalid Request';
-  SInternalServerError: string = 'Internal server error';
+  SMethodNotFound: string        = 'Method not found';
+  SMDAIndexNotFound: string      = 'MDA Index not found';
+  SParseError: string            = 'Parse error';
+  SInvalidRequest: string        = 'Invalid Request';
+  SInternalServerError: string   = 'Internal server error';
 
-  SApplicationJson: string     = 'application/json';
-  SApplicationJsonRPC: string  = 'application/json-rpc';
-  SHeadersAccept: string       = 'accept';
-  SHeadersContentType: string  = 'content-type';
-  CHeadersContentLength: string  = 'Content-Length';
+  SApplicationJson: string       = 'application/json';
+  SApplicationJsonRPC: string    = 'application/json-rpc';
+  SHeadersAccept: string         = 'accept';
+
+  // Request headers
+  SHeadersAcceptEncoding: string = 'Accept-Encoding';
+  SHeadersAcceptLanguage: string = 'Accept-Language';
+
+  SHeadersAccessControlRequestHeaders: string = 'Access-Control-Request-Headers';
+  SHeadersAccessControlRequestMethod:  string = 'Access-Control-Request-Method';
+
+  SHeadersConnection: string   = 'Connection';
+  SHeadersDNT: string          = 'DNT';
+  SHeadersOrigin: string       = 'Origin';
+  SHeadersHost: string         = 'Host';
+  SHeadersReferer: string      = 'Referer';
+  SHeadersSecFetchDest: string = 'Sec-Fetch-Dest';
+  SHeadersSecFetchMode: string = 'Sec-Fetch-Mode';
+  SHeadersSecFetchSite: string = 'Sec-Fetch-Site';
+  SHeadersSecGPC: string       = 'GPC';
+  SHeadersTE: string           = 'TE';
+  SHeadersXAPIKey: string      = 'X-API-Key';
+  SHeadersUserAgent: string    = 'User-Agent';
+
+  // Request header value
+  SHeadersEmpty: string       = 'empty';
+  SHeadersCORS: string        = 'cors';
+  SHeadersCrossSite: string   = 'cross-site';
+  SHeadersOne: string         = '1';
+  SHeadersTETrailers: string  = 'trailers';
+
+  // Response Headers
+  SHeadersAccessControlAllowCredentials: string = 'access-control-allow-credentials';
+  SHeadersAccessControlAllowHeaders: string     = 'access-control-allow-headers';
+  SHeadersAccessControlAllowMethods: string     = 'access-control-allow-methods';
+  SHeadersAccessControlAllowOrigin: string      = 'access-control-allow-origin';
+  SHeadersAccessControlMaxAge: string           = 'access-control-max-age';
+  SHeadersAltSvc: string                        = 'alt-svc';
+  SHeadersCFCacheStatus: string                 = 'cf-cache-status';
+  SHeadersCFRay: string                         = 'cf-ray';
+
+  SHeadersContentType: string                   = 'content-type';
+  CHeadersContentLength: string                 = 'Content-Length';
   
   CParseErrorInvalidCharacter    = -32702;
   CParseErrorUnsupportedEncoding = -32701;

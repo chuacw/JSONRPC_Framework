@@ -178,6 +178,7 @@ type
     FPassByPosOrName: TPassParamByPosOrName;
     FEnumByName: Boolean;
     {$ENDIF}
+    FAppendMethodName: Boolean;
     FJSONMethodID: Int64;
     FInterface: IInterface;
     FOnBeforeExecute: TBeforeExecuteEvent;
@@ -363,8 +364,16 @@ type
     { IJSONRPCWrapper }
     function GetJSONRPCWrapper: TJSONRPCWrapper;
 
+
+    /// <summary>
+    /// Returns the JSONHttpMethod attribute or '' if it doesn't exist.
+    /// </summary>
     function GetHttpMethod(const AMethodType: TRttiType;
       const AMethMD: TIntfMethEntry): string;
+
+    /// <summary>
+    /// Returns the UrlSuffix attribute or '' if it doesn't exist.
+    /// </summary>
     function GetUrlSuffix(const AMethodType: TRttiType;
       const AMethMD: TIntfMethEntry): string;
 
@@ -455,6 +464,11 @@ type
 
     property JSONRPCWrapper: TJSONRPCWrapper read GetJSONRPCWrapper;
     property OwnsObjects: Boolean read FOwnsObjects write FOwnsObjects;
+  end;
+
+  TJSONWrapper = class(TJSONRPCWrapper)
+  protected
+    procedure InitClient; override;
   end;
 
   /// <summary> JSON RPC server side handling
@@ -561,6 +575,7 @@ type
   end;
 
 procedure RegisterJSONRPCWrapper(const ATypeInfo: PTypeInfo);
+procedure RegisterJSONWrapper(const ATypeInfo: PTypeInfo); inline;
 procedure RegisterInvokableClass(const AClass: TClass);
 
 /// <summary>
@@ -631,6 +646,11 @@ end;
 procedure RegisterJSONRPCWrapper(const ATypeInfo: PTypeInfo);
 begin
   TJSONRPCWrapper.RegisterWrapper(ATypeInfo);
+end;
+
+procedure RegisterJSONWrapper(const ATypeInfo: PTypeInfo);
+begin
+  RegisterJSONRPCWrapper(ATypeInfo);
 end;
 
 procedure RegisterInvokableClass(const AClass: TClass);
@@ -938,7 +958,8 @@ begin
   LType := AMethodType;
   LHttpMethod := LType.GetAttribute<JSONHttpMethodAttribute>;
   if Assigned(LHttpMethod) then
-    Result := LHttpMethod.HttpMethod;
+    Result := LHttpMethod.HttpMethod else
+    Result := '';
 end;
 
 function TJSONRPCWrapper.GetUrlSuffix(
@@ -951,7 +972,8 @@ begin
   LType := AMethodType;
   LUrlSuffix := LType.GetAttribute(UrlSuffixAttribute) as UrlSuffixAttribute;
   if Assigned(LUrlSuffix) then
-    Result := LUrlSuffix.UrlSuffix;
+    Result := LUrlSuffix.UrlSuffix else
+    Result := '';
 end;
 
 function TJSONRPCWrapper.GetOnLogOutgoingJSONRequest: TOnLogOutgoingJSONRequest;
@@ -990,6 +1012,15 @@ procedure TJSONRPCWrapper.UpdateServerURL(
   var VServerURL: string);
 begin
 end;
+
+{ TJSONWrapper }
+
+procedure TJSONWrapper.InitClient;
+begin
+  FAppendMethodName := False;
+end;
+
+{ TIntfMethEntryHelper }
 
 function TIntfMethEntryHelper.GetSelfInfo: PTypeInfo;
 begin
@@ -1121,8 +1152,12 @@ begin
 
     var LIntfType := FRttiContext.GetType(AMethMD.MethodInfo);
     DumpType(LIntfType);
-    var LJSONMethodName := GetMethodName(AMethMD);
-    LJSONMethodObj.AddPair(SMETHOD, LJSONMethodName);
+
+    if FAppendMethodName then
+      begin
+        var LJSONMethodName := GetMethodName(AMethMD);
+        LJSONMethodObj.AddPair(SMETHOD, LJSONMethodName);
+      end;
 
     {$REGION 'Parameter parsing, handling'}
     if AMethMD.ParamCount > 0 then
@@ -1844,6 +1879,7 @@ begin
   Assert(Assigned(GJSONRPCTransportWrapperClass),
     'GJSONRPCTransportWrapperClass is not assigned!');
   FClient := GJSONRPCTransportWrapperClass.Create;
+  FAppendMethodName := True;
 end;
 
 procedure TJSONRPCWrapper.DoBeforeInitializeHeaders(var VNetHeaders: TNetHeaders);
@@ -2590,6 +2626,7 @@ begin
 
       var LJSONRequest := LJSONRequestObj.Format();
       try
+
         var LJSONRPCVersion := LJSONRequestObj.FindValue(SJSONRPC);
         var LRPCVersion: Double := 0.0;
         if (not Assigned(LJSONRPCVersion)) or

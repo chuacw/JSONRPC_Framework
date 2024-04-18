@@ -101,6 +101,8 @@ type
     FName: string;
   end;
 
+  SkipJSONRPCHeaderAttribute = class(TCustomAttribute);
+
   /// <summary> An attribute to override the method name used to call the JSON RPC server.
   /// </summary>
   MethodNameAttribute = class(BaseJSONRPCAttribute)
@@ -166,6 +168,10 @@ type
 
 //    procedure FakeCall;
 //    procedure SendJSON(const AJSON: string; const AProc: TProc);
+  end;
+
+  IJSONMethods = interface(IInvokable)
+    ['{D9894CD7-251A-4354-B737-145A19BA21D8}']
   end;
   {$METHODINFO OFF}
   {$TYPEINFO OFF}
