@@ -115,17 +115,17 @@ procedure CheckTypeInfo(ATypeInfo: PTypeInfo); inline;
 /// <summary>
 /// Adds the "jsonrpc": "2.0" into the header, only if AJSONObj is non-null
 /// </summary>
-procedure AddJSONVersion(const AJSONObj: TJSONObject); inline;
+procedure AddJSONRPCVersion(const AJSONObj: TJSONObject); inline;
 
 /// <summary>
 /// Adds the "id": string/number into the header, only if AJSONResultObj is
 /// non-null
 /// </summary>
-procedure AddJSONID(const AJSONObj: TJSONObject;
+procedure AddJSONRPCID(const AJSONObj: TJSONObject;
   const LIDIsString: Boolean; const LJSONRPCRequestIDString: string;
   const LIDIsNumber: Boolean; const LJSONRPCRequestID: Int64);
 
-procedure AddJSONIDNull(const AJSONObj: TJSONObject);
+procedure AddJSONRPCIDNull(const AJSONObj: TJSONObject);
 procedure AddJSONCode(const AJSONObj: TJSONObject; ACode: Integer);
 procedure AddJSONError(const AJSONObj: TJSONObject; const AErrorObj: TJSONObject);
 procedure RemoveJSONResult(const AJSONObj: TJSONObject);
@@ -653,7 +653,7 @@ begin
   {$ENDIF}
 end;
 
-procedure AddJSONVersion(const AJSONObj: TJSONObject);
+procedure AddJSONRPCVersion(const AJSONObj: TJSONObject);
 begin
   if not Assigned(AJSONObj) or // If it's empty, don't add
      Assigned(AJSONObj.FindValue(SJSONRPC)) then  // or if it's already assigned
@@ -662,7 +662,7 @@ begin
   AJSONObj.AddPair(SJSONRPC, FloatToJson(2.0));
 end;
 
-procedure AddJSONID(const AJSONObj: TJSONObject;
+procedure AddJSONRPCID(const AJSONObj: TJSONObject;
   const LIDIsString: Boolean; const LJSONRPCRequestIDString: string;
   const LIDIsNumber: Boolean; const LJSONRPCRequestID: Int64);
 begin
@@ -676,7 +676,7 @@ begin
     AJSONObj.AddPair(SID, LJSONRPCRequestID);
 end;
 
-procedure AddJSONIdNull(const AJSONObj: TJSONObject);
+procedure AddJSONRPCIdNull(const AJSONObj: TJSONObject);
 var
   LID: TJSONPair;
 begin
@@ -1113,7 +1113,7 @@ begin
   // Write this {"jsonrpc": "2.0", "result": 19, "id": 1}
   var LJSONObject := TJSONObject.Create;
   try
-    AddJSONVersion(LJSONObject);
+    AddJSONRPCVersion(LJSONObject);
     case ATypeInfo.Kind of
       tkInteger: LJSONObject.AddPair(SRESULT, AResponseValue.AsInteger);
       tkString, tkLString, tkUString:

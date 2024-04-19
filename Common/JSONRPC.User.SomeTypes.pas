@@ -63,7 +63,7 @@ type
   ISomeJSONRPC = interface(IJSONRPCMethods)
     ['{BDA67613-BA2E-415A-9C4E-DE5BD519C05E}']
 
-    [JSONNotify]
+    [JSONRPCNotify]
     procedure ANotifyMethod;
 
     procedure CallSomeMethod;

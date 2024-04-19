@@ -225,6 +225,16 @@ type
     class constructor Create;
     class destructor Destroy;
 
+    /// <summary>
+    /// Adds the JSON RPC version, or skips it, depending on the implementation
+    /// </summary>
+    procedure AddJSONRPCVersion(const AJSONObj: TJSONObject); virtual;
+
+    /// <summary>
+    /// Adds the JSON RPC ID, or skips it, depending on the implementation
+    /// </summary>
+    function GetIsNotification(const AMethodType: TRttiType): Boolean; virtual;
+
     // These help in unit testing
     procedure DoAfterExecute(const AMethodName: string; AJSONRequest: TStream); virtual;
     procedure DoBeforeExecute(const AMethodName: string; AJSONRequest: TStream); virtual;
@@ -468,6 +478,16 @@ type
 
   TJSONWrapper = class(TJSONRPCWrapper)
   protected
+    /// <summary>
+    /// Does nothing, so that JSON RPC version is not sent when dispatching the call
+    /// </summary>
+    procedure AddJSONRPCVersion(const AJSONObj: TJSONObject); override;
+
+    /// <summary>
+    /// Returns true in order not to send JSON RPC ID when dispatching the call
+    /// </summary>
+    function GetIsNotification(const AMethodType: TRttiType): Boolean; override;
+
     procedure InitClient; override;
   end;
 
@@ -1015,6 +1035,16 @@ end;
 
 { TJSONWrapper }
 
+procedure TJSONWrapper.AddJSONRPCVersion(const AJSONObj: TJSONObject);
+begin
+  // Empty
+end;
+
+function TJSONWrapper.GetIsNotification(const AMethodType: TRttiType): Boolean;
+begin
+  Result := True;
+end;
+
 procedure TJSONWrapper.InitClient;
 begin
   FAppendMethodName := False;
@@ -1077,6 +1107,16 @@ function TJSONRPCWrapper.GetMethod(const AMethMD: TIntfMethEntry): TRttiMethod;
 begin
   var LType := FRttiContext.GetType(AMethMD.MethodInfo); // TRttiInterfaceType
   Result := LType.GetDeclaredMethods[AMethMD.Pos-3];
+end;
+
+procedure TJSONRPCWrapper.AddJSONRPCVersion(const AJSONObj: TJSONObject);
+begin
+  JSONRPC.JsonUtils.AddJSONRPCVersion(AJSONObj);
+end;
+
+function TJSONRPCWrapper.GetIsNotification(const AMethodType: TRttiType): Boolean;
+begin
+  Result := AMethodType.HasAttribute<JSONRPCNotifyAttribute>;
 end;
 
 function TJSONRPCWrapper.GetMethodName(const AMethMD: TIntfMethEntry): string;
@@ -1148,7 +1188,7 @@ begin
   LJSONMethodObj := TJSONObject.Create;
   try
     {$REGION 'Convert native Delphi call to a JSON string'}
-    AddJSONVersion(LJSONMethodObj);
+    AddJSONRPCVersion(LJSONMethodObj);
 
     var LIntfType := FRttiContext.GetType(AMethMD.MethodInfo);
     DumpType(LIntfType);
@@ -1432,9 +1472,7 @@ begin
 
     // Only add ID if it's not a Notification call
     var LMethodType := LIntfType;
-//    var LJSONNotify := LMethodType.GetAttribute<JSONNotifyAttribute>;
-//    var LIsNotification := LJSONNotify <> nil;
-    var LIsNotification := LMethodType.HasAttribute<JSONRPCNotifyAttribute>;
+    var LIsNotification := GetIsNotification(LMethodType);  // LMethodType.HasAttribute<JSONRPCNotifyAttribute>;
     var LMethodID := -1;
     if not LIsNotification then
       begin
@@ -2744,7 +2782,7 @@ begin
         if (not LIsNotification) or Assigned(LMethod.ReturnType) then
           LJSONResponseObj := TJSONObject.Create;
 
-        AddJSONVersion(LJSONResponseObj);
+        AddJSONRPCVersion(LJSONResponseObj);
 
         if FPersistent and (High(FJSONRPCInstances) < LClassIndex) then
           SetLength(FJSONRPCInstances, LClassIndex+1);
@@ -3176,7 +3214,7 @@ begin
         // add Notification ID here
         if not LIsNotification then
           begin
-            AddJSONID(LJSONResponseObj,
+            AddJSONRPCID(LJSONResponseObj,
               LIDIsString, LJSONRPCRequestIDString,
               LIDIsNumber, LJSONRPCRequestID
             );
@@ -3203,7 +3241,7 @@ begin
           // assigned on Linux
           if not Assigned(LJSONResponseObj) then
             LJSONResponseObj := TJSONObject.Create;
-          AddJSONVersion(LJSONResponseObj);
+          AddJSONRPCVersion(LJSONResponseObj);
           if not Assigned(LJSONResponseObj.FindValue(SERROR)) then
             begin
               var LJSONErrorObj := TJSONObject.Create;
@@ -3218,7 +3256,7 @@ begin
               LJSONResponseObj.AddPair(SERROR, LJSONErrorObj);
             end;
           // Add default ID
-          AddJSONIDNull(LJSONResponseObj);
+          AddJSONRPCIDNull(LJSONResponseObj);
           VResponseObj := LJSONResponseObj;
         end;
       on E: EJSONRPCException do
@@ -3230,7 +3268,7 @@ begin
 
           // Create error object to be returned to JSON RPC client
           // Add default error
-          AddJSONVersion(LJSONResponseObj);
+          AddJSONRPCVersion(LJSONResponseObj);
 
           if not Assigned(LJSONResponseObj.FindValue(SERROR)) then
             begin
@@ -3255,7 +3293,7 @@ begin
             end;
 
           // Add default ID
-          AddJSONIDNull(LJSONResponseObj);
+          AddJSONRPCIDNull(LJSONResponseObj);
           VResponseObj := LJSONResponseObj;
         end;
     else
@@ -3271,7 +3309,7 @@ begin
       // handle failure to parse
       if Assigned(LJSONResponseObj) then
         begin
-          AddJSONVersion(LJSONResponseObj);
+          AddJSONRPCVersion(LJSONResponseObj);
           var LJSONErrorObj := TJSONObject.Create;
           case LJSONState of
             tjGettingMethod, tjLookupMethod: begin
@@ -3304,7 +3342,7 @@ begin
               end;
           end;
           LJSONResponseObj.AddPair(SERROR, LJSONErrorObj);
-          AddJSONIDNull(LJSONResponseObj);
+          AddJSONRPCIDNull(LJSONResponseObj);
           VResponseObj := LJSONResponseObj;
         end;
     end; // on Exception... else
@@ -3484,7 +3522,7 @@ begin
 
         // LJSONResultObj := TJSONObject.Create;
         // try
-        AddJSONVersion(LJSONResponseObj);
+        AddJSONRPCVersion(LJSONResponseObj);
         LJSONState := tjLookupMethod;
         LParseMethodName := LMethodName;
         var LParamCount := 0;
@@ -3972,7 +4010,7 @@ begin
         // add Notification ID here
         if not LIsNotification then
           begin
-            AddJSONID(LJSONResponseObj,
+            AddJSONRPCID(LJSONResponseObj,
               LIDIsString, LJSONRPCRequestIDString,
               LIDIsNumber, LJSONRPCRequestID
             );
@@ -3999,7 +4037,7 @@ begin
         begin
           // Create error object to be returned to JSON RPC client
           // Add default error
-          AddJSONVersion(LJSONResponseObj);
+          AddJSONRPCVersion(LJSONResponseObj);
 
           if not Assigned(LJSONResponseObj.FindValue(SERROR)) then
             begin
@@ -4024,13 +4062,13 @@ begin
             end;
 
           // Add default ID
-          AddJSONIDNull(LJSONResponseObj);
+          AddJSONRPCIDNull(LJSONResponseObj);
         end;
     else
       // handle failure to parse
       if Assigned(LJSONResponseObj) then
         begin
-          AddJSONVersion(LJSONResponseObj);
+          AddJSONRPCVersion(LJSONResponseObj);
           var LJSONErrorObj := TJSONObject.Create;
           case LJSONState of
             tjGettingMethod: begin
@@ -4058,7 +4096,7 @@ begin
               end;
           end;
           LJSONResponseObj.AddPair(SERROR, LJSONErrorObj);
-          AddJSONIDNull(LJSONResponseObj);
+          AddJSONRPCIDNull(LJSONResponseObj);
         end;
     {$ENDREGION 'Exception handler'}
     end; // on Exception... else
