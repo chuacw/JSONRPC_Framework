@@ -44,7 +44,7 @@ In the rest of this document, we'll refer to the example of an interface called 
 ISomeJSONRPC = interface(IJSONRPCMethods)
   [YourGUIDhere] // it is important to declare a GUID, or the compiler will
   complain "E2015 Operator not applicable to this operand type"
-    [JSONNotify]
+    [JSONRPCNotify]
     procedure ANotifyMethod;
 
     function AddSomeXY(X, Y: Integer): Integer;
