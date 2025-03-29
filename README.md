@@ -288,9 +288,7 @@ RegisterRecordHandler, without altering any part of the framework.
 Examples
 ---
 
-There are sample clients and servers in the examples directory.
-The clients and servers have been separately tested to run on Android, Linux
-and Windows.
+Examples directory was accidentally destroyed. Working on restoration.
 
 Bugs / Feature Requests
 ---
