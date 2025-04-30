@@ -22,6 +22,8 @@ Contents
 * [Examples](#examples)
 * [Bugs / Feature Requests](#bugs--feature-requests)
 * [Discussions](#discussions)
+* [Licensing](#licensing)
+* [Further development](#further-development)
 
 Introduction
 ---
