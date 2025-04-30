@@ -299,3 +299,11 @@ repository](https://github.com/chuacw/JSONRPC_Framework/issues/new).
 Discussions
 ---
 For discussions of any new features, please visit [JSON RPC Framework discussions](https://github.com/chuacw/JSONRPC_Framework/discussions).
+
+Licensing
+---
+Commercial use prohibited.
+
+Further development
+---
+Further development of this library has moved elsewhere.

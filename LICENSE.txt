@@ -1,0 +1,3 @@
+Commercial use prohibited.
+If you're including this library in any commercial application that costs money, please
+contact me by opening a discussion on the GitHub repository.
