@@ -14,14 +14,6 @@ type
     property EnumName: string read FName;
   end;
 
-  [EnumAs(2, 'base64+zstd')]
-  TEncoding = (
-    base58,
-    base64,
-    base64_zstd, // 2, base64+zstd
-    jsonParsed
-  );
-
 implementation
 
 { EnumAsAttribute }

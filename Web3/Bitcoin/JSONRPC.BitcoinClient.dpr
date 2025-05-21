@@ -21,7 +21,10 @@ uses
   JSONRPC.User.Types.BlockchainInfo in 'JSONRPC.User.Types.BlockchainInfo.pas',
   JSONRPC.User.Types.BestBlockHash in 'JSONRPC.User.Types.BestBlockHash.pas',
   JSONRPC.User.Types.BlockInfo in 'JSONRPC.User.Types.BlockInfo.pas',
-  JSONRPC.User.Types.BlockDefaultInfo in 'JSONRPC.User.Types.BlockDefaultInfo.pas';
+  JSONRPC.User.Types.BlockDefaultInfo in 'JSONRPC.User.Types.BlockDefaultInfo.pas',
+  JSONRPC.RttiUtils in '..\..\Common\JSONRPC.RttiUtils.pas',
+  JSONRPC.Common.FixBuggyNativeTypes in '..\..\Common\JSONRPC.Common.FixBuggyNativeTypes.pas',
+  JSONRPC.Common.Converters in '..\..\Common\JSONRPC.Common.Converters.pas';
 
 procedure BitcoinOutgoingRequest(const AJSONRPCRequest: string);
 begin

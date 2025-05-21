@@ -6,7 +6,7 @@ uses
   JSONRPC.TransportWrapper.HTTP, System.Classes, System.Net.URLClient;
 
 type
-  TJSONRPCHTTPTransportAptosWrapper = class(TJSONRPCHTTPTransportWrapper)
+  TJSONRPCAptosClient = class(TJSONRPCHTTPTransportWrapper)
   public
     procedure Post(const AURL: string; const ASource, AResponseContent: TStream;
       const AHeaders: TNetHeaders); override;
@@ -17,9 +17,9 @@ implementation
 uses
   JSONRPC.Common.Types;
 
-{ TJSONRPCHTTPTransportAptosWrapper }
+{ TJSONRPCAptosClient }
 
-procedure TJSONRPCHTTPTransportAptosWrapper.Post(const AURL: string;
+procedure TJSONRPCAptosClient.Post(const AURL: string;
   const ASource, AResponseContent: TStream; const AHeaders: TNetHeaders);
 begin
   FClient.Get(AURL, AResponseContent, AHeaders);
@@ -27,7 +27,7 @@ end;
 
 procedure InitTransportWrapperHTTP;
 begin
-  GJSONRPCTransportWrapperClass := TJSONRPCHTTPTransportAptosWrapper;
+  GJSONRPCTransportWrapperClass := TJSONRPCAptosClient;
 end;
 
 initialization

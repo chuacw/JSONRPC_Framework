@@ -8,9 +8,15 @@ interface
 
 uses
   System.JSON.Serializers, System.Generics.Collections, System.JSON.Converters,
-  JSONRPC.Web3.Solana.CustomConverters, JSONRPC.Web3.Solana.Attributes;
+  JSONRPC.Web3.Solana.Converters, JSONRPC.Web3.Solana.Attributes,
+  // JSONRPC.Web3.SolanaTypes.getAccountInfoResultsType,
+  JSONRPC.Web3.Solana.Encoding;
+
+{$TYPEINFO ON}
 
 type
+
+  TCommitment = (finalized, confirmed, processed);
 
   TByIdentity = TDictionary<string, TArray<Integer>>;
   /// <summary> This needs to be in a separate type section as generics
@@ -18,16 +24,31 @@ type
   /// </summary>
   TByIdentityConverter = class(TJsonStringDictionaryConverter<TArray<Integer>>);
 
-type
+  RPCResponse<T> = record
+    context: record
+      slot: UInt64;
+    end;
+    value: T;
+  end;
+
+  RPCResponseContext<T> = record
+    context: record
+      apiVersion: string;
+      slot: UInt64;
+    end;
+    value: T;
+  end;
 
   [JsonSerialize(TJsonMemberSerialization.Fields)]
   TRange = record
   private
-    FfirstSlot: Integer;
-    FlastSlot: Integer;
+    [JsonName('firstSlot')]
+    FfirstSlot: UInt64;
+    [JsonName('lastSlot')]
+    FlastSlot: UInt64;
   public
-    property firstSlot: Integer read FfirstSlot write FfirstSlot;
-    property lastSlot: Integer read FlastSlot write FlastSlot;
+    property firstSlot: UInt64 read FfirstSlot write FfirstSlot;
+    property lastSlot: UInt64 read FlastSlot write FlastSlot;
   end;
 
   [JsonSerialize(TJsonMemberSerialization.Fields)]
@@ -38,19 +59,18 @@ type
     property slot: Integer read Fslot write Fslot;
   end;
 
-  [JsonSerialize(TJsonMemberSerialization.Fields)]
-  TgetBlockProductionContext = record
-  private
-    [JsonName('apiVersion')]
-    FapiVersion: string;
-
-    [JsonName('slot')]
-    Fslot: UInt64;
-  public
-    property apiVersion: string read FapiVersion write FapiVersion;
-    property slot: UInt64 read Fslot write Fslot;
-  end;
-
+//  [JsonSerialize(TJsonMemberSerialization.Fields)]
+//  TgetBlockProductionContext = record
+//  private
+//    [JsonName('apiVersion')]
+//    FapiVersion: string;
+//
+//    [JsonName('slot')]
+//    Fslot: UInt64;
+//  public
+//    property apiVersion: string read FapiVersion write FapiVersion;
+//    property slot: UInt64 read Fslot write Fslot;
+//  end;
 
   [JsonSerialize(TJsonMemberSerialization.Fields)]
   TgetBlockProductionValue = record
@@ -69,20 +89,1148 @@ type
     property range: TRange read Frange write Frange;
   end;
 
+  TgetBlockProductionResult = RPCResponseContext<TgetBlockProductionValue>;
+
+  RPCResponseU64 = RPCResponse<UInt64>;
+
+  TTransactionDetails = (full, accounts, signatures, none);
+
+  commitmentConfigObject = record
+    commitment: TCommitment;
+    constructor Create(ACommitment: TCommitment);
+  end;
+
+  IdentityObj = record
+    identity: string;
+    constructor Create(const AIdentity: string);
+  end;
+
+  CommitmentContextSlotObj = record
+    commitment: TCommitment;
+    minContextSlot: UInt64;
+    constructor Create(ACommitment: TCommitment; AMinContextSlot: UInt64); overload;
+    constructor Create(AMinContextSlot: UInt64; ACommitment: TCommitment = finalized); overload;
+  end;
+
   [JsonSerialize(TJsonMemberSerialization.Fields)]
-  TgetBlockProductionResult = record
+  getAccountInfoResultValue = record
   private
-    Fcontext: TContext;
-    Fvalue: TgetBlockProductionValue;
+    [JsonName('data')]
+    Fdata: TArray<string>;
+
+    [JsonName('executable')]
+    Fexecutable: Boolean;
+
+    [JsonName('lamports')]
+    Flamports: UInt64;
+
+    [JsonName('owner')]
+    Fowner: string;
+
+    [JsonName('rentEpoch')]
+    FrentEpoch: UInt64;
+
+    [JsonName('space')]
+    Fspace: UInt64;
   public
-    property context: TContext read Fcontext write Fcontext;
-    property value: TgetBlockProductionValue read Fvalue write Fvalue;
+    property data: TArray<string>
+      read Fdata write Fdata;
+    property executable: Boolean read Fexecutable write Fexecutable;
+    property lamports: UInt64 read Flamports write Flamports;
+    property owner: string read Fowner write Fowner;
+    property rentEpoch: UInt64 read FrentEpoch write FrentEpoch;
+    property space: UInt64 read Fspace write Fspace;
+  end;
+
+  [JsonSerialize(TJsonMemberSerialization.Fields)]
+  getAccountInfoResultValue_2 = record
+  private
+    [JsonName('data')]
+    Fdata: string;
+
+    [JsonName('executable')]
+    Fexecutable: Boolean;
+
+    [JsonName('lamports')]
+    Flamports: UInt64;
+
+    [JsonName('owner')]
+    Fowner: string;
+
+    [JsonName('rentEpoch')]
+    FrentEpoch: UInt64;
+
+    [JsonName('space')]
+    Fspace: UInt64;
+  public
+    property data: string read Fdata write Fdata;
+    property executable: Boolean read Fexecutable write Fexecutable;
+    property lamports: UInt64 read Flamports write Flamports;
+    property owner: string read Fowner write Fowner;
+    property rentEpoch: UInt64 read FrentEpoch write FrentEpoch;
+    property space: UInt64 read Fspace write Fspace;
+  end;
+
+  getAccountInfoResult = RPCResponseContext<getAccountInfoResultValue>;
+  getAccountInfoResult_2 = RPCResponseContext<getAccountInfoResultValue_2>;
+
+  TDataSliceOffset = record
+    length: NativeUInt;
+    offset: NativeUInt;
+    constructor Create(ALength, AOffset: NativeUInt);
+  end;
+
+  [JsonSerialize(TJsonMemberSerialization.Fields)]
+  getAccountInfoConfigObject_1 = record
+  private
+    [JsonName('commitment')]
+    Fcommitment: TCommitment;
+
+    [JsonName('encoding')]
+    Fencoding: TEncoding;
+
+    [JsonName('dataSlice')]
+    FdataSlice: TDataSliceOffset;
+  public
+    property commitment: TCommitment read Fcommitment write Fcommitment;
+    property encoding: TEncoding read Fencoding write Fencoding;
+    property dataSlice: TDataSliceOffset read FdataSlice write FdataSlice;
+  end;
+
+  [JsonSerialize(TJsonMemberSerialization.Fields)]
+  getAccountInfoConfigObject_2 = record
+  private
+    [JsonName('encoding')]
+    Fencoding: TEncoding;
+  public
+    property encoding: TEncoding read Fencoding write Fencoding;
+  end;
+
+  [JsonSerialize(TJsonMemberSerialization.Fields)]
+  getAccountInfoConfigObject_3 = record
+  private
+    [JsonName('commitment')]
+    Fcommitment: TCommitment;
+
+    [JsonName('encoding')]
+    Fencoding: TEncoding;
+
+  public
+    property commitment: TCommitment read Fcommitment write Fcommitment;
+    property encoding: TEncoding read Fencoding write Fencoding;
+  end;
+
+  getAccountInfoConfigObject = record
+  public
+    class function Create(AEncoding: TEncoding): getAccountInfoConfigObject_2; overload; static;
+    class function Create(ACommitment: TCommitment; AEncoding: TEncoding;
+      const ADataSlize: TDataSliceOffset): getAccountInfoConfigObject_1; overload; static;
+    class function Create(ACommitment: TCommitment; AEncoding: TEncoding): getAccountInfoConfigObject_3; overload; static;
+    class function Create(AEncoding: TEncoding; ACommitment: TCommitment): getAccountInfoConfigObject_3; overload; static;
+  end;
+
+  getBalanceConfigObject = CommitmentContextSlotObj;
+
+  getBlockHeightConfigObject = CommitmentContextSlotObj;
+
+//  getBlockHeightConfigObject = record
+//    commitment: TCommitment;
+//    minContextSlot: UInt64;
+//    constructor Create(AMinContextSlot: UInt64; ACommitment: TCommitment = finalized);
+//  end;
+
+  getBlockConfigObject = record
+    encoding: TEncoding;
+    maxSupportedTransactionVersion: Integer;
+    transactionDetails: TTransactionDetails;
+    rewards: Boolean;
+    constructor Create(ACommitment: TCommitment;
+      AEncoding: TEncoding = TEncoding.json;
+      ATransactionDetails: TTransactionDetails = full;
+      AMaxSupportedTransactionVersion: Integer = 0;
+      ARewards: Boolean = True
+    );
+  end;
+
+  getBlockProductionConfigObjectRange = record
+    firstSlot: UInt64;
+    lastSlot: UInt64;
+  end;
+
+  getBlockProductionConfigObject = record
+    commitment: TCommitment;
+    identity: string;
+    range: getBlockProductionConfigObjectRange;
+  end;
+
+  getBlockResultTransactionMetaloadedAddresses = record
+    // readonly: [];
+    // writable: [];
+  end;
+
+  getBlockResultTransactionMetainnerInstructionsinstructions = record
+    accounts: TArray<UInt64>;
+    data: string;
+    programIdIndex: UInt64;
+    stackHeight: UInt64;
+  end;
+
+  getBlockResultTransactionMetainnerInstructions = record
+    index: UInt64;
+    instructions: TArray<getBlockResultTransactionMetainnerInstructionsinstructions>;
+  end;
+
+  TokenAmount = record
+    amount: string;
+    decimals: Integer;
+    uiAmount: Float64;
+    uiAmountString: string;
+  end;
+
+  uiTokenAmount = TokenAmount;
+
+  TokenBalances = record
+    accountIndex: UInt64;
+    mint: string;
+    owner: string;
+    programId: string;
+    uiTokenAmount: TokenAmount;
+  end;
+
+  getBlockResultTransactionMeta = record
+    computeUnitsConsumed: UInt64;
+    // err: null; // how to translate?
+    fee: UInt64;
+    innerInstructions: TArray<getBlockResultTransactionMetainnerInstructions>;
+    loadedAddresses: getBlockResultTransactionMetaloadedAddresses;
+    logMessages: TArray<string>;
+    postBalances: TArray<UInt64>;
+    preTokenBalances: TArray<TokenBalances>; // ???
+    postTokenBalances: TArray<TokenBalances>;
+    // rewards: array
+    // status:
+  end;
+
+  getBlockResultTransactionTransactionInstruction = record
+    accounts: TArray<UInt64>;
+    data: string;
+    programIdIndex: UInt64;
+    stackHeight: UInt64;
+  end;
+
+  getBlockResultTransactionTransaction = record
+    message: record
+      accountKeys: TArray<string>;
+    end;
+    // addressTableLookups: [];
+    header: record
+      numReadonlySignedAccounts: UInt64;
+      numReadonlyUnsignedAccounts: UInt64;
+      numRequiredSignatures: UInt64;
+    end;
+    instructions: TArray<getBlockResultTransactionTransactionInstruction>;
+  end;
+
+  getBlockResultTransaction = record
+    meta: getBlockResultTransactionMeta;
+    transaction: getBlockResultTransactionTransaction;
+  end;
+
+  getBlockResultRewards = record
+    // commission: null // How to translate?
+    lamports: UInt64;
+    postBalance: UInt64;
+    pubKey: string;
+    rewardType: string;
+  end;
+
+//  getBlockResult = record
+//    blockHash: string;
+//    previousBlockhash: string;
+//    parentSlot: UInt64;
+//    transactions: TArray<getBlockResultTransaction>;
+//    blockTime: Int64;
+//    blockHeight: UInt64;
+//    rewards: TArray<getBlockResultRewards>;
+//  end;
+
+  getBlockCommitmentResult = record
+    commitment: TArray<UInt64>;
+    totalStake: Integer;
+  end;
+
+  getVersionResult = record
+    [JsonName('solana-core')]
+    solana_core: string;
+    [JsonName('feature-set')]
+    feature_set: UInt32;
+  end;
+
+  votePubkey = record
+    votePubkey: string;
+    constructor Create(const AVotePubKey: string);
+  end;
+  getVoteAccountsConfigObject = record
+    commitment: TCommitment;
+    votePubkey: string;
+    keepUnstakedDelinquents: Boolean;
+    delinquentSlotDistance: UInt64;
+    constructor Create(ACommitment: TCommitment; const AVotePubkey: string;
+     AkeepUnstakedDelinquents: Boolean;
+     AdelinquentSlotDistance: UInt64);
+  end;
+  getVoteAccountsResultCurrentItem = record
+    votePubkey: string;
+    nodePubkey: string;
+    activatedStake: UInt64;
+    epochVoteAccount: Boolean;
+    commission: Float64;
+    lastVote: UInt64;
+    epochCredits: TArray<TArray<UInt64>>; // [epoch, credits, previousCredits]
+    rootSlot: UInt64;
+  end;
+  getVoteAccountsResult = record
+    current: TArray<getVoteAccountsResultCurrentItem>;
+    delinquent: TArray<getVoteAccountsResultCurrentItem>;
+  end;
+
+  isBlockhashValidResult = RPCResponseContext<Boolean>;
+
+  requestAirDropCommitment = record
+    commitment: TCommitment;
+    constructor Create(ACommitment: TCommitment);
+  end;
+
+  getEpochInfoResult = record
+    absoluteSlot: UInt64;
+    blockHeight: UInt64;
+    epoch: UInt64;
+    slotIndex: UInt64;
+    slotsInEpoch: UInt64;
+    transactionCount: UInt64;
+  end;
+
+  getEpochInfoConfigObject = record
+    commitment: TCommitment;
+    minContextSlot: UInt64;
+  end;
+
+  getEpochScheduleResult = record
+    slotsPerEpoch: UInt64;
+    leaderScheduleSlotOffset: UInt64;
+    warmup: Boolean;
+    firstNormalEpoch: UInt64;
+    firstNormalSlot: UInt64;
+  end;
+
+  getFeeForMessageResult = record
+  end;
+
+  getFeeForMessageConfigObject = getEpochInfoConfigObject;
+
+  getHighestSnapshotSlotResult = record
+    full: UInt64;
+    incremental: UInt64;
+  end;
+
+  getIdentityResult = record
+    identity: string;
+  end;
+
+  getInflationGovernorConfigObject = TCommitment;
+
+  getInflationGovernorResult = record
+    foundation: Float64;
+    foundationTerm: Float64;
+    initial: Float64;
+    taper: Float64;
+    terminal: Float64;
+  end;
+
+  getBlocksConfigObject = record
+    commitment: TCommitment;
+    constructor Create(ACommitment: TCommitment);
+  end;
+  getBlocksResult = TArray<UInt64>;
+
+  getBlocksWithLimitConfigObject = getBlocksConfigObject;
+  getBlocksWithLimitResult = TArray<UInt64>;
+
+  getClusterNodesResultItem = record
+    pubkey: string;
+    gossip: string;
+    pubsub: string;
+    rpc: string;
+    tpu: string;
+    featureSet: UInt32;
+    shredVersion: UInt16;
+    serveRepair: string;
+    tpuForwards: string;
+    tpuForwardsQuic: string;
+    tpuQuic: string;
+    tpuVote: string;
+    tvu: string;
+    version: string;
+  end;
+
+  getClusterNodesResult = TArray<getClusterNodesResultItem>;
+
+  getInflationRateResult = record
+    total: Float64;
+    validator: Float64;
+    foundation: Float64;
+    epoch: UInt64;
+  end;
+
+  getInflationRewardResult = record
+  end;
+
+  getLargestAccountsConfigObject = record
+    commitment: TCommitment;
+    filter: string;
+  end;
+
+  getLargestAccountsResultItem = record
+    address: string;
+    lamports: UInt64;
+  end;
+  getLargestAccountsResult = RPCResponse<TArray<getLargestAccountsResultItem>>;
+
+  getLatestBlockhashResultItem = record
+    blockhash: string;
+    lastValidBlockHeight: UInt64;
+  end;
+  getLatestBlockhashResult = RPCResponseContext<getLatestBlockhashResultItem>;
+  getLeaderScheduleResult = TDictionary<string, TArray<UInt64>>;
+
+  getMinimumBalanceForRentExemptionConfigObject = getBlocksConfigObject;
+
+  [JsonSerialize(TJsonMemberSerialization.Fields)]
+  TdataSlice = record
+    length: uint64;
+    size: uint64;
+  public
+    constructor Create(ALength, ASize: UInt64);
+  end;
+
+  getMultipleAccountsConfigObject = record
+    commitment: TCommitment;
+    minContextSlot: UInt64;
+    /// <summary>
+    /// Only available to base58, base64 or base64+zstd encodings
+    /// </summary>
+    dataSlice: TdataSlice;
+    encoding: TEncoding;
+  end;
+
+  getMultipleAccountsResultItem = record
+    data: TArray<string>;
+    lamports: UInt64;
+    owner: string;
+    executable: Boolean;
+    rentEpoch: UInt64;
+    space: UInt64;
+  end;
+
+  getMultipleAccountsResult = RPCResponseContext<TArray<getMultipleAccountsResultItem>>;
+  getProgramAccountsResult = record
+  end;
+
+  getRecentPerformanceSamplesResultItem = record
+    slot: UInt64;
+    numTransactions: UInt64;
+    numSlots: UInt64;
+    samplePeriodSecs: UInt16;
+    numNonVoteTransactions: UInt64;
+  end;
+  getRecentPerformanceSamplesResult = TArray<getRecentPerformanceSamplesResultItem>;
+
+  getRecentPrioritizationFeesResultItem = record
+    slot: UInt64;
+    prioritizationFee: UInt64;
+  end;
+  getRecentPrioritizationFeesResult = TArray<getRecentPrioritizationFeesResultItem>;
+
+  getSignaturesForAddressResultItem = record
+    signature: string;
+    slot: UInt64;
+    err: record // TODO -ochuacw -cInvestigate: What are the fields for err?
+    end;
+    memo: string;
+    blockTime: Int64;
+    confirmationStatus: TCommitment; // TODO -ochuacw -cInvestigate: is this TCommitment?
+  end;
+  getSignaturesForAddressResult = TArray<getSignaturesForAddressResultItem>;
+
+  getSignatureStatusesResultItem = record
+    slot: UInt64;
+    confirmations: NativeUInt;
+    err: record
+    end;
+    confirmationStatus: TCommitment;
+    // status: TDictionary<string, >;
+  end;
+  getSignatureStatusesResult = RPCResponseContext<TArray<getSignatureStatusesResultItem>>;
+  searchTransactionHistoryObj = record
+    searchTransactionHistory: Boolean;
+    constructor Create(ASearchTransactionHistory: Boolean);
+  end;
+
+  getSlotConfigObject = getBalanceConfigObject;
+  getSlotLeaderConfigObject = getBalanceConfigObject;
+  getStakeMinimumDelegationConfigObject = getBlocksConfigObject;
+
+  getSupplyConfigObject = record
+    commitment: TCommitment;
+    excludeNonCirculatingAccountsList: Boolean;
+    constructor Create(ACommitment: TCommitment;
+      AexcludeNonCirculatingAccountsList: Boolean);
+  end;
+  getSupplyResultItem = record
+    total: UInt64;
+    circulating: UInt64;
+    nonCirculating: UInt64;
+    nonCirculatingAccounts: TArray<string>;
+  end;
+  getSupplyResult = RPCResponseContext<getSupplyResultItem>;
+
+  getTokenAccountBalanceConfigObject = commitmentConfigObject;
+  getTokenAccountBalanceResultItem = record
+    amount: string;
+    decimals: UInt8;
+    uiAmount: Float64;
+    uiAmountString: string;
+  end;
+  getTokenAccountBalanceResult = RPCResponse<getTokenAccountBalanceResultItem>;
+
+  MintObj = record
+    mint: string;
+    constructor Create(const AMint: string);
+  end;
+  ProgramIdObj = record
+    programId: string;
+    constructor Create(const AProgramId: string);
+  end;
+
+  EncodingObj = record
+    encoding: TEncoding;
+    constructor Create(AEncoding: TEncoding);
+  end;
+  getTokenAccountsByDelegateConfigObject_2 = record
+    commitment: TCommitment;
+    minContextSlot: UInt64;
+    dataSlice: TDataSliceOffset;
+    encoding: TEncoding;
+  end;
+  getTokenAccountsByDelegateConfigObject = record
+    class function Create(
+      ACommitment: TCommitment;
+      AEncoding: TEncoding;
+      AMinContextSlot: UInt64;
+      ADataSlice: TDataSliceOffset
+    ): getTokenAccountsByDelegateConfigObject_2; overload; static;
+  end;
+
+  getTokenAccountsByDelegateResultItem = record
+  end;
+  getTokenAccountsByDelegateResult = RPCResponse<getTokenAccountsByDelegateResultItem>;
+
+  getTokenAccountsByOwnerResultItem = record
+    account: record
+      data: record
+        parsed: record
+          info: record
+            isNative: Boolean;
+            mint: string;
+            owner: string;
+            state: string;
+            tokenAmount: TokenAmount;
+          end;
+          [JsonName('type')]
+          &type: string;
+        end;
+        [JsonName('program')]
+        &program: string;
+      end;
+      executable: Boolean;
+      lamports: UInt64;
+      owner: string;
+      rentEpoch: UInt64;
+      space: UInt64;
+    end;
+    pubkey: string;
+  end;
+  getTokenAccountsByOwnerResultArray = TArray<getTokenAccountsByOwnerResultItem>;
+  getTokenAccountsByOwnerResult = RPCResponseContext<getTokenAccountsByOwnerResultArray>;
+
+  getTokenLargestAccountsResultItem = record
+    address: string;
+    amount: string;
+    decimals: Integer;
+    uiAmount: Float64;
+    uiAmountString: string;
+  end;
+  getTokenLargestAccountsResultArray = TArray<getTokenLargestAccountsResultItem>;
+  getTokenLargestAccountsResult = RPCResponseContext<getTokenLargestAccountsResultArray>;
+
+  getTokenSupplyResult = RPCResponseContext<TokenAmount>;
+
+  getTransactionConfigObject = record
+    commitment: TCommitment;
+    maxSupportedTransactionVersion: Integer;
+    encoding: TEncoding;
+    constructor Create(ACommitment: TCommitment;
+      AmaxSupportedTransactionVersion: Integer;
+      AEncoding: TEncoding);
+  end;
+
+  [JsonSerialize(TJsonMemberSerialization.Fields)]
+  TInstruction = record
+  private
+    [JsonName('accounts')]
+    Faccounts: TArray<Integer>;
+    [JsonName('data')]
+    Fdata: string;
+    [JsonName('programIdIndex')]
+    FprogramIdIndex: Integer;
+    [JsonName('stackHeight')]
+    FstackHeight: Integer;
+  public
+    property accounts: TArray<Integer> read Faccounts write Faccounts;
+    property data: string read Fdata write Fdata;
+    property programIdIndex: Integer read FprogramIdIndex write FprogramIdIndex;
+    property stackHeight: Integer read FstackHeight write FstackHeight;
+  end;
+
+  [JsonSerialize(TJsonMemberSerialization.Fields)]
+  TInnerInstruction = record
+  private
+    [JsonName('index')]
+    Findex: Integer;
+    [JsonName('instructions')]
+    Finstructions: TArray<TInstruction>;
+  public
+    property index: Integer read Findex write Findex;
+    property instructions: TArray<TInstruction> read Finstructions write Finstructions;
+  end;
+
+  [JsonSerialize(TJsonMemberSerialization.Fields)]
+  TLoadedAddresses = record
+  private
+    [JsonName('readonly')]
+    Freadonly: TArray<string>;
+    [JsonName('writable')]
+    Fwritable: TArray<string>;
+  public
+    property readonly: TArray<string> read Freadonly write Freadonly;
+    property writable: TArray<string> read Fwritable write Fwritable;
+  end;
+
+  [JsonSerialize(TJsonMemberSerialization.Fields)]
+  TPostTokenBalance = record
+  private
+    [JsonName('accountIndex')]
+    FaccountIndex: Integer;
+    [JsonName('mint')]
+    Fmint: string;
+    [JsonName('owner')]
+    Fowner: string;
+    [JsonName('programId')]
+    FprogramId: string;
+    [JsonName('uiTokenAmount')]
+    FuiTokenAmount: uiTokenAmount;
+  public
+    property accountIndex: Integer read FaccountIndex write FaccountIndex;
+    property mint: string read Fmint write Fmint;
+    property owner: string read Fowner write Fowner;
+    property programId: string read FprogramId write FprogramId;
+    property uiTokenAmount: uiTokenAmount read FuiTokenAmount write FuiTokenAmount;
+  end;
+
+  [JsonSerialize(TJsonMemberSerialization.Fields)]
+  TPreTokenBalance = record
+  private
+    [JsonName('accountIndex')]
+    FaccountIndex: Integer;
+    [JsonName('mint')]
+    Fmint: string;
+    [JsonName('owner')]
+    Fowner: string;
+    [JsonName('programId')]
+    FprogramId: string;
+    [JsonName('uiTokenAmount')]
+    FuiTokenAmount: uiTokenAmount;
+  public
+    property accountIndex: Integer read FaccountIndex write FaccountIndex;
+    property mint: string read Fmint write Fmint;
+    property owner: string read Fowner write Fowner;
+    property programId: string read FprogramId write FprogramId;
+    property uiTokenAmount: uiTokenAmount read FuiTokenAmount write FuiTokenAmount;
+  end;
+
+  [JsonSerialize(TJsonMemberSerialization.Fields)]
+  TStatus = record
+  private
+    [JsonName('Ok')]
+    FOk: string;
+  public
+    property Ok: string read FOk write FOk;
+  end;
+
+  [JsonSerialize(TJsonMemberSerialization.Fields)]
+  TMeta = record
+  private
+    [JsonName('computeUnitsConsumed')]
+    FcomputeUnitsConsumed: Integer;
+    [JsonName('err')]
+    Ferr: string;
+    [JsonName('fee')]
+    Ffee: Integer;
+    [JsonName('innerInstructions')]
+    FinnerInstructions: TArray<TInnerInstruction>;
+    [JsonName('loadedAddresses')]
+    FloadedAddresses: TLoadedAddresses;
+    [JsonName('logMessages')]
+    FlogMessages: TArray<string>;
+    [JsonName('postBalances')]
+    FpostBalances: TArray<Int64>;
+    [JsonName('postTokenBalances')]
+    FpostTokenBalances: TArray<TPostTokenBalance>;
+    [JsonName('preBalances')]
+    FpreBalances: TArray<Int64>;
+    [JsonName('preTokenBalances')]
+    FpreTokenBalances: TArray<TPreTokenBalance>;
+    [JsonName('rewards')]
+    Frewards: TArray<string>;
+    [JsonName('status')]
+    Fstatus: TStatus;
+//    function GetcomputeUnitsConsumed: Integer;
+//    function Geterr: string;
+//    function Getfee: Integer;
+//    function GetinnerInstructions: TArray<TInnerInstruction>;
+//    function GetloadedAddresses: TLoadedAddresses;
+//    function GetlogMessages: TArray<string>;
+//    function GetpostBalances: TArray<Int64>;
+//    function GetpostTokenBalances: TArray<TPostTokenBalance>;
+//    function GetpreBalances: TArray<Int64>;
+//    function GetpreTokenBalances: TArray<TPreTokenBalance>;
+//    function Getrewards: TArray<string>;
+//    function Getstatus: TStatus;
+  public
+    property computeUnitsConsumed: Integer read FcomputeUnitsConsumed write FcomputeUnitsConsumed;
+    property err: string read Ferr write Ferr;
+    property fee: Integer read Ffee write Ffee;
+    property innerInstructions: TArray<TInnerInstruction> read FinnerInstructions write FinnerInstructions;
+    property loadedAddresses: TLoadedAddresses read FloadedAddresses write FloadedAddresses;
+    property logMessages: TArray<string> read FlogMessages write FlogMessages;
+    property postBalances: TArray<Int64> read FpostBalances write FpostBalances;
+    property postTokenBalances: TArray<TPostTokenBalance> read FpostTokenBalances write FpostTokenBalances;
+    property preBalances: TArray<Int64> read FpreBalances write FpreBalances;
+    property preTokenBalances: TArray<TPreTokenBalance> read FpreTokenBalances write FpreTokenBalances;
+    property rewards: TArray<string> read Frewards write Frewards;
+    property status: TStatus read Fstatus write Fstatus;
+  end;
+
+  [JsonSerialize(TJsonMemberSerialization.Fields)]
+  TAddressTableLookup = record
+  private
+    [JsonName('accountKey')]
+    FaccountKey: string;
+    [JsonName('readonlyIndexes')]
+    FreadonlyIndexes: TArray<Integer>;
+    [JsonName('writableIndexes')]
+    FwritableIndexes: TArray<Integer>;
+  public
+    property accountKey: string read FaccountKey write FaccountKey;
+    property readonlyIndexes: TArray<Integer> read FreadonlyIndexes write FreadonlyIndexes;
+    property writableIndexes: TArray<Integer> read FwritableIndexes write FwritableIndexes;
+  end;
+
+  [JsonSerialize(TJsonMemberSerialization.Fields)]
+  THeader = record
+  private
+    [JsonName('numReadonlySignedAccounts')]
+    FnumReadonlySignedAccounts: Integer;
+    [JsonName('numReadonlyUnsignedAccounts')]
+    FnumReadonlyUnsignedAccounts: Integer;
+    [JsonName('numRequiredSignatures')]
+    FnumRequiredSignatures: Integer;
+  public
+    property numReadonlySignedAccounts: Integer read FnumReadonlySignedAccounts write FnumReadonlySignedAccounts;
+    property numReadonlyUnsignedAccounts: Integer read FnumReadonlyUnsignedAccounts write FnumReadonlyUnsignedAccounts;
+    property numRequiredSignatures: Integer read FnumRequiredSignatures write FnumRequiredSignatures;
+  end;
+
+  [JsonSerialize(TJsonMemberSerialization.Fields)]
+  TMessage = record
+  private
+    [JsonName('accountKeys')]
+    FaccountKeys: TArray<string>;
+    [JsonName('addressTableLookups')]
+    FaddressTableLookups: TArray<TAddressTableLookup>;
+    [JsonName('header')]
+    Fheader: THeader;
+    [JsonName('instructions')]
+    Finstructions: TArray<TInstruction>;
+    [JsonName('recentBlockhash')]
+    FrecentBlockhash: string;
+  public
+    property accountKeys: TArray<string> read FaccountKeys write FaccountKeys;
+    property addressTableLookups: TArray<TAddressTableLookup> read FaddressTableLookups write FaddressTableLookups;
+    property header: THeader read Fheader write Fheader;
+    property instructions: TArray<TInstruction> read Finstructions write Finstructions;
+    property recentBlockhash: string read FrecentBlockhash write FrecentBlockhash;
+  end;
+
+  [JsonSerialize(TJsonMemberSerialization.Fields)]
+  TTransaction = record
+  private
+    [JsonName('message')]
+    Fmessage: TMessage;
+    [JsonName('signatures')]
+    Fsignatures: TArray<string>;
+  public
+    property message: TMessage read Fmessage write Fmessage;
+    property signatures: TArray<string> read Fsignatures write Fsignatures;
+  end;
+
+  // TODO -ochuacw -cInvestigate: This is incomplete
+  getTransactionResult = record
+  private
+    [JsonName('blockTime')]
+    FblockTime: Integer;
+    [JsonName('meta')]
+    Fmeta: TMeta;
+    [JsonName('slot')]
+    Fslot: Integer;
+    [JsonName('transaction')]
+    Ftransaction: TTransaction;
+    [JsonName('version')]
+    Fversion: Integer;
+  public
+    property blockTime: Integer read FblockTime write FblockTime;
+    property meta: TMeta read Fmeta write Fmeta;
+    property slot: Integer read Fslot write Fslot;
+    property transaction: TTransaction read Ftransaction write Ftransaction;
+    property version: Integer read Fversion write Fversion;
+  end;
+
+  sendTransactionConfigObject = record
+    Encoding: TEncoding;
+    skipPreflight: Boolean;
+    preflightCommitment: TCommitment;
+    maxRetries: NativeUInt;
+    minContextSlot: UInt64;
+    constructor Create(AEncoding: TEncoding; ASkipPreflight: Boolean;
+      APreflightCommitment: TCommitment; AMaxRetries: NativeUInt;
+      AMinContextSlot: UInt64);
+  end;
+
+  simulateTransactionConfigObjectAccounts = record
+    addresses: TArray<string>; // base-58 encoded string
+    encoding: TEncoding;
+    constructor Create(const AAddresses: TArray<string>; AEncoding: TEncoding);
+  end;
+  simulateTransactionConfigObject = record
+    commitment: TCommitment;
+    sigVerify: Boolean;
+    replaceRecentBlockhash: Boolean;
+    minContextSlot: UInt64;
+    encoding: TEncoding;
+    innerInstructions: Boolean;
+    accounts: simulateTransactionConfigObjectAccounts;
+    constructor Create(
+      ACommitment: TCommitment; ASigVerify: Boolean;
+      AReplaceRecentBlockHash: Boolean;
+      AMinContextSlot: UInt64;
+      AEncoding: TEncoding;
+      AInnerInstructions: Boolean;
+      const AAccounts: simulateTransactionConfigObjectAccounts);
+  end;
+
+  // TODO -ochuacw -cInvestigate: This is incomplete
+  simulateTransactionResult = record
+  end;
+
+//  [JsonSerialize(TJsonMemberSerialization.Fields)]
+//  TInstruction = record
+//  private
+//    [JsonName('accounts')]
+//    Faccounts: TArray<Integer>;
+//    [JsonName('data')]
+//    Fdata: string;
+//    [JsonName('programIdIndex')]
+//    FprogramIdIndex: Integer;
+//    [JsonName('stackHeight')]
+//    FstackHeight: Integer;
+//    function Getaccounts: TArray<Integer>;
+//    function Getdata: string;
+//    function GetprogramIdIndex: Integer;
+//    function GetstackHeight: Integer;
+//  public
+//    property accounts: TArray<Integer> read Getaccounts write Faccounts;
+//    property data: string read Getdata write Fdata;
+//    property programIdIndex: Integer read GetprogramIdIndex write FprogramIdIndex;
+//    property stackHeight: Integer read GetstackHeight write FstackHeight;
+//  end;
+
+//  [JsonSerialize(TJsonMemberSerialization.Fields)]
+//  THeader = record
+//  private
+//    [JsonName('numReadonlySignedAccounts')]
+//    FnumReadonlySignedAccounts: Integer;
+//    [JsonName('numReadonlyUnsignedAccounts')]
+//    FnumReadonlyUnsignedAccounts: Integer;
+//    [JsonName('numRequiredSignatures')]
+//    FnumRequiredSignatures: Integer;
+//    function GetnumReadonlySignedAccounts: Integer;
+//    function GetnumReadonlyUnsignedAccounts: Integer;
+//    function GetnumRequiredSignatures: Integer;
+//  public
+//    property numReadonlySignedAccounts: Integer read GetnumReadonlySignedAccounts write FnumReadonlySignedAccounts;
+//    property numReadonlyUnsignedAccounts: Integer read GetnumReadonlyUnsignedAccounts write FnumReadonlyUnsignedAccounts;
+//    property numRequiredSignatures: Integer read GetnumRequiredSignatures write FnumRequiredSignatures;
+//  end;
+
+  [JsonSerialize(TJsonMemberSerialization.Fields)]
+  TInstruction_1 = record
+  private
+    [JsonName('accounts')]
+    Faccounts: TArray<Integer>;
+    [JsonName('data')]
+    Fdata: string;
+    [JsonName('programIdIndex')]
+    FprogramIdIndex: Integer;
+    [JsonName('stackHeight')]
+    FstackHeight: string;
+//    function Getaccounts: TArray<Integer>;
+//    function Getdata: string;
+//    function GetprogramIdIndex: Integer;
+//    function GetstackHeight: string;
+  public
+    property accounts: TArray<Integer> read Faccounts write Faccounts;
+    property data: string read Fdata write Fdata;
+    property programIdIndex: Integer read FprogramIdIndex write FprogramIdIndex;
+    property stackHeight: string read FstackHeight write FstackHeight;
+  end;
+
+//  [JsonSerialize(TJsonMemberSerialization.Fields)]
+//  TInnerInstruction = record
+//  private
+//    [JsonName('index')]
+//    Findex: Integer;
+//    [JsonName('instructions')]
+//    Finstructions: TArray<TInstruction>;
+//    function Getindex: Integer;
+//    function Getinstructions: TArray<TInstruction>;
+//  public
+//    property index: Integer read Getindex write Findex;
+//    property instructions: TArray<TInstruction> read Getinstructions write Finstructions;
+//  end;
+//
+//  [JsonSerialize(TJsonMemberSerialization.Fields)]
+//  TLoadedAddresses = record
+//  private
+//    [JsonName('readonly')]
+//    Freadonly: TArray<string>;
+//    [JsonName('writable')]
+//    Fwritable: TArray<string>;
+//    function Getreadonly: TArray<string>;
+//    function Getwritable: TArray<string>;
+//  public
+//    property readonly: TArray<string> read Getreadonly write Freadonly;
+//    property writable: TArray<string> read Getwritable write Fwritable;
+//  end;
+//
+//  [JsonSerialize(TJsonMemberSerialization.Fields)]
+//  TStatus = record
+//  private
+//    [JsonName('Ok')]
+//    FOk: string;
+//    function GetOk: string;
+//  public
+//    property Ok: string read GetOk write FOk;
+//  end;
+//
+//  [JsonSerialize(TJsonMemberSerialization.Fields)]
+//  TMessage = record
+//  private
+//    [JsonName('accountKeys')]
+//    FaccountKeys: TArray<string>;
+//    [JsonName('header')]
+//    Fheader: THeader;
+//    [JsonName('instructions')]
+//    Finstructions: TArray<TInstruction_1>;
+//    [JsonName('recentBlockhash')]
+//    FrecentBlockhash: string;
+//    [JsonName('addressTableLookups')]
+//    FaddressTableLookups: TArray<string>;
+//    function GetaccountKeys: TArray<string>;
+//    function Getheader: THeader;
+//    function Getinstructions: TArray<TInstruction_1>;
+//    function GetrecentBlockhash: string;
+//    function GetaddressTableLookups: TArray<string>;
+//  public
+//    property accountKeys: TArray<string> read GetaccountKeys write FaccountKeys;
+//    property header: THeader read Getheader write Fheader;
+//    property instructions: TArray<TInstruction_1> read Getinstructions write Finstructions;
+//    property recentBlockhash: string read GetrecentBlockhash write FrecentBlockhash;
+//    property addressTableLookups: TArray<string> read GetaddressTableLookups write FaddressTableLookups;
+//  end;
+//
+//  [JsonSerialize(TJsonMemberSerialization.Fields)]
+//  TMeta = record
+//  private
+//    [JsonName('computeUnitsConsumed')]
+//    FcomputeUnitsConsumed: Integer;
+//    [JsonName('err')]
+//    Ferr: string;
+//    [JsonName('fee')]
+//    Ffee: Integer;
+//    [JsonName('innerInstructions')]
+//    FinnerInstructions: TArray<TInnerInstruction>;
+//    [JsonName('loadedAddresses')]
+//    FloadedAddresses: TLoadedAddresses;
+//    [JsonName('logMessages')]
+//    FlogMessages: TArray<string>;
+//    [JsonName('postBalances')]
+//    FpostBalances: TArray<Int64>;
+//    [JsonName('postTokenBalances')]
+//    FpostTokenBalances: TArray<string>;
+//    [JsonName('preBalances')]
+//    FpreBalances: TArray<Int64>;
+//    [JsonName('preTokenBalances')]
+//    FpreTokenBalances: TArray<string>;
+//    [JsonName('rewards')]
+//    Frewards: TArray<string>;
+//    [JsonName('status')]
+//    Fstatus: TStatus;
+//    function GetcomputeUnitsConsumed: Integer;
+//    function Geterr: string;
+//    function Getfee: Integer;
+//    function GetinnerInstructions: TArray<TInnerInstruction>;
+//    function GetloadedAddresses: TLoadedAddresses;
+//    function GetlogMessages: TArray<string>;
+//    function GetpostBalances: TArray<Int64>;
+//    function GetpostTokenBalances: TArray<string>;
+//    function GetpreBalances: TArray<Int64>;
+//    function GetpreTokenBalances: TArray<string>;
+//    function Getrewards: TArray<string>;
+//    function Getstatus: TStatus;
+//  public
+//    property computeUnitsConsumed: Integer read GetcomputeUnitsConsumed write FcomputeUnitsConsumed;
+//    property err: string read Geterr write Ferr;
+//    property fee: Integer read Getfee write Ffee;
+//    property innerInstructions: TArray<TInnerInstruction> read GetinnerInstructions write FinnerInstructions;
+//    property loadedAddresses: TLoadedAddresses read GetloadedAddresses write FloadedAddresses;
+//    property logMessages: TArray<string> read GetlogMessages write FlogMessages;
+//    property postBalances: TArray<Int64> read GetpostBalances write FpostBalances;
+//    property postTokenBalances: TArray<string> read GetpostTokenBalances write FpostTokenBalances;
+//    property preBalances: TArray<Int64> read GetpreBalances write FpreBalances;
+//    property preTokenBalances: TArray<string> read GetpreTokenBalances write FpreTokenBalances;
+//    property rewards: TArray<string> read Getrewards write Frewards;
+//    property status: TStatus read Getstatus write Fstatus;
+//  end;
+
+  [JsonSerialize(TJsonMemberSerialization.Fields)]
+  TTransaction_1 = record
+  private
+    [JsonName('message')]
+    Fmessage: TMessage;
+    [JsonName('signatures')]
+    Fsignatures: TArray<string>;
+//    function Getmessage: TMessage;
+//    function Getsignatures: TArray<string>;
+  public
+    property message: TMessage read Fmessage write Fmessage;
+    property signatures: TArray<string> read Fsignatures write Fsignatures;
+  end;
+
+  [JsonSerialize(TJsonMemberSerialization.Fields)]
+  TReward = record
+  private
+    [JsonName('commission')]
+    Fcommission: string;
+    [JsonName('lamports')]
+    Flamports: Integer;
+    [JsonName('postBalance')]
+    FpostBalance: Int64;
+    [JsonName('pubkey')]
+    Fpubkey: string;
+    [JsonName('rewardType')]
+    FrewardType: string;
+//    function Getcommission: string;
+//    function Getlamports: Integer;
+//    function GetpostBalance: Int64;
+//    function Getpubkey: string;
+//    function GetrewardType: string;
+  public
+    property commission: string read Fcommission write Fcommission;
+    property lamports: Integer read Flamports write Flamports;
+    property postBalance: Int64 read FpostBalance write FpostBalance;
+    property pubkey: string read Fpubkey write Fpubkey;
+    property rewardType: string read FrewardType write FrewardType;
+  end;
+//
+//  [JsonSerialize(TJsonMemberSerialization.Fields)]
+//  TTransaction = record
+//  private
+//    [JsonName('meta')]
+//    Fmeta: TMeta;
+//    [JsonName('transaction')]
+//    Ftransaction: TTransaction_1;
+//    [JsonName('version')]
+//    Fversion: string;
+//    function Getmeta: TMeta;
+//    function Gettransaction: TTransaction_1;
+//    function Getversion: string;
+//  public
+//    property meta: TMeta read Getmeta write Fmeta;
+//    property transaction: TTransaction_1 read Gettransaction write Ftransaction;
+//    property version: string read Getversion write Fversion;
+//  end;
+
+  [JsonSerialize(TJsonMemberSerialization.Fields)]
+  getBlockResult = record
+  private
+    [JsonName('blockHeight')]
+    FblockHeight: Integer;
+    [JsonName('blockTime')]
+    FblockTime: Integer;
+    [JsonName('blockhash')]
+    Fblockhash: string;
+    [JsonName('parentSlot')]
+    FparentSlot: Integer;
+    [JsonName('previousBlockhash')]
+    FpreviousBlockhash: string;
+    [JsonName('rewards')]
+    Frewards: TArray<TReward>;
+    [JsonName('transactions')]
+    Ftransactions: TArray<TTransaction>;
+    function GetblockHeight: Integer;
+    function GetblockTime: Integer;
+    function Getblockhash: string;
+    function GetparentSlot: Integer;
+    function GetpreviousBlockhash: string;
+    function Getrewards: TArray<TReward>;
+    function Gettransactions: TArray<TTransaction>;
+  public
+    property blockHeight: Integer read GetblockHeight write FblockHeight;
+    property blockTime: Integer read GetblockTime write FblockTime;
+    property blockhash: string read Getblockhash write Fblockhash;
+    property parentSlot: Integer read GetparentSlot write FparentSlot;
+    property previousBlockhash: string read GetpreviousBlockhash write FpreviousBlockhash;
+    property rewards: TArray<TReward> read Getrewards write Frewards;
+    property transactions: TArray<TTransaction> read Gettransactions write Ftransactions;
   end;
 
 implementation
 
 uses
   System.SysUtils;
+
+type
+  TEncoding = JSONRPC.Web3.Solana.Encoding.TEncoding;
 
 { TgetBlockProductionValue }
 
@@ -94,6 +1242,7 @@ begin
     begin
       LByIdentity.Add(LPair.Key, Copy(LPair.Value));
     end;
+  Dest.range := Src.range;
 end;
 
 class operator TgetBlockProductionValue.Finalize(var Dest: TgetBlockProductionValue);
@@ -104,6 +1253,393 @@ end;
 class operator TgetBlockProductionValue.Initialize(out Dest: TgetBlockProductionValue);
 begin
   Dest.FbyIdentity := TDictionary<string, TArray<Integer>>.Create;
+  Dest.range := Default(TRange);
+end;
+
+{ commitmentConfigObject }
+
+constructor commitmentConfigObject.Create(ACommitment: TCommitment);
+begin
+  commitment := ACommitment;
+end;
+
+{ CommitmentContextSlotObj }
+
+constructor CommitmentContextSlotObj.Create(ACommitment: TCommitment; AMinContextSlot: UInt64);
+begin
+  commitment := ACommitment;
+  minContextSlot := AMinContextSlot;
+end;
+
+constructor CommitmentContextSlotObj.Create(AMinContextSlot: UInt64; ACommitment: TCommitment = finalized);
+begin
+  minContextSlot := AMinContextSlot;
+  commitment := ACommitment;
+end;
+
+{ IdentityObj }
+
+constructor IdentityObj.Create(const AIdentity: string);
+begin
+  identity := AIdentity;
+end;
+
+{ getBlockConfigObject }
+
+constructor getBlockConfigObject.Create(ACommitment: TCommitment;
+  AEncoding: TEncoding = TEncoding.json;
+  ATransactionDetails: TTransactionDetails = full;
+  AMaxSupportedTransactionVersion: Integer = 0;
+  ARewards: Boolean = True
+);
+begin
+  encoding := AEncoding;
+  transactionDetails := ATransactionDetails;
+  maxSupportedTransactionVersion := AMaxSupportedTransactionVersion;
+  rewards := ARewards;
+end;
+
+{ getBlocksConfigObject }
+
+constructor getBlocksConfigObject.Create(ACommitment: TCommitment);
+begin
+  commitment := ACommitment;
+end;
+
+{ searchTransactionHistoryObj }
+
+constructor searchTransactionHistoryObj.Create(ASearchTransactionHistory: Boolean);
+begin
+  searchTransactionHistory := ASearchTransactionHistory;
+end;
+
+{ getSupplyConfigObject }
+
+constructor getSupplyConfigObject.Create(ACommitment: TCommitment;
+  AexcludeNonCirculatingAccountsList: Boolean);
+begin
+  commitment := ACommitment;
+  excludeNonCirculatingAccountsList := AexcludeNonCirculatingAccountsList;
+end;
+
+{ MintObj }
+
+constructor MintObj.Create(const AMint: string);
+begin
+  mint := AMint;
+end;
+
+{ ProgramIdObj }
+
+constructor ProgramIdObj.Create(const AProgramId: string);
+begin
+  programId := AProgramId;
+end;
+
+{ EncodingObj }
+
+constructor EncodingObj.Create(AEncoding: TEncoding);
+begin
+  encoding := AEncoding;
+end;
+
+{ getTokenAccountsByDelegateConfigObject }
+
+class function getTokenAccountsByDelegateConfigObject.Create(
+  ACommitment: TCommitment;
+  AEncoding: TEncoding;
+  AMinContextSlot: UInt64;
+  ADataSlice: TDataSliceOffset
+): getTokenAccountsByDelegateConfigObject_2;
+begin
+  Result.commitment := ACommitment;
+  Result.encoding   := AEncoding;
+  Result.minContextSlot := AMinContextSlot;
+  Result.dataSlice := ADataSlice;
+end;
+
+{ getTransactionConfigObject }
+
+constructor getTransactionConfigObject.Create(ACommitment: TCommitment;
+  AmaxSupportedTransactionVersion: Integer;
+  AEncoding: TEncoding);
+begin
+  commitment := ACommitment;
+  maxSupportedTransactionVersion := AmaxSupportedTransactionVersion;
+  encoding := AEncoding;
+end;
+
+
+{ votePubkey }
+
+constructor votePubkey.Create(const AVotePubKey: string);
+begin
+  votePubkey := AVotePubKey;
+end;
+
+{ getVoteAccountsConfigObject }
+constructor getVoteAccountsConfigObject.Create(ACommitment: TCommitment; const AVotePubkey: string;
+  AkeepUnstakedDelinquents: Boolean;
+  AdelinquentSlotDistance: UInt64);
+begin
+  commitment := ACommitment;
+  votePubkey := AVotePubkey;
+  keepUnstakedDelinquents := AkeepUnstakedDelinquents;
+  delinquentSlotDistance := AdelinquentSlotDistance;
+end;
+
+{ requestAirDropCommitment }
+
+constructor requestAirDropCommitment.Create(ACommitment: TCommitment);
+begin
+  commitment := ACommitment;
+end;
+
+{ sendTransactionConfigObject }
+
+constructor sendTransactionConfigObject.Create(
+  AEncoding: TEncoding; ASkipPreflight: Boolean;
+  APreflightCommitment: TCommitment; AMaxRetries: NativeUInt;
+  AMinContextSlot: UInt64);
+begin
+  Encoding := AEncoding;
+  skipPreflight := ASkipPreflight;
+  preflightCommitment := APreflightCommitment;
+  maxRetries := AMaxRetries;
+  minContextSlot := AMinContextSlot;
+end;
+
+{ simulateTransactionConfigObjectAccounts }
+
+constructor simulateTransactionConfigObjectAccounts.Create(
+  const AAddresses: TArray<string>;
+  AEncoding: TEncoding);
+begin
+  addresses := AAddresses;
+  encoding := AEncoding;
+end;
+
+{ simulateTransactionConfigObject }
+
+constructor simulateTransactionConfigObject.Create(
+  ACommitment: TCommitment; ASigVerify: Boolean;
+  AReplaceRecentBlockHash: Boolean;
+  AMinContextSlot: UInt64;
+  AEncoding: TEncoding;
+  AInnerInstructions: Boolean;
+  const AAccounts: simulateTransactionConfigObjectAccounts);
+begin
+  commitment := ACommitment;
+  sigVerify := ASigVerify;
+  replaceRecentBlockhash := AReplaceRecentBlockHash;
+  minContextSlot := AMinContextSlot;
+  encoding := AEncoding;
+  innerInstructions := AInnerInstructions;
+  accounts := AAccounts;
+end;
+
+{ TdataSlice }
+
+constructor TdataSlice.Create(ALength, ASize: UInt64);
+begin
+  length := ALength;
+  size   := ASize;
+end;
+
+
+{ TDataSliceOffset }
+
+constructor TDataSliceOffset.Create(ALength, AOffset: NativeUInt);
+begin
+  length := ALength;
+  offset := AOffset;
+end;
+
+{ getAccountInfoConfigObject }
+
+class function getAccountInfoConfigObject.Create(ACommitment: TCommitment;
+  AEncoding: TEncoding;
+  const ADataSlize: TDataSliceOffset): getAccountInfoConfigObject_1;
+begin
+  Result.commitment := ACommitment;
+  Result.encoding := AEncoding;
+  Result.dataSlice := ADataSlize;
+end;
+
+class function getAccountInfoConfigObject.Create(
+  AEncoding: TEncoding): getAccountInfoConfigObject_2;
+begin
+  Result.encoding := AEncoding;
+end;
+
+class function getAccountInfoConfigObject.Create(ACommitment: TCommitment;
+  AEncoding: TEncoding): getAccountInfoConfigObject_3;
+begin
+  Result.commitment := ACommitment;
+  Result.encoding := AEncoding;
+end;
+
+class function getAccountInfoConfigObject.Create(
+  AEncoding: TEncoding;
+  ACommitment: TCommitment): getAccountInfoConfigObject_3;
+begin
+  Result.commitment := ACommitment;
+  Result.encoding := AEncoding;
+end;
+
+//function TInstruction_1.GetprogramIdIndex: Integer;
+//begin
+//  Result := FprogramIdIndex;
+//end;
+//
+//function TInstruction_1.GetstackHeight: string;
+//begin
+//  Result := FstackHeight;
+//end;
+//
+//function TMeta.GetcomputeUnitsConsumed: Integer;
+//begin
+//  Result := FcomputeUnitsConsumed;
+//end;
+//
+//function TMeta.Geterr: string;
+//begin
+//  Result := Ferr;
+//end;
+//
+//function TMeta.Getfee: Integer;
+//begin
+//  Result := Ffee;
+//end;
+//
+//function TMeta.GetinnerInstructions: TArray<TInnerInstruction>;
+//begin
+//  Result := FinnerInstructions;
+//end;
+//
+//function TMeta.GetloadedAddresses: TLoadedAddresses;
+//begin
+//  Result := FloadedAddresses;
+//end;
+//
+//function TMeta.GetlogMessages: TArray<string>;
+//begin
+//  Result := FlogMessages;
+//end;
+//
+//function TMeta.GetpostBalances: TArray<Int64>;
+//begin
+//  Result := FpostBalances;
+//end;
+//
+//function TMeta.GetpostTokenBalances: TArray<string>;
+//begin
+//  Result := FpostTokenBalances;
+//end;
+//
+//function TMeta.GetpreBalances: TArray<Int64>;
+//begin
+//  Result := FpreBalances;
+//end;
+//
+//function TMeta.GetpreTokenBalances: TArray<string>;
+//begin
+//  Result := FpreTokenBalances;
+//end;
+//
+//function TMeta.Getrewards: TArray<string>;
+//begin
+//  Result := Frewards;
+//end;
+//
+//function TMeta.Getstatus: TStatus;
+//begin
+//  Result := Fstatus;
+//end;
+//
+//function TTransaction_1.Getmessage: TMessage;
+//begin
+//  Result := Fmessage;
+//end;
+//
+//function TTransaction_1.Getsignatures: TArray<string>;
+//begin
+//  Result := Fsignatures;
+//end;
+//
+//function TReward.Getcommission: string;
+//begin
+//  Result := Fcommission;
+//end;
+//
+//function TReward.Getlamports: Integer;
+//begin
+//  Result := Flamports;
+//end;
+//
+//function TReward.GetpostBalance: Int64;
+//begin
+//  Result := FpostBalance;
+//end;
+//
+//function TReward.Getpubkey: string;
+//begin
+//  Result := Fpubkey;
+//end;
+//
+//function TReward.GetrewardType: string;
+//begin
+//  Result := FrewardType;
+//end;
+//
+//function TTransaction.Getmeta: TMeta;
+//begin
+//  Result := Fmeta;
+//end;
+//
+//function TTransaction.Gettransaction: TTransaction_1;
+//begin
+//  Result := Ftransaction;
+//end;
+//
+//function TTransaction.Getversion: string;
+//begin
+//  Result := Fversion;
+//end;
+
+function getBlockResult.GetblockHeight: Integer;
+begin
+  Result := FblockHeight;
+end;
+
+function getBlockResult.GetblockTime: Integer;
+begin
+  Result := FblockTime;
+end;
+
+function getBlockResult.Getblockhash: string;
+begin
+  Result := Fblockhash;
+end;
+
+function getBlockResult.GetparentSlot: Integer;
+begin
+  Result := FparentSlot;
+end;
+
+function getBlockResult.GetpreviousBlockhash: string;
+begin
+  Result := FpreviousBlockhash;
+end;
+
+function getBlockResult.Getrewards: TArray<TReward>;
+begin
+  Result := Frewards;
+end;
+
+function getBlockResult.Gettransactions: TArray<TTransaction>;
+begin
+  Result := Ftransactions;
 end;
 
 end.

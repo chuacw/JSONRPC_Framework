@@ -16,8 +16,8 @@ function GetBitcoinJSONRPC(
   const AServerURL: string = '';
   const AUserName: string = '';
   const APassword: string = '';
-  const AOnLoggingOutgoingJSONRequest: TOnLogOutgoingJSONRequest = nil;
-  const AOnLoggingIncomingJSONResponse: TOnLogIncomingJSONResponse = nil
+  const AOnLoggingOutgoingJSONRPCRequest: TOnLogOutgoingJSONRPCRequest = nil;
+  const AOnLoggingIncomingJSONRPCResponse: TOnLogIncomingJSONRPCResponse = nil
 ): IBitcoinJSONRPC;
 
 implementation
@@ -33,13 +33,13 @@ function GetBitcoinJSONRPC(
   const AServerURL: string = '';
   const AUserName: string = '';
   const APassword: string = '';
-  const AOnLoggingOutgoingJSONRequest: TOnLogOutgoingJSONRequest = nil;
-  const AOnLoggingIncomingJSONResponse: TOnLogIncomingJSONResponse = nil
+  const AOnLoggingOutgoingJSONRPCRequest: TOnLogOutgoingJSONRPCRequest = nil;
+  const AOnLoggingIncomingJSONRPCResponse: TOnLogIncomingJSONRPCResponse = nil
 ): IBitcoinJSONRPC;
 begin
   RegisterJSONRPCWrapper(TypeInfo(IBitcoinJSONRPC));
 
-  var LJSONRPCWrapper := TJSONRPCWrapper.Create(nil);
+  var LJSONRPCWrapper := TJSONRPCWrapper.Create;
   LJSONRPCWrapper.ServerURL := AServerURL;
   LJSONRPCWrapper.PassParamsByPos := True;
 
@@ -67,11 +67,11 @@ begin
     LMethods := LIntfType.GetDeclaredMethods;
     LMethType := LMethods[AMethMD.Pos-3];
     LParams := LMethType.GetParameters;
-    Result := LParams[AParamIndex-1].HasAttribute<JSONMarshalAsNumber>;
+    Result := LParams[AParamIndex-1].HasAttribute<JSONRPCMarshalAsNumber>;
   end;
 
-  LJSONRPCWrapper.OnLogOutgoingJSONRequest := AOnLoggingOutgoingJSONRequest;
-  LJSONRPCWrapper.OnLogIncomingJSONResponse := AOnLoggingIncomingJSONResponse;
+  LJSONRPCWrapper.OnLogOutgoingJSONRPCRequest := AOnLoggingOutgoingJSONRPCRequest;
+  LJSONRPCWrapper.OnLogIncomingJSONRPCResponse := AOnLoggingIncomingJSONRPCResponse;
 
   Result := LJSONRPCWrapper as IBitcoinJSONRPC;
 
@@ -88,5 +88,5 @@ begin
 end;
 
 initialization
-  InvRegistry.RegisterInterface(TypeInfo(IBitcoinJSONRPC));
+  InvokableRegistry.RegisterInterface(TypeInfo(IBitcoinJSONRPC));
 end.

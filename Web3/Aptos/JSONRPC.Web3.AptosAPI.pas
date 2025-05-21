@@ -44,5 +44,5 @@ uses
   JSONRPC.InvokeRegistry;
 
 initialization
-  InvRegistry.RegisterInterface(TypeInfo(IAptosJSONRPC));
+  InvokableRegistry.RegisterInterface(TypeInfo(IAptosJSONRPC));
 end.

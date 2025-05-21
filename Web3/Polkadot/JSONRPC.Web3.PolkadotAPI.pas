@@ -329,34 +329,35 @@ type
 *)
 
 function GetPolkadotJSONRPC(const AServerURL: string = '';
-  const AOnLoggingOutgoingJSONRequest: TOnLogOutgoingJSONRequest = nil;
-  const AOnLoggingIncomingJSONResponse: TOnLogIncomingJSONResponse = nil
+  const AOnLoggingOutgoingJSONRPCRequest: TOnLogOutgoingJSONRPCRequest = nil;
+  const AOnLoggingIncomingJSONRPCResponse: TOnLogIncomingJSONRPCResponse = nil
 ): IPolkadotJSONRPC;
 
 function GetPolkadotJSON(const AServerURL: string = '';
   const APIKey: string = '';
-  const AOnLoggingOutgoingJSONRequest: TOnLogOutgoingJSONRequest = nil;
-  const AOnLoggingIncomingJSONResponse: TOnLogIncomingJSONResponse = nil
+  const AOnLoggingOutgoingJSONRPCRequest: TOnLogOutgoingJSONRPCRequest = nil;
+  const AOnLoggingIncomingJSONRPCResponse: TOnLogIncomingJSONRPCResponse = nil
 ): IPolkadotJSON;
 
 implementation
 
 uses
-  JSONRPC.InvokeRegistry, JSONRPC.Common.Consts, System.JSON.Types;
+  JSONRPC.InvokeRegistry, JSONRPC.Common.Consts, System.JSON.Types,
+  JSONRPC.Client.JSONRPCHTTPWrapper;
 
 function GetPolkadotJSONRPC(const AServerURL: string = '';
-  const AOnLoggingOutgoingJSONRequest: TOnLogOutgoingJSONRequest = nil;
-  const AOnLoggingIncomingJSONResponse: TOnLogIncomingJSONResponse = nil
+  const AOnLoggingOutgoingJSONRPCRequest: TOnLogOutgoingJSONRPCRequest = nil;
+  const AOnLoggingIncomingJSONRPCResponse: TOnLogIncomingJSONRPCResponse = nil
 ): IPolkadotJSONRPC;
 begin
   RegisterJSONRPCWrapper(TypeInfo(IPolkadotJSONRPC));
-  var LJSONRPCWrapper := TJSONRPCWrapper.Create(nil);
+  var LJSONRPCWrapper := TJSONRPCHTTPClient.Create;
   LJSONRPCWrapper.OnBeforeInitializeHeaders := procedure(var VNetHeaders: TNetHeaders)
   begin
     VNetHeaders := VNetHeaders + [TNameValuePair.Create(SHeadersContentType, SApplicationJson)];
   end;
-  LJSONRPCWrapper.OnLogOutgoingJSONRequest := AOnLoggingOutgoingJSONRequest;
-  LJSONRPCWrapper.OnLogIncomingJSONResponse := AOnLoggingIncomingJSONResponse;
+  LJSONRPCWrapper.OnLogOutgoingJSONRPCRequest := AOnLoggingOutgoingJSONRPCRequest;
+  LJSONRPCWrapper.OnLogIncomingJSONRPCResponse := AOnLoggingIncomingJSONRPCResponse;
   LJSONRPCWrapper.PassParamsByPos := True;
   LJSONRPCWrapper.PassEnumByName := True;
   LJSONRPCWrapper.ServerURL := AServerURL;
@@ -365,13 +366,13 @@ end;
 
 function GetPolkadotJSON(const AServerURL: string = '';
   const APIKey: string = '';
-  const AOnLoggingOutgoingJSONRequest: TOnLogOutgoingJSONRequest = nil;
-  const AOnLoggingIncomingJSONResponse: TOnLogIncomingJSONResponse = nil
+  const AOnLoggingOutgoingJSONRPCRequest: TOnLogOutgoingJSONRPCRequest = nil;
+  const AOnLoggingIncomingJSONRPCResponse: TOnLogIncomingJSONRPCResponse = nil
 ): IPolkadotJSON;
 begin
-  RegisterJSONWrapper(TypeInfo(IPolkadotJSON));
-  var LJSONWrapper := TJSONWrapper.Create(nil);
-  LJSONWrapper.OnBeforeInitializeHeaders := procedure(var VNetHeaders: TNetHeaders)
+  RegisterJSONRPCWrapper(TypeInfo(IPolkadotJSON));
+  var LJSONRPCWrapper := TJSONRPCHTTPClient.Create;
+  LJSONRPCWrapper.OnBeforeInitializeHeaders := procedure(var VNetHeaders: TNetHeaders)
   begin
     var LOriginHost := 'https://staking.polkadot.network';
     VNetHeaders := VNetHeaders +
@@ -386,14 +387,14 @@ begin
       [TNameValuePair.Create(SHeadersTE, SHeadersTETrailers)] +
       [TNameValuePair.Create(SHeadersXAPIKey, APIKey)];
   end;
-  LJSONWrapper.OnLogOutgoingJSONRequest := AOnLoggingOutgoingJSONRequest;
-  LJSONWrapper.OnLogIncomingJSONResponse := AOnLoggingIncomingJSONResponse;
-  LJSONWrapper.PassParamsByName := True;
-  LJSONWrapper.PassEnumByName := True;
-  LJSONWrapper.ServerURL := AServerURL;
-  Result := LJSONWrapper as IPolkadotJSON;
+  LJSONRPCWrapper.OnLogOutgoingJSONRPCRequest := AOnLoggingOutgoingJSONRPCRequest;
+  LJSONRPCWrapper.OnLogIncomingJSONRPCResponse := AOnLoggingIncomingJSONRPCResponse;
+  LJSONRPCWrapper.PassParamsByName := True;
+  LJSONRPCWrapper.PassEnumByName := True;
+  LJSONRPCWrapper.ServerURL := AServerURL;
+  Result := LJSONRPCWrapper as IPolkadotJSON;
 end;
 
 initialization
-  InvRegistry.RegisterInterface(TypeInfo(IPolkadotJSONRPC));
+  InvokableRegistry.RegisterInterface(TypeInfo(IPolkadotJSONRPC));
 end.

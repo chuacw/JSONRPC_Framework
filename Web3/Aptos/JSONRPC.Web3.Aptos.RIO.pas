@@ -3,10 +3,11 @@ unit JSONRPC.Web3.Aptos.RIO;
 interface
 
 uses
-  JSONRPC.RIO, System.Classes, System.Net.URLClient, JSONRPC.Common.Types;
+  JSONRPC.RIO, System.Classes, System.Net.URLClient, JSONRPC.Common.Types,
+  JSONRPC.Client.CustomJSONRPCHTTPWrapper;
 
 type
-  TWeb3AptosJSONRPCWrapper = class(TJSONRPCWrapper)
+  TWeb3AptosJSONRPCClient = class(TCustomJSONRPCHTTPWrapper)
   protected
     procedure DoBeforeExecute(const AMethodName: string; AJSONRequest: TStream); override;
 
@@ -24,15 +25,15 @@ uses
   JSONRPC.Common.Consts, System.Rtti, System.SysUtils,
   System.TypInfo;
 
-{ TWeb3AptosJSONRPCWrapper }
+{ TWeb3AptosJSONRPCClient }
 
-constructor TWeb3AptosJSONRPCWrapper.Create(AOwner: TComponent);
+constructor TWeb3AptosJSONRPCClient.Create(AOwner: TComponent);
 begin
   inherited;
   FPassByPosOrName := tppByPos;
 end;
 
-procedure TWeb3AptosJSONRPCWrapper.DoBeforeExecute(const AMethodName: string;
+procedure TWeb3AptosJSONRPCClient.DoBeforeExecute(const AMethodName: string;
   AJSONRequest: TStream);
 begin
 // Aptos is a REST server, not a JSON RPC server, so no need to include a JSON RPC request
@@ -40,7 +41,7 @@ begin
   inherited;
 end;
 
-function TWeb3AptosJSONRPCWrapper.InitializeHeaders(
+function TWeb3AptosJSONRPCClient.InitializeHeaders(
   const ARequestStream: TStream): TNetHeaders;
 begin
   Result := [
@@ -49,7 +50,7 @@ begin
   ];
 end;
 
-procedure TWeb3AptosJSONRPCWrapper.UpdateServerURL(
+procedure TWeb3AptosJSONRPCClient.UpdateServerURL(
   const AContext: TInvContext;
   const AMethMD: TIntfMethEntry; var VServerURL: string);
 var

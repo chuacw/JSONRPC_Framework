@@ -15,6 +15,12 @@ type
   Hash = string;
   NonceType = string;
   HexNumber = string;
+  StrHexNumber = record
+  private
+    FValue: Integer;
+  public
+    class operator Implicit(const Src: StrHexNumber): Integer;
+  end;
   BloomFilter = string;
   log = string;
 
@@ -47,6 +53,7 @@ type
     &type: HexNumber;
   end;
   PTransactionObject = ^TransactionObject;
+
   [JsonConverter(TransactionReceiptObjectConverter)]
   TransactionReceiptObject = record
     transactionHash: Hash;
@@ -131,8 +138,13 @@ end;
 procedure TEthSyncingConverter.WriteJson(const AWriter: TJsonWriter;
   const AValue: TValue; const ASerializer: TJsonSerializer);
 begin
-  inherited;
+end;
 
+{ StrHexNumber }
+
+class operator StrHexNumber.Implicit(const Src: StrHexNumber): Integer;
+begin
+  Result := Src.FValue;
 end;
 
 initialization
@@ -173,7 +185,8 @@ initialization
         end;
       BigInteger.TryParse(LResultValue, LDecimalPlaces, PBigInteger(AResultP)^);
     end,
-    procedure(const AValue: TValue; ATypeInfo: PTypeInfo; const AJSONObject: TJSONObject)
+    procedure(const AParamName: string; const AValue: TValue;
+      ATypeInfo: PTypeInfo; const AJSONObject: TJSONObject)
     // TValueToJSON
     var
       LBigInteger: BigInteger;

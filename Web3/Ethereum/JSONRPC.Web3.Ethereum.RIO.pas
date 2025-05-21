@@ -3,11 +3,14 @@ unit JSONRPC.Web3.Ethereum.RIO;
 interface
 
 uses
-  JSONRPC.RIO, System.TypInfo, System.Classes, System.JSON, System.Rtti;
+  JSONRPC.RIO, System.TypInfo, System.Classes, System.JSON, System.Rtti,
+  JSONRPC.Client.JSONRPCHTTPWrapper, System.SysUtils;
 
 type
-  TWeb3EthereumJSONRPCWrapper = class(TJSONRPCWrapper)
+  TWeb3EthereumJSONRPCClient = class(TJSONRPCHTTPWrapper)
   protected
+    FOnAfterDispatch: TProc;
+    procedure DoAfterDispatch; override;
     function SerializeRecord(const [Ref] VRecord; ATypeInfo: PTypeInfo): string; override;
     procedure DeserializeJSON(const AJsonValue: TJSONValue; ATypeInfo: PTypeInfo;
       var VRestoredRecord); overload; override;
@@ -15,6 +18,7 @@ type
       var VValue: TValue);  overload; override;
   public
     constructor Create(AOwner: TComponent); override;
+    property OnAfterDispatch: TProc read FOnAfterDispatch write FOnAfterDispatch;
   end;
 
 implementation
@@ -24,15 +28,15 @@ uses
   JSONRPC.Web3.Common.Types, System.JSON.Readers, System.JSON.Serializers,
   JSONRPC.Web3.Ethereum.Serializers;
 
-{ TWeb3EthereumJSONRPCWrapper }
+{ TWeb3EthereumJSONRPCClient }
 
-constructor TWeb3EthereumJSONRPCWrapper.Create(AOwner: TComponent);
+constructor TWeb3EthereumJSONRPCClient.Create(AOwner: TComponent);
 begin
   inherited;
   FPassByPosOrName := tppByPos;
 end;
 
-procedure TWeb3EthereumJSONRPCWrapper.DeserializeJSON(const AJsonValue: TJSONValue;
+procedure TWeb3EthereumJSONRPCClient.DeserializeJSON(const AJsonValue: TJSONValue;
   ATypeInfo: PTypeInfo; var VRestoredRecord);
 var
   LValue: TValue;
@@ -54,7 +58,7 @@ begin
     end;
 end;
 
-procedure TWeb3EthereumJSONRPCWrapper.DeserializeJSON(const AJsonValue: TJSONValue;
+procedure TWeb3EthereumJSONRPCClient.DeserializeJSON(const AJsonValue: TJSONValue;
   ATypeInfo: PTypeInfo; var VValue: TValue);
 var
   LObjReader: TJsonReader;
@@ -86,12 +90,26 @@ begin
   end;
 end;
 
-function TWeb3EthereumJSONRPCWrapper.SerializeRecord(const [ref] VRecord;
+procedure TWeb3EthereumJSONRPCClient.DoAfterDispatch;
+begin
+  if Assigned(FOnAfterDispatch) then
+    FOnAfterDispatch;
+end;
+
+function TWeb3EthereumJSONRPCClient.SerializeRecord(const [ref] VRecord;
   ATypeInfo: PTypeInfo): string;
+var
+  LCopy: string;
 begin
   if ATypeInfo = TypeInfo(Web3Address) then
-    Result := PString(VRecord)^ else
-    Result := inherited;
+    begin
+      LCopy := PString(VRecord)^;
+      UniqueString(LCopy);
+      Result := LCopy;
+    end else
+    begin
+      Result := inherited;
+    end;
 end;
 
 end.

@@ -3,12 +3,22 @@ unit JSONRPC.Web3.EthereumAPI;
 interface
 
 uses
-  JSONRPC.RIO, JSONRPC.Web3.Common.Types, JSONRPC.Common.Types, Web3.Ethereum.Types,
-  System.SysUtils, System.JSON, Velthuis.BigIntegers;
+  JSONRPC.RIO, JSONRPC.Web3.Common.Types, JSONRPC.Common.Types,
+  JSONRPC.Web3.Ethereum.Types, System.SysUtils, System.JSON, Velthuis.BigIntegers,
+  JSONRPC.Web3.Ethereum.Converters, System.JSON.Serializers;
 
 type
 
   HexBytes = BigInteger;
+
+  [JsonConverter(TJSONFalseBlockInfoConverter)]
+  TJSONFalseBlockInfo = record
+  public
+    startingBlock, currentBlock, highestBlock: UInt64; // encoded as hex
+    class operator Assign(var Dest: TJSONFalseBlockInfo; const [ref] Src: TJSONFalseBlockInfo);
+    class operator Implicit(const Value: TJSONFalseBlockInfo): Boolean;
+    class operator Initialize(out Dest: TJSONFalseBlockInfo);
+  end;
 
   IEthereumJSONRPC = interface(IJSONRPCMethods)
     ['{BC41AE33-10B1-4969-BA60-D2581EA21613}']
@@ -18,7 +28,7 @@ type
     function net_listening: Boolean;
     function net_peerCount: HexNumber; deprecated 'This might not exist!';
     function eth_protocolVersion: HexNumber;
-    function eth_syncing: TJSONObject;
+    function eth_syncing: TJSONFalseBlockInfo;
     function eth_coinbase: HexNumber;
     function eth_chainId: HexNumber;
     function eth_mining: Boolean;
@@ -58,30 +68,38 @@ type
 
   end;
 
-function GetEthereumJSONRPC(const AServerURL: string = '';
-  const AWrapperType: TTransportWrapperType = twtHTTP;
-  const UseDefaultProcs: Boolean = True;
-  const AOnSyncProc: TOnSyncEvent = nil;
-  const AOnBeforeParse: TOnBeforeParseEvent = nil): IEthereumJSONRPC;
-
 implementation
 
 uses
-  JSONRPC.InvokeRegistry, Web3.Ethereum.RIO;
+  JSONRPC.InvokeRegistry;
 
-function GetEthereumJSONRPC(const AServerURL: string = '';
-  const AWrapperType: TTransportWrapperType = twtHTTP;
-  const UseDefaultProcs: Boolean = True;
-  const AOnSyncProc: TOnSyncEvent = nil;
-  const AOnBeforeParse: TOnBeforeParseEvent = nil): IEthereumJSONRPC;
+{ TJSONFalseBlockInfo }
+
+class operator TJSONFalseBlockInfo.Assign(
+  var Dest: TJSONFalseBlockInfo;
+  const [ref] Src: TJSONFalseBlockInfo);
 begin
-  RegisterJSONRPCWrapper(TypeInfo(IEthereumJSONRPC));
-  var LJSONRPCWrapper := TWeb3EthereumJSONRPCWrapper.Create(nil);
-  LJSONRPCWrapper.PassParamsByPos := True;
-  LJSONRPCWrapper.ServerURL := AServerURL;
-  Result := LJSONRPCWrapper as IEthereumJSONRPC;
+  Dest.currentBlock  := Src.currentBlock;
+  Dest.highestBlock  := Src.highestBlock;
+  Dest.startingBlock := Src.highestBlock;
+end;
+
+class operator TJSONFalseBlockInfo.Implicit(
+  const Value: TJSONFalseBlockInfo): Boolean;
+begin
+  if (Value.currentBlock = 0) and (Value.highestBlock = 0) and
+    (Value.startingBlock = 0) then
+    Result := False else
+    Result := True;
+end;
+
+class operator TJSONFalseBlockInfo.Initialize(out Dest: TJSONFalseBlockInfo);
+begin
+  Dest.currentBlock  := 0;
+  Dest.highestBlock  := 0;
+  Dest.startingBlock := 0;
 end;
 
 initialization
-  InvRegistry.RegisterInterface(TypeInfo(IEthereumJSONRPC));
+  InvokableRegistry.RegisterInterface(TypeInfo(IEthereumJSONRPC));
 end.
